@@ -14,22 +14,40 @@ const fadeUp = {
   }),
 };
 
-const IntegrationCard = ({ integration, index }: { integration: Integration; index: number }) => (
-  <motion.div
-    custom={index}
-    initial="hidden"
-    whileInView="visible"
-    viewport={{ once: true }}
-    variants={fadeUp}
-    className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all group"
-  >
-    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-      <integration.icon className="w-6 h-6 text-primary" />
-    </div>
-    <h3 className="text-lg font-semibold text-foreground mb-2">{integration.name}</h3>
-    <p className="text-sm text-muted-foreground leading-relaxed">{integration.description}</p>
-  </motion.div>
-);
+const IntegrationCard = ({ integration, index }: { integration: Integration; index: number }) => {
+  const isCtaCard = integration.name === "Don't See Your Application?";
+  
+  const handleClick = () => {
+    if (isCtaCard) {
+      const searchSection = document.getElementById("integration-search");
+      if (searchSection) {
+        searchSection.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => {
+          const input = searchSection.querySelector("input");
+          if (input) input.focus();
+        }, 600);
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      custom={index}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={fadeUp}
+      onClick={handleClick}
+      className={`rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all group ${isCtaCard ? "cursor-pointer" : ""}`}
+    >
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+        <integration.icon className="w-6 h-6 text-primary" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{integration.name}</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">{integration.description}</p>
+    </motion.div>
+  );
+};
 
 const Integrations = () => {
   return (

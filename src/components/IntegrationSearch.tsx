@@ -249,7 +249,7 @@ const IntegrationSearch = () => {
   };
 
   return (
-    <section className="py-16 px-6">
+    <section className="py-16 px-6" id="integration-search">
       <div className="max-w-2xl mx-auto" ref={containerRef}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
