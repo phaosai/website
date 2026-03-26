@@ -1,5 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /functions/
+
+Sitemap: https://phaosai.com/sitemap.xml
+
+# Prioritize key pages
 User-agent: Googlebot
 Allow: /
+Allow: /roi-calculator
+Allow: /integrations
+Allow: /about
+Allow: /blog
 
 User-agent: Bingbot
 Allow: /
@@ -8,7 +20,4 @@ User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
 Allow: /

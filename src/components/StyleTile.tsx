@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import {
-  Bot,
   Zap,
   ArrowRight,
   MessageSquare,
@@ -15,6 +14,9 @@ import { Link } from "react-router-dom";
 import phaosHero from "@/assets/phaos-hero.png";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
+import ROICalculator from "@/components/ROICalculator";
+import { organizationSchema, softwareApplicationSchema, homeFaqSchema } from "@/lib/seo-schemas";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -28,6 +30,12 @@ const fadeUp = {
 const StyleTile = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      <SEOHead
+        title="Phaos AI — AI-Powered Voice & Workflow Automation"
+        description="Deploy intelligent AI agents to manage inbound calls and automate complex workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
+        canonical="/"
+        jsonLd={[organizationSchema, softwareApplicationSchema, homeFaqSchema]}
+      />
       <Navigation />
 
       {/* ── Hero ── */}
@@ -40,8 +48,8 @@ const StyleTile = () => {
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[180px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-light/6 blur-[150px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full grid lg:grid-cols-2 gap-12 items-center pt-24">
-          <div>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full pt-24">
+          <div className="max-w-2xl">
             <motion.h1
               custom={1}
               initial="hidden"
@@ -76,39 +84,6 @@ const StyleTile = () => {
               </Link>
             </motion.div>
           </div>
-
-          {/* Chat bubble mockup */}
-          <motion.div
-            custom={4}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            className="hidden lg:flex flex-col gap-4 items-end"
-          >
-            <div className="glass rounded-2xl p-5 max-w-sm w-full">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Phaos AI Agent</p>
-                  <p className="text-xs text-muted-foreground">Active now</p>
-                </div>
-                <div className="ml-auto w-2 h-2 rounded-full bg-success" />
-              </div>
-              <div className="space-y-3">
-                <div className="bg-secondary rounded-2xl rounded-tl-md px-4 py-3">
-                  <p className="text-sm text-foreground">Hi! I've reviewed your account and see you have a pending renewal. Want me to process that now?</p>
-                </div>
-                <div className="bg-primary/20 rounded-2xl rounded-tr-md px-4 py-3 ml-8">
-                  <p className="text-sm text-foreground">Yes, please go ahead.</p>
-                </div>
-                <div className="bg-secondary rounded-2xl rounded-tl-md px-4 py-3">
-                  <p className="text-sm text-foreground">Done! ✅ Renewal confirmed and receipt sent to your email. Anything else I can help with?</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </section>
 
@@ -164,7 +139,7 @@ const StyleTile = () => {
                 className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 group hover:border-primary/40 transition-colors cursor-pointer"
               >
                 <div className="grid grid-cols-3 gap-3 mb-8">
-                  {[Mic, Headphones, MessageSquare, Phone, BrainCircuit, Bot].map((Icon, i) => (
+                  {[Mic, Headphones, MessageSquare, Phone, BrainCircuit, Zap].map((Icon, i) => (
                     <div key={i} className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
                       <Icon className="w-6 h-6 text-primary" />
                     </div>
@@ -187,7 +162,7 @@ const StyleTile = () => {
                 className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-purple-deep/20 via-card to-card border border-purple-deep/20 group hover:border-purple-deep/40 transition-colors cursor-pointer"
               >
                 <div className="grid grid-cols-3 gap-3 mb-8">
-                  {[Workflow, Zap, BrainCircuit, MessageSquare, Bot, CheckCircle].map((Icon, i) => (
+                  {[Workflow, Zap, BrainCircuit, MessageSquare, CheckCircle, Phone].map((Icon, i) => (
                     <div key={i} className="w-14 h-14 rounded-2xl bg-purple-deep/10 flex items-center justify-center group-hover:bg-purple-deep/15 transition-colors">
                       <Icon className="w-6 h-6 text-purple-light" />
                     </div>
@@ -200,6 +175,68 @@ const StyleTile = () => {
               </motion.div>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ── FAQ Section for SEO ── */}
+      <section className="py-24 px-6 border-t border-border/30">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Frequently Asked <span className="text-gradient-purple">Questions</span>
+            </h2>
+          </motion.div>
+          <div className="space-y-4">
+            {[
+              { q: "What is Phaos AI?", a: "Phaos AI is an AI-powered platform that deploys intelligent voice agents to manage inbound calls and agentic workflows to automate complex business operations — eliminating manual processes with seamless automation." },
+              { q: "How does the Voice AI Agent work?", a: "Our voice agents answer calls 24/7 with hyper-realistic, emotionally intelligent conversations. They qualify leads, book appointments, handle FAQs, and seamlessly hand off to human agents when needed." },
+              { q: "What industries does Phaos AI serve?", a: "While we have deep expertise in printing and document solutions, our platform serves any business that needs voice AI and workflow automation — healthcare, real estate, financial services, and more." },
+              { q: "How much can I save?", a: "A copier dealership with 5 service calls/day can save over $100,000 annually. Use our free ROI Calculator to estimate your specific savings." },
+              { q: "Does it integrate with my existing tools?", a: "Yes — Phaos AI offers native Zapier integrations with 6,000+ apps, webhook connectivity, and direct integrations with popular CRMs, ERPs, and industry software." },
+            ].map(({ q, a }, i) => (
+              <motion.details
+                key={q}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-2xl bg-card border border-border/50 p-5 group open:border-primary/30"
+              >
+                <summary className="text-foreground font-semibold cursor-pointer list-none flex items-center justify-between">
+                  {q}
+                  <ArrowRight className="w-4 h-4 text-muted-foreground group-open:rotate-90 transition-transform" />
+                </summary>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{a}</p>
+              </motion.details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI Calculator Embed ── */}
+      <section className="py-24 px-6 border-t border-border/30">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Free <span className="text-gradient-purple">System Audit Tool</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              See how much you could save with AI-powered voice agents and workflow automation.
+            </p>
+          </motion.div>
+          <ROICalculator embedded />
         </div>
       </section>
 
