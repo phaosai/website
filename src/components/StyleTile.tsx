@@ -3,21 +3,15 @@ import {
   Bot,
   Phone,
   Zap,
-  Shield,
   ArrowRight,
   Mail,
   MapPin,
   MessageSquare,
   Headphones,
-  BarChart3,
-  Settings,
-  Users,
-  Clock,
-  CheckCircle,
   Mic,
   BrainCircuit,
   Workflow,
-  Lock,
+  CheckCircle,
 } from "lucide-react";
 import phaosHero from "@/assets/phaos-hero.png";
 import phaosLogo from "@/assets/phaos-logo.png";
@@ -219,7 +213,7 @@ const StyleTile = () => {
               className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-purple-deep/20 via-card to-card border border-purple-deep/20 group hover:border-purple-deep/40 transition-colors"
             >
               <div className="grid grid-cols-3 gap-3 mb-8">
-                {[Workflow, Zap, Settings, BarChart3, Users, CheckCircle].map((Icon, i) => (
+                {[Workflow, Zap, BrainCircuit, MessageSquare, Bot, CheckCircle].map((Icon, i) => (
                   <div key={i} className="w-14 h-14 rounded-2xl bg-purple-deep/10 flex items-center justify-center group-hover:bg-purple-deep/15 transition-colors">
                     <Icon className="w-6 h-6 text-purple-light" />
                   </div>
@@ -236,35 +230,8 @@ const StyleTile = () => {
 
       {/* Stats and Product Showcase sections removed */}
 
-      {/* ── Enterprise Security Strip ── */}
-      <section className="py-16 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {[
-              { icon: Shield, label: "SOC 2 Compliant" },
-              { icon: Lock, label: "End-to-End Encryption" },
-              { icon: Users, label: "Role-Based Access" },
-              { icon: Settings, label: "Custom Deployment" },
-            ].map((item, i) => (
-              <motion.div
-                key={item.label}
-                custom={i}
-                variants={fadeUp}
-                className="flex items-center gap-3 p-4 rounded-xl glass"
-              >
-                <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+
+
 
       {/* ── Footer ── */}
       <footer className="py-16 px-6 border-t border-border/30">
