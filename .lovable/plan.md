@@ -1,69 +1,28 @@
 
 
-# Rebuild Style Tile to Match Sierra.ai Layout
+# Fix Logo + Remove "Enterprise AI Platform" + Begin Copy Approval
 
-## The Problem
-The current style tile shows color palettes, typography samples, and button demos -- it looks like a design system documentation page. Sierra.ai's homepage has a completely different structure: full-bleed hero with image background, logos strip, colored feature cards, stats, product demos, and a professional footer.
+## Immediate Fixes (1 credit)
+1. **Replace the nav logo** with the uploaded `Phaos_Homepage_Image.png` file — swap it in as the new `phaos-logo.png` asset and ensure it renders clearly against the dark nav (adjust sizing/brightness as needed).
+2. **Remove the "Enterprise AI Platform" badge** above the hero headline entirely.
 
-## What Sierra.ai's Layout Actually Looks Like
+## Then: Copy Approval Round 1 — Hero Section
 
-```text
-+------------------------------------------+
-| Logo (left)          Learn More | Menu    |  <- minimal nav
-+------------------------------------------+
-|                                          |
-|  Big headline          [Full-bleed       |
-|  left-aligned           hero image/      |
-|  "Learn more" btn       video bg]        |
-|                                          |
-|        [Chat bubble overlays]            |
-+------------------------------------------+
-| "Leading brands succeed with Sierra"     |
-| [logo] [logo] [logo] [logo] [logo]      |  <- logo/partner strip
-| [logo] [logo] [logo] [logo] [logo]      |
-+------------------------------------------+
-| "Transform your customer experience"     |
-|                                          |
-| +--green card--+  +--orange card--+      |  <- 2-col colored cards
-| | icons grid   |  | heart icons   |      |
-| | description  |  | description   |      |
-| +--------------+  +---------------+      |
-+------------------------------------------+
-| "The results speak for themselves"       |
-| [stat] [stat] [stat] [stat]              |  <- metrics
-+------------------------------------------+
-| Product showcase with tabs               |
-| [screenshot / dashboard UI]              |  <- product demo
-+------------------------------------------+
-| Multi-column footer with link groups     |
-+------------------------------------------+
-```
+After the fixes above, I'll present 3-5 options for the **hero headline + subheadline** for you to pick from. Based on your knowledge base (voice AI, agentic workflows, competing with Bland/Synthflow/Vapi, enterprise positioning), here are the options I'll propose:
 
-## What We'll Build (Phaos version of this layout)
+**Headline Options:**
+1. "AI-Powered Voice & Agentic Workflow Automation" (your approved tagline, used as-is)
+2. "Your AI Workforce, Ready to Deploy" — subline: "Voice agents and intelligent workflows that handle millions of conversations — so your team can focus on what matters."
+3. "Conversations That Convert. Workflows That Scale." — subline: "Deploy AI voice agents and agentic automation across your entire customer journey."
+4. "The Future of Customer Engagement Starts Here" — subline: "AI-powered voice agents and workflow automation built for enterprises that demand excellence."
+5. "AI That Doesn't Just Talk — It Takes Action" — subline: "From first contact to final resolution, Phaos deploys intelligent agents that handle calls, automate workflows, and drive results 24/7."
 
-Rewrite `StyleTile.tsx` to mirror Sierra's section structure with Phaos's dark purple branding:
+After you pick a hero, we'll move through each section:
+- Round 2: Feature cards (Voice AI + Agentic Workflows descriptions)
+- Round 3: Stats/metrics (which numbers to highlight)
+- Round 4: Product showcase section
+- Round 5: Investment/partner section messaging
+- Round 6: Footer + contact copy
 
-1. **Nav**: Logo left, nav links center, "Book a Demo" button right. Keep dark glass nav but ensure logo is visible (fix font color contrast issue).
-
-2. **Hero**: Full-viewport height section with the Phaos hero image as background (cover, darkened overlay). Headline left-aligned (not centered). Single "Book a Demo" pill button. Chat-bubble-style overlay on the right showing an AI conversation snippet.
-
-3. **Partner/Investment Strip**: Instead of client logos, show "Backed by Innovation" or "Seeking Strategic Partners" with placeholder partner slots -- matches the investment angle.
-
-4. **Two-Column Feature Cards**: Colored gradient cards (purple tones instead of Sierra's green/orange). Each card has icon grid + description text. Cards for Voice AI, Agentic Workflows, etc.
-
-5. **Stats/Metrics Section**: "The results speak for themselves" -- show key metrics (calls handled, response time, accuracy %).
-
-6. **Product Showcase**: Tab-style section showing a mock dashboard UI or platform screenshot, similar to Sierra's Agent Studio/SDK tabs.
-
-7. **Footer**: Multi-column layout with Product links, Company links, contact info. Clean and professional.
-
-## Technical Details
-- Rewrite `StyleTile.tsx` entirely -- same file, new content
-- Keep the existing CSS variables, glass utilities, and purple gradients from `index.css`
-- Keep framer-motion animations but apply them to real sections (scroll-triggered fade-ins)
-- Fix the logo visibility issue: ensure the Phaos logo/text contrasts properly against the nav background
-- Hero image used as `background-image` with dark overlay, not as an `<img>` element below content
-
-## Logo Color Fix
-The logo text "Phaos AI" needs to be white/light against the dark nav. The logo image itself (purple on transparent or dark) needs to be checked for contrast -- if it doesn't read well, we'll add a light filter or use text-only branding in the nav.
+Each round will have 3-5 options to choose from.
 
