@@ -110,7 +110,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Location</p>
-                    <p className="text-sm text-muted-foreground">Casselberry, Florida USA</p>
+                    <p className="text-sm text-muted-foreground">Casselberry, FL USA</p>
                   </div>
                 </div>
               </div>
