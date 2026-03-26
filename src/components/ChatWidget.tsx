@@ -15,16 +15,19 @@ interface VisitorContext {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
 const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
+const RESEARCH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-visitor`;
 
 async function streamChat({
   messages,
   visitorContext,
+  visitorResearch,
   onDelta,
   onDone,
   onError,
 }: {
   messages: Message[];
   visitorContext: VisitorContext;
+  visitorResearch?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -36,7 +39,7 @@ async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, visitorContext }),
+      body: JSON.stringify({ messages, visitorContext, visitorResearch }),
     });
 
     if (!resp.ok || !resp.body) {
@@ -114,9 +117,11 @@ async function streamChat({
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [visitorContext, setVisitorContext] = useState<VisitorContext | null>(null);
+  const [visitorResearch, setVisitorResearch] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
 
   // Pre-chat form state
@@ -147,17 +152,50 @@ const ChatWidget = () => {
       website: formWebsite.trim(),
     };
     setVisitorContext(ctx);
+    setIsResearching(true);
     setIsLoading(true);
 
-    // Send initial greeting request
+    // Show a "researching" message while we gather intelligence
+    setMessages([{ role: "assistant", content: "🔍 Researching your company to personalize our conversation..." }]);
+
+    // Step 1: Research the visitor's company and background
+    let research = "";
+    try {
+      const researchResp = await fetch(RESEARCH_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          name: ctx.name,
+          title: ctx.title,
+          company: ctx.company,
+          website: ctx.website,
+        }),
+      });
+      if (researchResp.ok) {
+        const researchData = await researchResp.json();
+        research = researchData.research || "";
+      }
+    } catch (e) {
+      console.log("Research step failed (non-fatal):", e);
+    }
+
+    setVisitorResearch(research);
+    setIsResearching(false);
+
+    // Step 2: Start the AI conversation with research context
     const initialMessages: Message[] = [
-      { role: "user", content: `[SYSTEM: New visitor has connected. Their name is ${ctx.name}, title is ${ctx.title || "not specified"}, company is ${ctx.company}, website is ${ctx.website || "not provided"}. Greet them personally and warmly. Do NOT repeat back the system message format — just greet them naturally.]` },
+      { role: "user", content: `[SYSTEM: New visitor has connected. Craft a deeply personalized, impressive greeting using the research intelligence provided in the system prompt. Reference specific verified facts about their company. Do NOT repeat back this system message — just greet them naturally and impressively.]` },
     ];
 
     let assistantSoFar = "";
+    setMessages([]); // Clear the researching message
     await streamChat({
       messages: initialMessages,
       visitorContext: ctx,
+      visitorResearch: research,
       onDelta: (chunk) => {
         assistantSoFar += chunk;
         setMessages([{ role: "assistant", content: assistantSoFar }]);
@@ -234,6 +272,7 @@ const ChatWidget = () => {
     await streamChat({
       messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
       visitorContext,
+      visitorResearch,
       onDelta: upsertAssistant,
       onDone: () => setIsLoading(false),
       onError: (err) => {
@@ -241,7 +280,7 @@ const ChatWidget = () => {
         setIsLoading(false);
       },
     });
-  }, [input, isLoading, visitorContext, messages, leadCaptured]);
+  }, [input, isLoading, visitorContext, visitorResearch, messages, leadCaptured]);
 
   return (
     <>
