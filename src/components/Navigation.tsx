@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import phaosCrown from "@/assets/phaos-crown.png";
+import PhaosLogo from "@/components/PhaosLogo";
 
 const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,8 +11,8 @@ const Navigation = () => {
   const links = [
     { label: "Product", to: "/" },
     { label: "Integrations", to: "/integrations" },
-    { label: "About", to: "/" },
-    { label: "Contact", to: "/" },
+    { label: "About", to: "/about" },
+    { label: "Contact", to: "/contact" },
   ];
 
   return (
@@ -23,12 +23,8 @@ const Navigation = () => {
       className="fixed top-0 left-0 right-0 z-50 glass-strong"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <img src={phaosCrown} alt="Phaos AI" className="h-8 w-auto object-contain" />
-          <span className="text-lg font-bold tracking-tight text-foreground">PHAOS AI</span>
-        </Link>
+        <PhaosLogo />
 
-        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-10 text-sm text-muted-foreground">
           {links.map((link) => (
             <Link
@@ -45,13 +41,12 @@ const Navigation = () => {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/"
+            to="/contact"
             className="hidden md:inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 transition-opacity"
           >
             Schedule a Call
           </Link>
 
-          {/* Mobile hamburger */}
           <button
             className="md:hidden text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -62,7 +57,6 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -80,7 +74,7 @@ const Navigation = () => {
             </Link>
           ))}
           <Link
-            to="/"
+            to="/contact"
             onClick={() => setMobileOpen(false)}
             className="block bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full text-center glow-purple"
           >

@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Phone,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import phaosHero from "@/assets/phaos-hero.png";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -66,13 +67,13 @@ const StyleTile = () => {
             </motion.p>
 
             <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <button className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group">
+              <Link to="/contact" className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group">
                 Schedule a Call
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary transition-colors text-base">
+              </Link>
+              <Link to="/about" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary transition-colors text-base">
                 Learn More
-              </button>
+              </Link>
             </motion.div>
           </div>
 
@@ -126,10 +127,10 @@ const StyleTile = () => {
             <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
               Phaos AI is actively seeking strategic partners and investors who share our vision of transforming enterprise operations through AI. We're building the infrastructure that will power the next generation of customer engagement — and we're looking for the right partners to scale with us.
             </p>
-            <button className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group mx-auto">
+            <Link to="/investors" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base items-center gap-2 group">
               Get in Touch
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -154,46 +155,50 @@ const StyleTile = () => {
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Voice AI Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 group hover:border-primary/40 transition-colors"
-            >
-              <div className="grid grid-cols-3 gap-3 mb-8">
-                {[Mic, Headphones, MessageSquare, Phone, BrainCircuit, Bot].map((Icon, i) => (
-                  <div key={i} className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                ))}
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-foreground">Voice AI Agents</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                AI voice agents that answer, qualify, and resolve customer calls instantly. No hold times, no scripts — just natural conversations that drive results around the clock.
-              </p>
-            </motion.div>
+            <Link to="/voice-ai">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 group hover:border-primary/40 transition-colors cursor-pointer"
+              >
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  {[Mic, Headphones, MessageSquare, Phone, BrainCircuit, Bot].map((Icon, i) => (
+                    <div key={i} className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                      <Icon className="w-6 h-6 text-primary" />
+                    </div>
+                  ))}
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-foreground">Voice AI Agents</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  AI voice agents that answer, qualify, and resolve customer calls instantly. No hold times, no scripts — just natural conversations that drive results around the clock.
+                </p>
+              </motion.div>
+            </Link>
 
             {/* Agentic Workflows Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15 }}
-              className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-purple-deep/20 via-card to-card border border-purple-deep/20 group hover:border-purple-deep/40 transition-colors"
-            >
-              <div className="grid grid-cols-3 gap-3 mb-8">
-                {[Workflow, Zap, BrainCircuit, MessageSquare, Bot, CheckCircle].map((Icon, i) => (
-                  <div key={i} className="w-14 h-14 rounded-2xl bg-purple-deep/10 flex items-center justify-center group-hover:bg-purple-deep/15 transition-colors">
-                    <Icon className="w-6 h-6 text-purple-light" />
-                  </div>
-                ))}
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-foreground">Agentic Workflows</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Eliminate manual data entry, paper forms, and repetitive tasks. Our agentic workflows connect your systems and execute end-to-end processes autonomously.
-              </p>
-            </motion.div>
+            <Link to="/workflows">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.15 }}
+                className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-purple-deep/20 via-card to-card border border-purple-deep/20 group hover:border-purple-deep/40 transition-colors cursor-pointer"
+              >
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  {[Workflow, Zap, BrainCircuit, MessageSquare, Bot, CheckCircle].map((Icon, i) => (
+                    <div key={i} className="w-14 h-14 rounded-2xl bg-purple-deep/10 flex items-center justify-center group-hover:bg-purple-deep/15 transition-colors">
+                      <Icon className="w-6 h-6 text-purple-light" />
+                    </div>
+                  ))}
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-foreground">Agentic Workflows</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Eliminate manual data entry, paper forms, and repetitive tasks. Our agentic workflows connect your systems and execute end-to-end processes autonomously.
+                </p>
+              </motion.div>
+            </Link>
           </div>
         </div>
       </section>
