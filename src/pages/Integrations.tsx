@@ -8,7 +8,6 @@ import {
   Users,
   CreditCard,
   Mail,
-  Shield,
   FileText,
   Headphones,
   Server,
