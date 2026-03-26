@@ -298,7 +298,10 @@ const ChatWidget = () => {
             aria-label="Open chat"
           >
             {showPulse && (
-              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
+              <>
+                <span className="absolute -inset-2 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: "1.5s" }} />
+                <span className="absolute -inset-4 rounded-full bg-primary/10 animate-ping" style={{ animationDuration: "2s", animationDelay: "0.3s" }} />
+              </>
             )}
             <MessageCircle className="w-6 h-6 text-primary-foreground" />
           </motion.button>
