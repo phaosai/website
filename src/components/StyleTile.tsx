@@ -3,21 +3,15 @@ import {
   Bot,
   Phone,
   Zap,
-  Shield,
   ArrowRight,
   Mail,
   MapPin,
   MessageSquare,
   Headphones,
-  BarChart3,
-  Settings,
-  Users,
-  Clock,
-  CheckCircle,
   Mic,
   BrainCircuit,
   Workflow,
-  Lock,
+  CheckCircle,
 } from "lucide-react";
 import phaosHero from "@/assets/phaos-hero.png";
 import phaosLogo from "@/assets/phaos-logo.png";
