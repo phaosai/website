@@ -213,7 +213,7 @@ const StyleTile = () => {
               className="rounded-3xl p-8 md:p-10 bg-gradient-to-br from-purple-deep/20 via-card to-card border border-purple-deep/20 group hover:border-purple-deep/40 transition-colors"
             >
               <div className="grid grid-cols-3 gap-3 mb-8">
-                {[Workflow, Zap, Settings, BarChart3, Users, CheckCircle].map((Icon, i) => (
+                {[Workflow, Zap, BrainCircuit, MessageSquare, Bot, CheckCircle].map((Icon, i) => (
                   <div key={i} className="w-14 h-14 rounded-2xl bg-purple-deep/10 flex items-center justify-center group-hover:bg-purple-deep/15 transition-colors">
                     <Icon className="w-6 h-6 text-purple-light" />
                   </div>
