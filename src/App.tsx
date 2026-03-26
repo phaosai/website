@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ChatWidget from "./components/ChatWidget";
 
 const Integrations = lazy(() => import("./pages/Integrations.tsx"));
 const About = lazy(() => import("./pages/About.tsx"));
