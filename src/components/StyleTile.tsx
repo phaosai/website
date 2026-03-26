@@ -236,35 +236,8 @@ const StyleTile = () => {
 
       {/* Stats and Product Showcase sections removed */}
 
-      {/* ── Enterprise Security Strip ── */}
-      <section className="py-16 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {[
-              { icon: Shield, label: "SOC 2 Compliant" },
-              { icon: Lock, label: "End-to-End Encryption" },
-              { icon: Users, label: "Role-Based Access" },
-              { icon: Settings, label: "Custom Deployment" },
-            ].map((item, i) => (
-              <motion.div
-                key={item.label}
-                custom={i}
-                variants={fadeUp}
-                className="flex items-center gap-3 p-4 rounded-xl glass"
-              >
-                <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+
+
 
       {/* ── Footer ── */}
       <footer className="py-16 px-6 border-t border-border/30">
