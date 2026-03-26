@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
+import shreePhoto from "@/assets/shree-dandekar.jpg";
+import diegoPhoto from "@/assets/diego-barrientos.png";
+import willPhoto from "@/assets/will-donahue.jpg";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
