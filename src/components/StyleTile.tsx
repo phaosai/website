@@ -47,8 +47,8 @@ const StyleTile = () => {
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={phaosLogo} alt="Phaos AI" className="h-8 w-8 rounded-lg object-cover brightness-150" />
-            <span className="text-lg font-bold tracking-tight text-foreground">Phaos AI</span>
+            <img src={phaosLogo} alt="Phaos AI" className="h-9 w-auto object-contain" />
+            <span className="text-lg font-bold tracking-tight text-foreground">Phaos <span className="italic font-light">AI</span></span>
           </div>
           <div className="hidden md:flex items-center gap-10 text-sm text-muted-foreground">
             <span className="hover:text-foreground transition-colors cursor-pointer">Product</span>
@@ -77,12 +77,6 @@ const StyleTile = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full grid lg:grid-cols-2 gap-12 items-center pt-24">
           {/* Left — copy */}
           <div>
-            <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUp}>
-              <span className="inline-block px-4 py-1.5 rounded-full text-xs font-medium tracking-wider uppercase bg-primary/10 text-primary border border-primary/20 mb-8">
-                Enterprise AI Platform
-              </span>
-            </motion.div>
-
             <motion.h1
               custom={1}
               initial="hidden"
@@ -422,8 +416,8 @@ const StyleTile = () => {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-4">
-                <img src={phaosLogo} alt="Phaos AI" className="h-8 w-8 rounded-lg object-cover brightness-150" />
-                <span className="text-lg font-bold text-foreground">Phaos AI</span>
+                <img src={phaosLogo} alt="Phaos AI" className="h-9 w-auto object-contain" />
+                <span className="text-lg font-bold text-foreground">Phaos <span className="italic font-light">AI</span></span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 AI-Powered Voice & Agentic Workflow Automation for the modern enterprise.
