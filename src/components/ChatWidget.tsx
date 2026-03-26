@@ -272,6 +272,7 @@ const ChatWidget = () => {
     await streamChat({
       messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
       visitorContext,
+      visitorResearch,
       onDelta: upsertAssistant,
       onDone: () => setIsLoading(false),
       onError: (err) => {
@@ -279,7 +280,7 @@ const ChatWidget = () => {
         setIsLoading(false);
       },
     });
-  }, [input, isLoading, visitorContext, messages, leadCaptured]);
+  }, [input, isLoading, visitorContext, visitorResearch, messages, leadCaptured]);
 
   return (
     <>
