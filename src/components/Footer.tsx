@@ -77,7 +77,10 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border/50 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© 2026 Phaos AI. All rights reserved.</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-muted-foreground">© 2026 Phaos AI. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground/70 italic">Phaos — Greek for "light." Guided by faith, built with purpose.</p>
+          </div>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>

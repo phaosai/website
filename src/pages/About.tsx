@@ -96,6 +96,49 @@ const About = () => {
         </div>
       </section>
 
+      {/* Our Foundation */}
+      <section className="py-20 px-6 border-t border-border/30">
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Our <span className="text-gradient-purple">Foundation</span>
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-lg">
+              The name <strong className="text-foreground">Phaos</strong> comes from the Koine Greek word for <em>"light"</em> — rooted in <span className="text-primary">John 1:4-5</span>: <em>"In Him was life, and that life was the light of all mankind. The light shines in the darkness, and the darkness has not overcome it."</em>
+            </p>
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed mt-4">
+              We are a faith-based company, and our values reflect the principles that guide everything we build.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+            {[
+              { letter: "F", word: "Freedom", description: "Empowering businesses to break free from manual processes and operate with autonomy." },
+              { letter: "A", word: "Authenticity", description: "Building genuine technology that reflects honest, transparent relationships." },
+              { letter: "I", word: "Integrity", description: "Upholding the highest ethical standards in every line of code and every interaction." },
+              { letter: "T", word: "Transformation", description: "Driving meaningful change — in operations, in outcomes, and in people's lives." },
+              { letter: "H", word: "Humility", description: "Leading with servant-leadership, putting our customers and community first." },
+            ].map((value, i) => (
+              <motion.div
+                key={value.letter}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                className="rounded-2xl p-6 bg-gradient-to-b from-primary/10 via-card to-card border border-primary/20 text-center hover:border-primary/40 transition-all"
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-primary">{value.letter}</span>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{value.word}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{value.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* What We're Building */}
       <section className="py-20 px-6 border-t border-border/30">
         <div className="max-w-4xl mx-auto">
@@ -103,6 +146,20 @@ const About = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">
               What We're <span className="text-gradient-purple">Building</span>
             </h2>
+            <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
+              <p>
+                Phaos AI is developing a dual-platform solution: <strong className="text-foreground">Voice AI Agents</strong> that handle inbound and outbound calls with human-like intelligence, and <strong className="text-foreground">Agentic Workflows</strong> that automate complex, multi-step business processes end-to-end.
+              </p>
+              <p>
+                We started by tackling the printing, copier, and document solutions industry — a sector drowning in manual processes, paper-heavy workflows, and excessive customer touchpoints. But our technology is built to serve any business that relies on high call volumes, repetitive operations, and disconnected systems.
+              </p>
+              <p>
+                From automated service dispatching and intelligent call routing to proactive customer outreach and cross-platform data sync, Phaos AI replaces the manual grind with seamless, autonomous automation.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
             <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
               <p>
                 Phaos AI is developing a dual-platform solution: <strong className="text-foreground">Voice AI Agents</strong> that handle inbound and outbound calls with human-like intelligence, and <strong className="text-foreground">Agentic Workflows</strong> that automate complex, multi-step business processes end-to-end.
@@ -153,7 +210,7 @@ const About = () => {
                     His deep understanding of B2B sales cycles, customer engagement, and operational workflows — combined with a passion for emerging technology — led him to found Phaos AI. Daniel saw firsthand how businesses in the printing and document solutions industry were buried under manual processes, excessive call volumes, and disconnected systems. He set out to build an AI platform that doesn't just automate — it transforms.
                   </p>
                   <p>
-                    Based in Central Florida, Daniel brings a servant-leadership philosophy to every aspect of Phaos AI — building technology that empowers businesses and the people behind them.
+                    Based in Central Florida, Daniel brings a faith-driven, servant-leadership philosophy to every aspect of Phaos AI — building technology that empowers businesses and the people behind them.
                   </p>
                 </div>
               </div>
