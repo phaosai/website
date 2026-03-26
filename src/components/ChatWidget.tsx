@@ -48,10 +48,10 @@ async function streamChat({
         return;
       }
       if (resp.status === 402) {
-        onError("Our chat service is temporarily unavailable. Please email us at Info@PhaosAI.com");
+        onError("Our chat service is temporarily unavailable. Please email us at daniel@phaosai.com");
         return;
       }
-      onError("Something went wrong. Please try again or reach us at Info@PhaosAI.com");
+      onError("Something went wrong. Please try again or reach us at daniel@phaosai.com");
       return;
     }
 
@@ -110,7 +110,7 @@ async function streamChat({
 
     onDone();
   } catch (e) {
-    onError("Connection error. Please try again or contact Info@PhaosAI.com");
+    onError("Connection error. Please try again or contact daniel@phaosai.com");
   }
 }
 
