@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Phone, Workflow, Plug } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import IntegrationSearch from "@/components/IntegrationSearch";
 import { categories, type Integration } from "@/data/integrations";
 
 const fadeUp = {
@@ -56,6 +57,9 @@ const Integrations = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Integration Search */}
+      <IntegrationSearch />
 
       {/* How It Works */}
       <section className="py-20 px-6 border-t border-border/30">
@@ -116,45 +120,6 @@ const Integrations = () => {
               </ul>
             </motion.div>
           </div>
-        </div>
-      </section>
-
-      {/* Autonomous Workflow Example */}
-      <section className="py-20 px-6 border-t border-border/30">
-        <div className="max-w-4xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-              An <span className="text-gradient-purple">Autonomous Scenario</span>
-            </h2>
-            <p className="text-muted-foreground text-lg text-center mb-10 max-w-2xl mx-auto">
-              See how Phaos AI connects disparate systems into a single, automated workflow.
-            </p>
-            <div className="space-y-4">
-              {[
-                { step: "1", text: "A customer calls the Phaos AI Voice Agent to report a broken copier." },
-                { step: "2", text: "The AI cross-references the caller's phone number with your CRM to find the active contract." },
-                { step: "3", text: "An emergency service ticket is automatically created in ConnectWise." },
-                { step: "4", text: "The closest technician is scheduled using Google Calendar and Route4Me." },
-                { step: "5", text: "A confirmation text is sent to the customer via Twilio." },
-                { step: "6", text: "The internal team is alerted via Slack with a full summary." },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  custom={i}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={fadeUp}
-                  className="flex items-start gap-4 rounded-2xl p-5 bg-card border border-border/50"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary">{item.step}</span>
-                  </div>
-                  <p className="text-foreground leading-relaxed">{item.text}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
         </div>
       </section>
 
