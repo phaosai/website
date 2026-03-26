@@ -135,7 +135,7 @@ const StyleTile = () => {
                   <p className="text-sm font-semibold text-foreground">Phaos AI Agent</p>
                   <p className="text-xs text-muted-foreground">Active now</p>
                 </div>
-                <div className="ml-auto w-2 h-2 rounded-full bg-green-500" />
+                <div className="ml-auto w-2 h-2 rounded-full bg-success" />
               </div>
               <div className="space-y-3">
                 <div className="bg-secondary rounded-2xl rounded-tl-md px-4 py-3">
@@ -340,7 +340,7 @@ const StyleTile = () => {
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
                     <Bot className="w-5 h-5 text-primary" />
                     <span className="text-sm font-medium text-foreground">Sales Agent</span>
-                    <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
+                    <span className="ml-auto w-2 h-2 rounded-full bg-success" />
                   </div>
                   {["Support Agent", "Scheduling Agent", "Survey Agent"].map((name) => (
                     <div key={name} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors cursor-pointer">
@@ -354,7 +354,7 @@ const StyleTile = () => {
                 <div className="md:col-span-2 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-foreground">Sales Agent — Performance</h3>
-                    <span className="text-xs px-3 py-1 rounded-full bg-green-500/10 text-green-400 font-medium">Live</span>
+                    <span className="text-xs px-3 py-1 rounded-full bg-success/10 text-success-foreground font-medium">Live</span>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     {[
