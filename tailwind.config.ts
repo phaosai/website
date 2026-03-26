@@ -55,6 +55,10 @@ export default {
           light: "hsl(var(--purple-light))",
           deep: "hsl(var(--purple-deep))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
