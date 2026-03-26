@@ -1,6 +1,3 @@
-# Memory: index.md
-Updated: now
-
 Phaos AI website — dark theme, purple gradient, Inter font, Sierra.ai-inspired aesthetic
 
 ## Brand
@@ -8,10 +5,10 @@ Phaos AI website — dark theme, purple gradient, Inter font, Sierra.ai-inspired
 - Email: Info@PhaosAI.com
 - Phone: (617) 678-2426
 - Location: Casselberry, Florida USA
-- Crown logo: src/assets/phaos-crown.png
+- Logo: src/assets/phaos-crown.png (purple infinity crown)
 - Hero image: src/assets/phaos-hero.png
-- Logo text: "PHAOS AI" (all caps, same font weight)
-- CTA button text: "Schedule a Call" (not "Book a Demo")
+- Founder photo: src/assets/daniel-lindros.jpg
+- Logo text: "Phaos" (bold) + "AI" (italic, purple, lighter weight)
 
 ## Design System
 - Background: #0a0a1a (240 20% 4%)
@@ -23,20 +20,11 @@ Phaos AI website — dark theme, purple gradient, Inter font, Sierra.ai-inspired
 - Glass-morphism cards, purple glow effects, framer-motion animations
 
 ## Site Structure
-- Pages: Home (/), Integrations (/integrations), About, Contact (planned)
-- Shared components: Navigation.tsx, Footer.tsx
-- Investment/partner section on home (vision-forward pitch)
-- Footer: text-only "PHAOS AI" aligned as column header (no logo image)
-- Lazy-loaded routes for performance
+- 12 pages: Home, Integrations, About, Contact, Careers, Partners, Investors, Voice AI, Workflows, Security, Privacy, Terms
+- Forms on: Careers, Partners, Investors, Contact (with honeypot spam protection)
+- All "Book a Demo" → "Schedule a Call"
+- Footer: 4 columns (Brand, Product, Company, Get in Touch)
 
-## Removed/Rejected
-- "Enterprise AI Platform" badge — removed
-- Stats section — removed (pre-revenue)
-- Product showcase section — removed
-- Security badges strip on home — removed
-- "Book a Demo" wording — changed to "Schedule a Call"
-
-## Integrations Page
-- Content sourced from Product Development Roadmap PDF
-- Voice AI integrations: Salesforce, HubSpot, ConnectWise, Google Calendar, Outlook, Shopify, WooCommerce, Magento, Stripe, QuickBooks
-- Workflow integrations: Salesforce, HubSpot, SAP, Oracle NetSuite, Shopify, WooCommerce, Stripe, Google Workspace, Microsoft 365, Slack, AWS, GCP, Azure
+## Workflow
+- Section-by-section copy approval with 3-5 options each
+- Style tile first, then full build
