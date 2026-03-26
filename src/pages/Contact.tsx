@@ -14,8 +14,10 @@ const Contact = () => {
     e.preventDefault();
     if (honeypot) return;
     setSubmitting(true);
+    const mailtoLink = `mailto:info@phaosai.com?subject=${encodeURIComponent("Contact Form Submission")}&body=${encodeURIComponent(reason)}`;
+    window.open(mailtoLink, '_blank');
     setTimeout(() => {
-      toast.success("Message sent! We'll get back to you soon.");
+      toast.success("Opening your email client to send your message to info@phaosai.com");
       setReason("");
       setSubmitting(false);
     }, 1000);
@@ -33,7 +35,7 @@ const Contact = () => {
               Get in <span className="text-gradient-purple">Touch</span>
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Whether you have questions about our platform, want to schedule a demo, or explore a partnership — we'd love to hear from you.
+              Whether you have questions about our platform, want to schedule a call, or explore a partnership — we'd love to hear from you.
             </p>
           </motion.div>
 
@@ -116,7 +118,7 @@ const Contact = () => {
               <div className="rounded-2xl p-6 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20">
                 <p className="text-foreground font-semibold mb-2">Prefer a call?</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We're happy to schedule a personalized demo and walk you through exactly how Phaos AI can transform your operations.
+                  We're happy to schedule a call to discuss exactly how Phaos AI can transform your operations.
                 </p>
               </div>
             </motion.div>

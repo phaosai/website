@@ -81,6 +81,7 @@ const communicationIntegrations: Integration[] = [
   { name: "Slack", description: "AI drops summaries of high-priority service calls into team channels for instant awareness", icon: MessageSquare },
   { name: "Twilio", description: "Send automated SMS to customers — appointment confirmations, technician ETAs, and status updates", icon: Phone },
   { name: "Gmail / Office 365 Email", description: "Send structured, automated follow-up emails post-call with full conversation context", icon: Mail },
+  { name: "Don't See Your Application?", description: "Ask us if we can quickly and easily connect to your specific systems! If there are Zapier Triggers or webhooks, we can make it happen quick and painless.", icon: Plug },
 ];
 
 const categories = [
@@ -260,29 +261,6 @@ const Integrations = () => {
         </section>
       ))}
 
-      {/* Security Strip */}
-      <section className="py-20 px-6 border-t border-border/30">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-6">
-              <Shield className="w-7 h-7 text-primary" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Enterprise-Grade <span className="text-gradient-purple">Security</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed mb-10">
-              All integrations are built with end-to-end encryption, role-based access controls, and compliance with GDPR, CCPA, HIPAA, and PCI-DSS standards.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              {["End-to-End Encryption", "SOC 2 Compliant", "HIPAA Ready", "PCI-DSS Secure", "GDPR & CCPA"].map((badge) => (
-                <span key={badge} className="bg-secondary text-sm text-muted-foreground px-4 py-2 rounded-full border border-border/50">
-                  {badge}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="py-20 px-6 border-t border-border/30">
