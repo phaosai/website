@@ -21,6 +21,10 @@ import {
   Zap,
   Settings,
   Monitor,
+  Package,
+  BarChart3,
+  Layers,
+  Box,
 } from "lucide-react";
 
 export interface Integration {
@@ -36,11 +40,18 @@ export interface IntegrationCategory {
 }
 
 const mpsIntegrations: Integration[] = [
-  { name: "PaperCut MF", description: "Export usage logs and track printer health, toner levels, and user print behavior in real-time", icon: Printer },
-  { name: "ezeep Blue", description: "Natively integrated — trigger workflows on new print jobs and log them automatically for billing", icon: Printer },
-  { name: "Cloudprinter.com", description: "Trigger AI voice agent calls to customers with delivery updates on order status changes", icon: Printer },
-  { name: "Print Autopilot", description: "Automate document workflows and streamline print production processes end-to-end", icon: Printer },
-  { name: "SNMP Monitoring (Syncro/MSP)", description: "Trigger service workflows when printers report error codes like paper jams or fuser errors", icon: Wrench },
+  { name: "PaperCut (Hive/MF)", description: "Enterprise print management with usage tracking, quota enforcement, and environmental reporting. AI Automation Example: Triggers a Phaos AI 'Policy Compliance' nudge to the department head when a user or group exceeds their monthly color printing quota or budget.", icon: Printer },
+  { name: "PrinterLogic", description: "Serverless printing infrastructure that eliminates print servers and simplifies driver management. AI Automation Example: Automatically generates an AI-written 'Site Optimization Report' when a new printer is added, suggesting the best driver and security settings.", icon: Printer },
+  { name: "Printix (by Kofax)", description: "Cloud-native print management with secure release and mobile printing across distributed workforces. AI Automation Example: Initiates a Phaos AI 'Onboarding Guide' for new employees added to a Printix group, walking them through secure print release on mobile devices.", icon: Printer },
+  { name: "ezeep Blue", description: "Natively integrated cloud printing — trigger workflows on new print jobs and log them automatically for billing. AI Automation Example: Executes a Phaos AI 'Supply Chain' trigger to check paper and toner inventory the moment a high-volume job is sent to a remote office.", icon: Printer },
+  { name: "YSoft SafeQ", description: "Enterprise print and scan management with advanced security, cost control, and workflow automation. AI Automation Example: Deploys a Phaos AI 'Security Audit' alert to IT admins when sensitive document titles are detected in the print queue but not released within 24 hours.", icon: Shield },
+  { name: "MyQ Solution", description: "Flexible print management with secure pull-printing, scanning workflows, and sustainability reporting. AI Automation Example: Triggers a Phaos AI 'Green Initiative' report for the CFO, highlighting monthly carbon footprint savings and paper reduction achieved through secure print release.", icon: Printer },
+  { name: "PrintTracker", description: "Industry-leading data collection agent for remote monitoring of printer fleets and supply levels. AI Automation Example: Launches a Phaos AI 'Proactive Service' ticket the moment a 'Critical Error Code' is captured via DCA, providing the technician with exact parts needed.", icon: Wrench },
+  { name: "Printanista (ECI)", description: "Comprehensive fleet management with automated meter collection, supply fulfillment, and contract billing. AI Automation Example: Automatically calculates 'Cost-per-Page' drift and notifies the Account Manager if usage deviates by more than 15% from the contract baseline.", icon: BarChart3 },
+  { name: "Xerox Workplace Cloud", description: "Cloud-based print and content management designed for hybrid and distributed work environments. AI Automation Example: Triggers a Phaos AI 'Home Office Audit' for remote workers, tracking business-related print volumes on non-contract devices for expense reimbursement.", icon: Globe },
+  { name: "HP JetAdvantage Insights", description: "Fleet analytics and optimization platform delivering actionable intelligence on device utilization and costs. AI Automation Example: Uses Phaos AI to analyze fleet utilization data and automatically recommend 'Device Consolidation' plans during quarterly business reviews.", icon: BarChart3 },
+  { name: "Lexmark Cloud Services", description: "Enterprise-grade cloud fleet management with predictive analytics and remote device diagnostics. AI Automation Example: Activates a Phaos AI 'Predictive Maintenance' sequence that schedules a service visit when telemetry predicts a fuser failure within the next 5,000 pages.", icon: Settings },
+  { name: "FMAudit (ECI)", description: "Automated data collection and fleet monitoring for managed print service providers worldwide. AI Automation Example: Triggers a Phaos AI 'Toner Concierge' workflow that confirms the customer's shipping address and contact before automatically releasing a low-toner supply shipment.", icon: Printer },
 ];
 
 const erpIntegrations: Integration[] = [
@@ -61,22 +72,33 @@ const erpIntegrations: Integration[] = [
 ];
 
 const crmIntegrations: Integration[] = [
-  { name: "SalesChain", description: "Industry leader for Quote-to-Cash in office equipment — manage complex lease cycles and capital equipment billing. Automation: Trigger AI outreach when leases near expiration to discuss upgrades", icon: Users },
-  { name: "Sherpa CRM (White Cup)", description: "Revenue Intelligence platform combining ERP data with sales activity to identify at-risk accounts. Automation: Parse business intelligence alerts and draft personalized outreach for declining accounts", icon: Users },
-  { name: "AgentDealer", description: "Salesforce-powered CRM pre-configured for copier dealers with equipment asset tracking and meter-based billing. Automation: Notify customers about high-volume alternatives when usage alerts trigger", icon: Users },
-  { name: "Compass Sales Solutions", description: "Specialized for MPS providers — TCO assessments and automated proposal generation built in. Automation: Monitor proposal views via webhook and trigger AI follow-up calls", icon: Users },
-  { name: "Close CRM", description: "Action-first CRM with built-in calling and SMS — the fastest platform for MSP and IT services sales teams. Automation: Sync full AI conversation transcripts directly into the Close timeline", icon: Users },
-  { name: "HubSpot", description: "World leader in inbound marketing with a Flywheel model ideal for digital-first lead generation. Automation: Trigger AI outreach when leads engage with specific content or landing pages", icon: Users },
-  { name: "Pipedrive", description: "Visual Kanban-style CRM built around Activity-Based Selling to keep field reps focused on deal-moving actions. Automation: Auto-schedule site walk-throughs when deals enter the Discovery stage", icon: Users },
-  { name: "Zoho CRM", description: "Best value-to-feature ratio with a massive ecosystem including inventory and service desk modules. Automation: Use Blueprints to trigger AI tasks at specific equipment installation milestones", icon: Users },
-  { name: "Microsoft Dynamics 365", description: "Enterprise standard for large-scale operations with deep native Microsoft 365 and Teams integration. Automation: Update Dynamics records in real-time from conversations within Teams", icon: Users },
-  { name: "Salesforce", description: "The #1 AI CRM globally with virtually infinite customization through the Agentforce ecosystem. Automation: Map complex custom objects like serial numbers directly into AI workflows via Zapier", icon: Users },
+  { name: "SalesChain", description: "Industry leader for Quote-to-Cash in office equipment — manage complex lease cycles and capital equipment billing. AI Automation Example: Automatically initiates personalized upgrade consultations when equipment leases hit the 9-month maturity window to preempt competitor buyouts.", icon: Users },
+  { name: "Sherpa CRM (White Cup)", description: "Revenue Intelligence platform combining ERP data with sales activity to identify at-risk accounts. AI Automation Example: Deploys a Phaos AI 'Health Check' sequence immediately when revenue intelligence flags a drop in customer print volume to catch at-risk accounts.", icon: Users },
+  { name: "AgentDealer", description: "Salesforce-powered CRM pre-configured for copier dealers with equipment asset tracking and meter-based billing. AI Automation Example: Triggers instant AI outreach to fleet managers when specific serial numbers hit over-utilization thresholds, recommending higher-capacity hardware.", icon: Users },
+  { name: "Compass Sales Solutions", description: "Specialized for MPS providers — TCO assessments and automated proposal generation built in. AI Automation Example: Activates a Phaos AI follow-up via SMS the moment a prospect views a Managed Print proposal, ensuring high-intent engagement while the data is fresh.", icon: Users },
+  { name: "Close CRM", description: "Action-first CRM with built-in calling and SMS — the fastest platform for MSP and IT services sales teams. AI Automation Example: Executes an immediate, multi-channel qualification conversation within 60 seconds of a new lead creation to filter high-value opportunities.", icon: Users },
+  { name: "HubSpot", description: "World leader in inbound marketing with a Flywheel model ideal for digital-first lead generation. AI Automation Example: Launches a targeted AI dialogue centered on security and compliance requirements immediately after a prospect downloads a technical whitepaper.", icon: Users },
+  { name: "Pipedrive", description: "Visual Kanban-style CRM built around Activity-Based Selling to keep field reps focused on deal-moving actions. AI Automation Example: Automates the coordination and scheduling of site walk-throughs and discovery meetings the moment a deal enters a new pipeline stage.", icon: Users },
+  { name: "Zoho CRM", description: "Best value-to-feature ratio with a massive ecosystem including inventory and service desk modules. AI Automation Example: Bridges service and sales by triggering an AI 'Replacement Quote' workflow for customers who experience three or more hardware service calls within 60 days.", icon: Users },
+  { name: "Microsoft Dynamics 365", description: "Enterprise standard for large-scale operations with deep native Microsoft 365 and Teams integration. AI Automation Example: Synchronizes enterprise fleet expansion plans by cross-referencing new client office locations with existing service territory maps.", icon: Users },
+  { name: "Salesforce", description: "The #1 AI CRM globally with virtually infinite customization through the Agentforce ecosystem. AI Automation Example: Manages end-to-end negotiation and seat-expansion dialogue for expiring software licenses by monitoring custom asset objects in real-time.", icon: Users },
+  { name: "SugarCRM", description: "Flexible, developer-friendly CRM with powerful workflow automation and deep customization capabilities. AI Automation Example: Scans CRM notes for competitor mentions to instantly arm sales reps with AI-generated battle cards and comparison data before their next meeting.", icon: Users },
+  { name: "Keap", description: "All-in-one CRM and marketing automation platform built for small businesses and growing service teams. AI Automation Example: Resurrects 'Lost Opportunities' after six months by deploying a low-pressure AI check-in sequence to identify dissatisfaction with the current provider.", icon: Users },
 ];
 
 const ecommerceIntegrations: Integration[] = [
-  { name: "Shopify", description: "AI checks fulfillment status when customers ask about orders — real-time lookups during calls", icon: ShoppingCart },
-  { name: "WooCommerce", description: "Manage online supply catalogs and trigger AI updates on order events and inventory changes", icon: ShoppingCart },
-  { name: "Magento", description: "Sync enterprise-level catalog data for automated reordering and product availability updates", icon: ShoppingCart },
+  { name: "Shopify", description: "The leading e-commerce platform for online storefronts with extensive app ecosystem and fulfillment tools. AI Automation Example: Triggers Phaos AI to perform a real-time fraud and 'print-readiness' audit on high-value orders, flagging low-resolution artwork before production.", icon: ShoppingCart },
+  { name: "WooCommerce", description: "Open-source e-commerce on WordPress with unlimited flexibility for custom catalog and order workflows. AI Automation Example: Initiates an AI-driven 'Cross-Sell' outreach when a customer purchases a specific printer model, suggesting compatible paper and toner bundles.", icon: ShoppingCart },
+  { name: "BigCommerce", description: "Enterprise-grade e-commerce with powerful B2B features, multi-channel selling, and headless commerce support. AI Automation Example: Executes a Phaos AI 'Bulk Order Concierge' workflow for B2B accounts placing high-volume orders, generating custom contract pricing.", icon: ShoppingCart },
+  { name: "ShipStation", description: "Multi-carrier shipping platform that automates label creation, tracking, and delivery notifications at scale. AI Automation Example: Triggers a Phaos AI 'Delivery Intelligence' notification if the carrier reports a delay, proactively offering solutions before the customer contacts support.", icon: Truck },
+  { name: "Cin7 Core", description: "Comprehensive inventory and order management connecting sales channels, warehouses, and supply chain operations. AI Automation Example: Analyzes stock level updates to automatically draft and send purchase orders to suppliers when specialized print substrates dip below safety stock.", icon: Package },
+  { name: "Katana Cloud Manufacturing", description: "Real-time manufacturing ERP with live inventory tracking, production planning, and shop floor management. AI Automation Example: Triggers an AI 'Production Schedule Optimization' alert when a rush order is placed, identifying the best equipment and shift to minimize lead time.", icon: Settings },
+  { name: "Zoho Inventory", description: "End-to-end inventory management with multi-warehouse support, serial tracking, and deep Zoho ecosystem integration. AI Automation Example: Bridges e-commerce and warehouse by sending an automated 'Serial Number Tracking' confirmation to the client once equipment is picked and packed.", icon: Box },
+  { name: "Order Desk", description: "Powerful order management hub that connects and routes orders across multiple fulfillment channels and vendors. AI Automation Example: Uses Phaos AI to intelligently route order data to different print facilities based on customer proximity and real-time machine availability.", icon: Layers },
+  { name: "Brightpearl", description: "Retail operations platform combining inventory, accounting, CRM, and fulfillment for omnichannel commerce. AI Automation Example: Deploys a Phaos AI 'Customer Lifetime Value' alert when a buyer's total spend crosses a threshold qualifying them for a managed account.", icon: BarChart3 },
+  { name: "SkuVault", description: "Warehouse management system with barcode scanning, quality control, and real-time inventory synchronization. AI Automation Example: Initiates an AI 'Inventory Audit' sequence when a stock-out occurs, automatically searching for alternative suppliers or comparable substitutes.", icon: Package },
+  { name: "Linnworks", description: "Multi-channel commerce platform automating listings, inventory, and fulfillment across all major marketplaces. AI Automation Example: Triggers a Phaos AI 'Marketplace Parity' check when a price change is made, ensuring all connected sales channels remain synced and competitive.", icon: Globe },
+  { name: "Liftoff (Promo Industry)", description: "Company store and promotional product platform for branded merchandise programs and corporate fulfillment. AI Automation Example: Automatically triggers a Phaos AI 'Store Maintenance' alert when a core product goes out of stock, suggesting a replacement variant to the admin.", icon: ShoppingCart },
 ];
 
 const documentIntegrations: Integration[] = [
