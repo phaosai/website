@@ -218,7 +218,7 @@ const StyleTile = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 text-foreground">Voice AI Agents</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Human-like conversations powered by advanced LLMs. Handle inbound and outbound calls 24/7 with natural language understanding that feels indistinguishable from a live agent.
+                AI voice agents that answer, qualify, and resolve customer calls instantly. No hold times, no scripts — just natural conversations that drive results around the clock.
               </p>
             </motion.div>
 
@@ -239,7 +239,7 @@ const StyleTile = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 text-foreground">Agentic Workflows</h3>
               <p className="text-muted-foreground leading-relaxed">
-                AI that doesn't just talk — it takes action across your CRM, calendar, and business tools. Automate complex multi-step processes with intelligent decision-making.
+                Eliminate manual data entry, paper forms, and repetitive tasks. Our agentic workflows connect your systems and execute end-to-end processes autonomously.
               </p>
             </motion.div>
           </div>
