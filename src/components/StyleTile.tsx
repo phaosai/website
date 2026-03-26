@@ -1,20 +1,19 @@
 import { motion } from "framer-motion";
 import {
   Bot,
-  Phone,
   Zap,
   ArrowRight,
-  Mail,
-  MapPin,
   MessageSquare,
   Headphones,
   Mic,
   BrainCircuit,
   Workflow,
   CheckCircle,
+  Phone,
 } from "lucide-react";
 import phaosHero from "@/assets/phaos-hero.png";
-import phaosLogo from "@/assets/phaos-logo.png";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -25,51 +24,22 @@ const fadeUp = {
   }),
 };
 
-const stagger = {
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-
 const StyleTile = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      {/* ── Navigation ── */}
-      <motion.nav
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="fixed top-0 left-0 right-0 z-50 glass-strong"
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={phaosLogo} alt="Phaos AI" className="h-9 w-auto object-contain" />
-            <span className="text-lg font-bold tracking-tight text-foreground">Phaos <span className="italic font-light">AI</span></span>
-          </div>
-          <div className="hidden md:flex items-center gap-10 text-sm text-muted-foreground">
-            <span className="hover:text-foreground transition-colors cursor-pointer">Product</span>
-            <span className="hover:text-foreground transition-colors cursor-pointer">About</span>
-            <span className="hover:text-foreground transition-colors cursor-pointer">Contact</span>
-          </div>
-          <button className="bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 transition-opacity">
-            Book a Demo
-          </button>
-        </div>
-      </motion.nav>
+      <Navigation />
 
-      {/* ── Hero — Full-bleed with background image ── */}
+      {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${phaosHero})` }}
         />
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-background/85" />
-        {/* Glow orbs */}
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[180px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-light/6 blur-[150px] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full grid lg:grid-cols-2 gap-12 items-center pt-24">
-          {/* Left — copy */}
           <div>
             <motion.h1
               custom={1}
@@ -95,9 +65,9 @@ const StyleTile = () => {
               Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation.
             </motion.p>
 
-            <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-4">
+            <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group">
-                Book a Demo
+                Schedule a Call
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <button className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary transition-colors text-base">
@@ -106,7 +76,7 @@ const StyleTile = () => {
             </motion.div>
           </div>
 
-          {/* Right — Chat bubble mockup */}
+          {/* Chat bubble mockup */}
           <motion.div
             custom={4}
             initial="hidden"
@@ -228,79 +198,7 @@ const StyleTile = () => {
         </div>
       </section>
 
-      {/* Stats and Product Showcase sections removed */}
-
-
-
-
-      {/* ── Footer ── */}
-      <footer className="py-16 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-3 mb-4">
-                <img src={phaosLogo} alt="Phaos AI" className="h-9 w-auto object-contain" />
-                <span className="text-lg font-bold text-foreground">Phaos <span className="italic font-light">AI</span></span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                AI-Powered Voice & Agentic Workflow Automation for the modern enterprise.
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Product</p>
-              <ul className="space-y-3">
-                {["Voice AI Agents", "Agentic Workflows", "Analytics", "Integrations", "Security"].map((link) => (
-                  <li key={link}>
-                    <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{link}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Company</p>
-              <ul className="space-y-3">
-                {["About", "Careers", "Partners", "Investors", "Contact"].map((link) => (
-                  <li key={link}>
-                    <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">{link}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Get in Touch</p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">Info@PhaosAI.com</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">(617) 678-2426</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">Casselberry, Florida USA</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border/50 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">© 2026 Phaos AI. All rights reserved.</p>
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <span className="hover:text-foreground transition-colors cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-foreground transition-colors cursor-pointer">Terms of Service</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
