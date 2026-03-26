@@ -3,21 +3,21 @@ import {
   ArrowRight,
   Phone,
   Workflow,
-  Database,
   ShoppingCart,
   Calendar,
   Users,
   CreditCard,
-  BarChart3,
   Mail,
-  Globe,
   Shield,
-  Cpu,
   FileText,
   Headphones,
   Server,
-  Layers,
   Plug,
+  Printer,
+  MapPin,
+  MessageSquare,
+  Route,
+  Wrench,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -35,36 +35,63 @@ interface Integration {
   name: string;
   description: string;
   icon: React.ElementType;
-  category: "crm" | "ecommerce" | "calendar" | "erp" | "payments" | "analytics" | "cloud" | "communication";
 }
 
-const voiceIntegrations: Integration[] = [
-  { name: "Salesforce", description: "Sync call data, lead qualification, and customer records in real-time", icon: Users, category: "crm" },
-  { name: "HubSpot", description: "Auto-log calls, update contacts, and trigger workflows from conversations", icon: Users, category: "crm" },
-  { name: "ConnectWise", description: "Create service tickets, update customer records, and manage dispatching", icon: Headphones, category: "crm" },
-  { name: "Google Calendar", description: "Book appointments and schedule service calls during live conversations", icon: Calendar, category: "calendar" },
-  { name: "Microsoft Outlook", description: "Calendar sync and email follow-ups triggered by call outcomes", icon: Mail, category: "calendar" },
-  { name: "Shopify", description: "Access order status, product info, and customer purchase history", icon: ShoppingCart, category: "ecommerce" },
-  { name: "WooCommerce", description: "Pull order tracking, inventory levels, and cart data into conversations", icon: ShoppingCart, category: "ecommerce" },
-  { name: "Magento", description: "Provide real-time product availability and order updates to callers", icon: ShoppingCart, category: "ecommerce" },
-  { name: "Stripe", description: "Process secure payments and verify transaction status during calls", icon: CreditCard, category: "payments" },
-  { name: "QuickBooks", description: "Access invoice data, payment history, and account balances", icon: FileText, category: "erp" },
+const mpsIntegrations: Integration[] = [
+  { name: "PaperCut MF", description: "Export usage logs and track printer health, toner levels, and user print behavior in real-time", icon: Printer },
+  { name: "ezeep Blue", description: "Natively integrated — trigger workflows on new print jobs and log them automatically for billing", icon: Printer },
+  { name: "Cloudprinter.com", description: "Trigger AI voice agent calls to customers with delivery updates on order status changes", icon: Printer },
+  { name: "Print Autopilot", description: "Automate document workflows and streamline print production processes end-to-end", icon: Printer },
+  { name: "SNMP Monitoring (Syncro/MSP)", description: "Trigger service workflows when printers report error codes like paper jams or fuser errors", icon: Wrench },
 ];
 
-const workflowIntegrations: Integration[] = [
-  { name: "Salesforce", description: "Automate lead routing, opportunity updates, and account management workflows", icon: Users, category: "crm" },
-  { name: "HubSpot", description: "Trigger marketing sequences, update deal stages, and sync contact data", icon: Users, category: "crm" },
-  { name: "SAP", description: "Connect to ERP modules for procurement, inventory, and financial workflows", icon: Server, category: "erp" },
-  { name: "Oracle NetSuite", description: "Automate order-to-cash, procure-to-pay, and financial close processes", icon: Database, category: "erp" },
-  { name: "Shopify", description: "Automate order fulfillment, inventory sync, and customer notification workflows", icon: ShoppingCart, category: "ecommerce" },
-  { name: "WooCommerce", description: "Trigger automated workflows on order events, returns, and inventory changes", icon: ShoppingCart, category: "ecommerce" },
-  { name: "Stripe", description: "Automate payment reconciliation, subscription management, and refund workflows", icon: CreditCard, category: "payments" },
-  { name: "Google Workspace", description: "Automate document creation, email workflows, and calendar management", icon: Globe, category: "communication" },
-  { name: "Microsoft 365", description: "Connect to Teams, SharePoint, and Outlook for cross-platform automation", icon: Layers, category: "communication" },
-  { name: "Slack", description: "Send automated alerts, approvals, and workflow status updates to channels", icon: Mail, category: "communication" },
-  { name: "AWS", description: "Leverage cloud infrastructure for scalable, secure workflow execution", icon: Cpu, category: "cloud" },
-  { name: "Google Cloud", description: "AI/ML services, data processing, and serverless workflow orchestration", icon: Cpu, category: "cloud" },
-  { name: "Microsoft Azure", description: "Enterprise-grade cloud services with Active Directory integration", icon: Cpu, category: "cloud" },
+const erpIntegrations: Integration[] = [
+  { name: "ConnectWise Manage", description: "Create tickets, update project statuses, and log ticket notes automatically from AI interactions", icon: Headphones },
+  { name: "Syncro MSP", description: "Trigger service appointments from RMM alerts and sync printer monitoring data seamlessly", icon: Server },
+  { name: "Tigerpaw", description: "Sync customer contacts and service assets via REST API and webhook integrations", icon: Server },
+  { name: "e-automate (ECI)", description: "Pull meter reads into Phaos for automated billing workflows via SQL-to-Web connections", icon: Server },
+];
+
+const crmIntegrations: Integration[] = [
+  { name: "Salesforce", description: "AI qualifies leads and creates new contacts and opportunities automatically in your CRM", icon: Users },
+  { name: "HubSpot", description: "Auto-log call transcripts, update deal stages, and trigger marketing sequences from conversations", icon: Users },
+];
+
+const ecommerceIntegrations: Integration[] = [
+  { name: "Shopify", description: "AI checks fulfillment status when customers ask about orders — real-time lookups during calls", icon: ShoppingCart },
+  { name: "WooCommerce", description: "Manage online supply catalogs and trigger AI updates on order events and inventory changes", icon: ShoppingCart },
+  { name: "Magento", description: "Sync enterprise-level catalog data for automated reordering and product availability updates", icon: ShoppingCart },
+];
+
+const documentIntegrations: Integration[] = [
+  { name: "PDF.co", description: "AI-powered document processor that reads scanned PDFs, extracts data like serial numbers, and sends it to your ERP", icon: FileText },
+];
+
+const fieldServiceIntegrations: Integration[] = [
+  { name: "WorkWave / ServiceTitan", description: "Send dispatch info from AI calls directly to a technician's mobile app via webhooks", icon: MapPin },
+  { name: "Google Maps / Route4Me", description: "Automatically calculate the best route for technicians based on AI-created service tickets", icon: Route },
+];
+
+const calendarIntegrations: Integration[] = [
+  { name: "Google Calendar", description: "AI finds open slots and books appointments during live customer conversations automatically", icon: Calendar },
+  { name: "Microsoft Outlook / Office 365", description: "Enterprise scheduling, calendar sync, and email routing for automated follow-ups", icon: Calendar },
+];
+
+const communicationIntegrations: Integration[] = [
+  { name: "Slack", description: "AI drops summaries of high-priority service calls into team channels for instant awareness", icon: MessageSquare },
+  { name: "Twilio", description: "Send automated SMS to customers — appointment confirmations, technician ETAs, and status updates", icon: Phone },
+  { name: "Gmail / Office 365 Email", description: "Send structured, automated follow-up emails post-call with full conversation context", icon: Mail },
+];
+
+const categories = [
+  { title: "Managed Print Services & Print Management", integrations: mpsIntegrations, icon: Printer },
+  { title: "Industry-Specific ERPs & PSAs", integrations: erpIntegrations, icon: Server },
+  { title: "CRM & Sales", integrations: crmIntegrations, icon: Users },
+  { title: "E-Commerce & Inventory", integrations: ecommerceIntegrations, icon: ShoppingCart },
+  { title: "Document & Form Automation", integrations: documentIntegrations, icon: FileText },
+  { title: "Field Service & Logistics", integrations: fieldServiceIntegrations, icon: MapPin },
+  { title: "Scheduling & Calendar", integrations: calendarIntegrations, icon: Calendar },
+  { title: "Multi-Channel Communication", integrations: communicationIntegrations, icon: MessageSquare },
 ];
 
 const IntegrationCard = ({ integration, index }: { integration: Integration; index: number }) => (
@@ -95,11 +122,7 @@ const Integrations = () => {
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-light/4 blur-[150px] pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
               <Plug className="w-4 h-4 text-primary" />
               <span className="text-sm text-primary font-medium">Planned Integrations</span>
@@ -109,7 +132,7 @@ const Integrations = () => {
               <span className="text-gradient-purple">Your Business Runs On</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Phaos AI agents and workflows integrate with the platforms you already use — giving your AI access to real-time data from CRMs, ERPs, e-commerce platforms, and more. No silos. No manual handoffs.
+              Phaos AI agents and workflows integrate with the platforms you already use — giving your AI access to real-time data from CRMs, ERPs, print management systems, e-commerce platforms, and more. No silos. No manual handoffs.
             </p>
           </motion.div>
         </div>
@@ -118,13 +141,7 @@ const Integrations = () => {
       {/* How It Works */}
       <section className="py-20 px-6 border-t border-border/30">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               How <span className="text-gradient-purple">Integrations</span> Work
             </h2>
@@ -134,26 +151,20 @@ const Integrations = () => {
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="rounded-3xl p-8 bg-gradient-to-br from-primary/15 via-card to-card border border-primary/20"
-            >
+            <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="rounded-3xl p-8 bg-gradient-to-br from-primary/15 via-card to-card border border-primary/20">
               <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-6">
                 <Phone className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-foreground">Voice AI + Integrations</h3>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                During live calls, your AI agent pulls customer data, order history, and account details from connected systems — answering questions, booking appointments, and updating records in real-time without any human involvement.
+                During live calls, your AI agent pulls customer data, order history, and account details from connected systems — answering questions, booking appointments, and updating records in real-time.
               </p>
               <ul className="space-y-3">
                 {[
                   "Access CRM records during live conversations",
                   "Book appointments directly into calendars",
                   "Pull real-time order status from e-commerce platforms",
-                  "Process payments securely during calls",
+                  "Create service tickets and dispatch technicians",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <ArrowRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -163,13 +174,7 @@ const Integrations = () => {
               </ul>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15 }}
-              className="rounded-3xl p-8 bg-gradient-to-br from-purple-deep/15 via-card to-card border border-purple-deep/20"
-            >
+            <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.15 }} className="rounded-3xl p-8 bg-gradient-to-br from-purple-deep/15 via-card to-card border border-purple-deep/20">
               <div className="w-14 h-14 rounded-2xl bg-purple-deep/15 flex items-center justify-center mb-6">
                 <Workflow className="w-7 h-7 text-purple-light" />
               </div>
@@ -180,9 +185,9 @@ const Integrations = () => {
               <ul className="space-y-3">
                 {[
                   "Sync data across CRM, ERP, and e-commerce systems",
-                  "Trigger automated actions on events across platforms",
-                  "Auto-generate documents and send notifications",
-                  "Reconcile payments and manage subscriptions",
+                  "Auto-create service tickets from printer error alerts",
+                  "Route technicians and optimize dispatch schedules",
+                  "Send automated SMS and email follow-ups",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <ArrowRight className="w-4 h-4 text-purple-light mt-0.5 shrink-0" />
@@ -195,73 +200,70 @@ const Integrations = () => {
         </div>
       </section>
 
-      {/* Voice AI Integrations */}
+      {/* Autonomous Workflow Example */}
       <section className="py-20 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-                <Phone className="w-5 h-5 text-primary" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Voice AI Agent Integrations</h2>
-            </div>
-            <p className="text-muted-foreground max-w-2xl">
-              Your AI call agents will have direct access to data from these platforms — enabling real-time lookups, updates, and actions during live conversations.
+        <div className="max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
+              An <span className="text-gradient-purple">Autonomous Scenario</span>
+            </h2>
+            <p className="text-muted-foreground text-lg text-center mb-10 max-w-2xl mx-auto">
+              See how Phaos AI connects disparate systems into a single, automated workflow.
             </p>
+            <div className="space-y-4">
+              {[
+                { step: "1", text: "A customer calls the Phaos AI Voice Agent to report a broken copier." },
+                { step: "2", text: "The AI cross-references the caller's phone number with your CRM to find the active contract." },
+                { step: "3", text: "An emergency service ticket is automatically created in ConnectWise." },
+                { step: "4", text: "The closest technician is scheduled using Google Calendar and Route4Me." },
+                { step: "5", text: "A confirmation text is sent to the customer via Twilio." },
+                { step: "6", text: "The internal team is alerted via Slack with a full summary." },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  custom={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeUp}
+                  className="flex items-start gap-4 rounded-2xl p-5 bg-card border border-border/50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-primary">{item.step}</span>
+                  </div>
+                  <p className="text-foreground leading-relaxed">{item.text}</p>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {voiceIntegrations.map((integration, i) => (
-              <IntegrationCard key={integration.name + "-voice"} integration={integration} index={i} />
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Workflow Integrations */}
-      <section className="py-20 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-deep/15 flex items-center justify-center">
-                <Workflow className="w-5 h-5 text-purple-light" />
+      {/* Integration Categories */}
+      {categories.map((category, catIdx) => (
+        <section key={category.title} className="py-16 px-6 border-t border-border/30">
+          <div className="max-w-7xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="mb-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <category.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">{category.title}</h2>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Agentic Workflow Integrations</h2>
+            </motion.div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {category.integrations.map((integration, i) => (
+                <IntegrationCard key={integration.name} integration={integration} index={i + catIdx} />
+              ))}
             </div>
-            <p className="text-muted-foreground max-w-2xl">
-              Workflows will connect to these platforms to automate multi-step processes — reading, writing, and syncing data across your entire tech stack.
-            </p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {workflowIntegrations.map((integration, i) => (
-              <IntegrationCard key={integration.name + "-workflow"} integration={integration} index={i} />
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
       {/* Security Strip */}
       <section className="py-20 px-6 border-t border-border/30">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-6">
               <Shield className="w-7 h-7 text-primary" />
             </div>
@@ -269,7 +271,7 @@ const Integrations = () => {
               Enterprise-Grade <span className="text-gradient-purple">Security</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed mb-10">
-              All integrations are built with end-to-end encryption, role-based access controls, and compliance with GDPR, CCPA, HIPAA, and PCI-DSS standards. Your data stays secure at every touchpoint.
+              All integrations are built with end-to-end encryption, role-based access controls, and compliance with GDPR, CCPA, HIPAA, and PCI-DSS standards.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               {["End-to-End Encryption", "SOC 2 Compliant", "HIPAA Ready", "PCI-DSS Secure", "GDPR & CCPA"].map((badge) => (
@@ -285,22 +287,17 @@ const Integrations = () => {
       {/* CTA */}
       <section className="py-20 px-6 border-t border-border/30">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Ready to <span className="text-gradient-purple">Connect Your Stack</span>?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
               Let us show you how Phaos AI integrates with the tools you already use — and how it can eliminate the manual work between them.
             </p>
-            <button className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group mx-auto">
+            <a href="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base items-center gap-2 group">
               Schedule a Call
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </a>
           </motion.div>
         </div>
       </section>
