@@ -160,20 +160,8 @@ const About = () => {
           </motion.div>
         </div>
       </section>
-            <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
-              <p>
-                Phaos AI is developing a dual-platform solution: <strong className="text-foreground">Voice AI Agents</strong> that handle inbound and outbound calls with human-like intelligence, and <strong className="text-foreground">Agentic Workflows</strong> that automate complex, multi-step business processes end-to-end.
-              </p>
-              <p>
-                We started by tackling the printing, copier, and document solutions industry — a sector drowning in manual processes, paper-heavy workflows, and excessive customer touchpoints. But our technology is built to serve any business that relies on high call volumes, repetitive operations, and disconnected systems.
-              </p>
-              <p>
-                From automated service dispatching and intelligent call routing to proactive customer outreach and cross-platform data sync, Phaos AI replaces the manual grind with seamless, autonomous automation.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+
+
 
       {/* Founder Section */}
       <section className="py-20 px-6 border-t border-border/30">
