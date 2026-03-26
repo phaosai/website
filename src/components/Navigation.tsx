@@ -9,9 +9,10 @@ const Navigation = () => {
   const location = useLocation();
 
   const links = [
-    { label: "Product", to: "/" },
-    { label: "Integrations", to: "/integrations" },
+    { label: "Home", to: "/" },
     { label: "About", to: "/about" },
+    { label: "Integrations", to: "/integrations" },
+    { label: "ROI Calculator", to: "/roi-calculator" },
     { label: "Contact", to: "/contact" },
   ];
 
@@ -23,7 +24,9 @@ const Navigation = () => {
       className="fixed top-0 left-0 right-0 z-50 glass-strong"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <PhaosLogo />
+        <Link to="/" aria-label="Phaos AI Home">
+          <PhaosLogo />
+        </Link>
 
         <div className="hidden md:flex items-center gap-10 text-sm text-muted-foreground">
           {links.map((link) => (
@@ -31,7 +34,7 @@ const Navigation = () => {
               key={link.label}
               to={link.to}
               className={`hover:text-foreground transition-colors ${
-                location.pathname === link.to && link.to !== "/" ? "text-foreground" : ""
+                location.pathname === link.to ? "text-foreground" : ""
               }`}
             >
               {link.label}
