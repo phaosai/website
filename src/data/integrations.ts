@@ -61,8 +61,16 @@ const erpIntegrations: Integration[] = [
 ];
 
 const crmIntegrations: Integration[] = [
-  { name: "Salesforce", description: "AI qualifies leads and creates new contacts and opportunities automatically in your CRM", icon: Users },
-  { name: "HubSpot", description: "Auto-log call transcripts, update deal stages, and trigger marketing sequences from conversations", icon: Users },
+  { name: "SalesChain", description: "Industry leader for Quote-to-Cash in office equipment — manage complex lease cycles and capital equipment billing. Automation: Trigger AI outreach when leases near expiration to discuss upgrades", icon: Users },
+  { name: "Sherpa CRM (White Cup)", description: "Revenue Intelligence platform combining ERP data with sales activity to identify at-risk accounts. Automation: Parse business intelligence alerts and draft personalized outreach for declining accounts", icon: Users },
+  { name: "AgentDealer", description: "Salesforce-powered CRM pre-configured for copier dealers with equipment asset tracking and meter-based billing. Automation: Notify customers about high-volume alternatives when usage alerts trigger", icon: Users },
+  { name: "Compass Sales Solutions", description: "Specialized for MPS providers — TCO assessments and automated proposal generation built in. Automation: Monitor proposal views via webhook and trigger AI follow-up calls", icon: Users },
+  { name: "Close CRM", description: "Action-first CRM with built-in calling and SMS — the fastest platform for MSP and IT services sales teams. Automation: Sync full AI conversation transcripts directly into the Close timeline", icon: Users },
+  { name: "HubSpot", description: "World leader in inbound marketing with a Flywheel model ideal for digital-first lead generation. Automation: Trigger AI outreach when leads engage with specific content or landing pages", icon: Users },
+  { name: "Pipedrive", description: "Visual Kanban-style CRM built around Activity-Based Selling to keep field reps focused on deal-moving actions. Automation: Auto-schedule site walk-throughs when deals enter the Discovery stage", icon: Users },
+  { name: "Zoho CRM", description: "Best value-to-feature ratio with a massive ecosystem including inventory and service desk modules. Automation: Use Blueprints to trigger AI tasks at specific equipment installation milestones", icon: Users },
+  { name: "Microsoft Dynamics 365", description: "Enterprise standard for large-scale operations with deep native Microsoft 365 and Teams integration. Automation: Update Dynamics records in real-time from conversations within Teams", icon: Users },
+  { name: "Salesforce", description: "The #1 AI CRM globally with virtually infinite customization through the Agentforce ecosystem. Automation: Map complex custom objects like serial numbers directly into AI workflows via Zapier", icon: Users },
 ];
 
 const ecommerceIntegrations: Integration[] = [
