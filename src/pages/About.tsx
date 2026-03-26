@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
+import shreePhoto from "@/assets/shree-dandekar.jpg";
+import diegoPhoto from "@/assets/diego-barrientos.png";
+import willPhoto from "@/assets/will-donahue.jpg";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -181,29 +184,26 @@ const About = () => {
 
 
 
-      {/* Founder Section */}
+      {/* Team Section */}
       <section className="py-20 px-6 border-t border-border/30">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Meet the <span className="text-gradient-purple">Founder</span>
+              Meet the <span className="text-gradient-purple">Team</span>
             </h2>
           </motion.div>
 
+          {/* Daniel Lindros */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20"
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img
-                  src={danielPhoto}
-                  alt="Daniel Lindros — Founder & CEO of Phaos AI"
-                  className="w-full h-full object-cover object-top"
-                />
+                <img src={danielPhoto} alt="Daniel Lindros — Founder & CEO of Phaos AI" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Daniel Lindros</h3>
@@ -217,6 +217,96 @@ const About = () => {
                   </p>
                   <p>
                     Based in Central Florida, Daniel brings a faith-driven, servant-leadership philosophy to every aspect of Phaos AI — building technology that empowers businesses and the people behind them.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Shree Dandekar */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
+                <img src={shreePhoto} alt="Shree Dandekar — CTO of Phaos AI" className="w-full h-full object-cover object-top" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-1">Shree Dandekar</h3>
+                <p className="text-primary font-medium mb-4">Chief Technology Officer</p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    Shree Dandekar is an inspirational technology leader, inventor, and product strategist with over 30 years of experience driving software innovation across Fortune 500 industries and global markets. A growth architect at heart, Shree has spent his career turning complex technical challenges into scalable, revenue-generating solutions — spanning enterprise software, AI, and digital transformation.
+                  </p>
+                  <p>
+                    His deep expertise in product development, engineering leadership, and go-to-market execution — combined with a proven track record of building and scaling high-performing technology teams — makes him the ideal architect behind Phaos AI's platform. Shree brings the technical rigor and visionary product thinking needed to deliver AI that doesn't just work — it sets new benchmarks.
+                  </p>
+                  <p>
+                    With a career that began as a software engineer at Dell and evolved through senior leadership roles across multiple industries, Shree brings a rare blend of hands-on technical depth and executive strategic perspective to Phaos AI.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Diego Barrientos */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
+                <img src={diegoPhoto} alt="Juan Diego Barrientos — Director of Product Technology at Phaos AI" className="w-full h-full object-cover object-top" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-1">Juan "Diego" Barrientos</h3>
+                <p className="text-primary font-medium mb-4">Director of Product Technology</p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    Diego Barrientos is a versatile product technology leader with deep expertise in quality assurance, user experience research, and full-stack development. His career has been defined by a relentless focus on building software that works flawlessly — from rigorous QA methodologies to intuitive user-facing design.
+                  </p>
+                  <p>
+                    His hands-on experience conducting user research studies, performing quality assurance across complex platforms, and shipping production-grade software gives him a unique lens on product development — one that prioritizes both technical excellence and real-world usability. Diego ensures that every feature Phaos AI delivers meets the highest standards of reliability and user experience.
+                  </p>
+                  <p>
+                    Based in Orlando, Florida, Diego brings a builder's mentality and a quality-first discipline to Phaos AI — making sure our platform doesn't just launch, it performs.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Will Donahue */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
+                <img src={willPhoto} alt="Will Donahue — Sales Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-1">Will Donahue</h3>
+                <p className="text-primary font-medium mb-4">Sales Specialist</p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    Will Donahue is a driven sales professional with a passion for building meaningful client relationships and connecting businesses with solutions that create real impact. His experience spans consultative selling, client development, and relationship management — skills honed through a career dedicated to understanding customer needs and delivering measurable value.
+                  </p>
+                  <p>
+                    Will's approach to sales is rooted in service and authenticity — he listens first, understands the pain points, and positions Phaos AI as a genuine solution rather than a pitch. His ability to communicate complex technology in clear, relatable terms makes him an invaluable bridge between our platform and the businesses we serve.
+                  </p>
+                  <p>
+                    Based in North Carolina, Will brings a faith-driven work ethic and a genuine commitment to helping businesses unlock the full potential of AI-powered automation.
                   </p>
                 </div>
               </div>
