@@ -111,7 +111,7 @@ const About = () => {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {[
               { letter: "F", word: "Freedom", description: "Empowering businesses to break free from manual processes and operate with autonomy." },
               { letter: "A", word: "Authenticity", description: "Building genuine technology that reflects honest, transparent relationships." },
@@ -135,6 +135,24 @@ const About = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed">{value.description}</p>
               </motion.div>
             ))}
+
+            {/* F.A.I.T.H. Summary Card */}
+            <motion.div
+              custom={5}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="rounded-2xl p-6 bg-gradient-to-br from-primary/20 via-purple-deep/15 to-card border border-primary/30 text-center hover:border-primary/50 transition-all flex flex-col justify-center"
+            >
+              <h3 className="text-2xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="text-primary">F</span>.<span className="text-primary">A</span>.<span className="text-primary">I</span>.<span className="text-primary">T</span>.<span className="text-primary">H</span>.
+              </h3>
+              <p className="text-sm text-primary font-medium mb-3">Our Culture Framework</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Phaos AI operates as a faith-based company rooted in Biblical principles. Our culture is built on servant-leadership, ethical stewardship, and the belief that technology should uplift people — not replace their dignity. Every decision we make is guided by these values, ensuring we build with purpose, lead with humility, and serve with integrity.
+              </p>
+            </motion.div>
           </div>
         </div>
       </section>
