@@ -1,28 +1,68 @@
 
 
-# Fix Logo + Remove "Enterprise AI Platform" + Begin Copy Approval
+# Phaos AI Live Chat Agent — Implementation Plan
 
-## Immediate Fixes (1 credit)
-1. **Replace the nav logo** with the uploaded `Phaos_Homepage_Image.png` file — swap it in as the new `phaos-logo.png` asset and ensure it renders clearly against the dark nav (adjust sizing/brightness as needed).
-2. **Remove the "Enterprise AI Platform" badge** above the hero headline entirely.
+## What You'll Get
 
-## Then: Copy Approval Round 1 — Hero Section
+A floating chat bubble (bottom-right corner) on every page of the site. When clicked, it opens a sleek chat panel that:
 
-After the fixes above, I'll present 3-5 options for the **hero headline + subheadline** for you to pick from. Based on your knowledge base (voice AI, agentic workflows, competing with Bland/Synthflow/Vapi, enterprise positioning), here are the options I'll propose:
+1. **Pre-chat form** — Collects the visitor's name, title, company name, and company website before starting the conversation
+2. **Personalized AI greeting** — Once they submit, the AI uses their info to craft a tailored opening message (e.g., "Welcome, Sarah! I see you're the VP of Operations at Acme Print Solutions — great to connect.")
+3. **Knowledge-grounded responses** — Answers questions about Phaos AI using your bylaws, articles of incorporation, and product roadmap as its knowledge base
+4. **Lead gating** — When visitors ask about pricing, specific functionality details, or anything requiring a sales conversation, the AI pivots to collecting their email and phone number, then lets them know someone will reach out
+5. **Email delivery** — Captured lead info (name, title, company, website, email, phone, conversation transcript) gets sent to info@phaosai.com
 
-**Headline Options:**
-1. "AI-Powered Voice & Agentic Workflow Automation" (your approved tagline, used as-is)
-2. "Your AI Workforce, Ready to Deploy" — subline: "Voice agents and intelligent workflows that handle millions of conversations — so your team can focus on what matters."
-3. "Conversations That Convert. Workflows That Scale." — subline: "Deploy AI voice agents and agentic automation across your entire customer journey."
-4. "The Future of Customer Engagement Starts Here" — subline: "AI-powered voice agents and workflow automation built for enterprises that demand excellence."
-5. "AI That Doesn't Just Talk — It Takes Action" — subline: "From first contact to final resolution, Phaos deploys intelligent agents that handle calls, automate workflows, and drive results 24/7."
+## What I Need From You
 
-After you pick a hero, we'll move through each section:
-- Round 2: Feature cards (Voice AI + Agentic Workflows descriptions)
-- Round 3: Stats/metrics (which numbers to highlight)
-- Round 4: Product showcase section
-- Round 5: Investment/partner section messaging
-- Round 6: Footer + contact copy
+1. **Upload the knowledge base documents** — Your Bylaws, Articles of Incorporation, and Product Development Roadmap in text-readable format (PDF, DOCX, or text). I'll extract the content and embed it into the AI's system prompt so it can answer accurately.
 
-Each round will have 3-5 options to choose from.
+2. **Enable Lovable Cloud** — The AI chat requires a backend edge function (to keep the API key secure and handle the AI conversation). You'll need Lovable Cloud enabled on this project. If it's not already, I'll walk you through it.
+
+## Technical Architecture
+
+```text
+┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────┐
+│  Chat Widget     │────▶│  Edge Function        │────▶│  Lovable AI     │
+│  (React component│     │  "phaos-chat"         │     │  Gateway        │
+│   on every page) │◀────│  - System prompt w/   │◀────│  (Gemini)       │
+│                  │     │    knowledge base      │     │                 │
+│  Pre-chat form:  │     │  - Lead gating logic   │     └─────────────────┘
+│  Name, Title,    │     │  - Email to            │
+│  Company, Website│     │    info@phaosai.com    │
+└─────────────────┘     └──────────────────────┘
+```
+
+### Components to Build
+
+1. **`ChatWidget.tsx`** — Floating bubble + expandable chat panel with:
+   - Pre-chat form (name, title, company, website)
+   - Message list with streaming AI responses
+   - Glassmorphism dark theme matching the site aesthetic
+   - Rendered on every page via `App.tsx`
+
+2. **Edge Function `phaos-chat/index.ts`** — Backend that:
+   - Receives messages + visitor context (name, title, company, website)
+   - Constructs a system prompt with knowledge base content + visitor personalization
+   - Streams responses from Gemini via Lovable AI Gateway
+   - Detects pricing/functionality questions and instructs the AI to gate
+
+3. **Edge Function `capture-lead/index.ts`** — Receives lead data and sends it to info@phaosai.com (or stores it for email delivery)
+
+### Design Details
+
+- Purple-accent glassmorphism chat panel matching the site's dark theme
+- Bot avatar with the Phaos AI branding
+- Typing indicator during AI response streaming
+- Smooth open/close animations via framer-motion
+- Mobile-responsive (full-screen on small devices)
+
+## Steps
+
+1. Upload knowledge base documents → I extract and embed content
+2. Enable Lovable Cloud (if not already)
+3. Build the chat edge function with knowledge base + lead gating
+4. Build the lead capture edge function
+5. Build the floating chat widget component
+6. Add widget to App.tsx so it appears on every page
+7. Test end-to-end
 
