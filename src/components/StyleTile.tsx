@@ -147,37 +147,25 @@ const StyleTile = () => {
         </div>
       </section>
 
-      {/* ── Partner / Investment Strip ── */}
-      <section className="py-20 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-center text-sm font-medium tracking-widest uppercase text-muted-foreground mb-12"
-          >
-            Seeking Strategic Partners & Investors
-          </motion.p>
+      {/* ── Investment / Partnership ── */}
+      <section className="py-24 px-6 border-t border-border/30">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
+            transition={{ duration: 0.8 }}
           >
-            {["Technology Partners", "Venture Capital", "Strategic Alliances", "Enterprise Clients"].map((label, i) => (
-              <motion.div
-                key={label}
-                custom={i}
-                variants={fadeUp}
-                className="glass rounded-xl p-6 flex flex-col items-center justify-center text-center h-28 hover:border-primary/30 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-border mb-3 flex items-center justify-center">
-                  <span className="text-muted-foreground text-lg">+</span>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground">{label}</p>
-              </motion.div>
-            ))}
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              Seeking <span className="text-gradient-purple">Strategic Partners</span>
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
+              Phaos AI is actively seeking strategic partners and investors who share our vision of transforming enterprise operations through AI. We're building the infrastructure that will power the next generation of customer engagement — and we're looking for the right partners to scale with us.
+            </p>
+            <button className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base flex items-center gap-2 group mx-auto">
+              Get in Touch
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
         </div>
       </section>
@@ -193,10 +181,10 @@ const StyleTile = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Transform Your <span className="text-gradient-purple">Customer Experience</span>
+              Voice AI Meets <span className="text-gradient-purple">Agentic Automation</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Enterprise-grade AI that doesn't just talk — it takes action.
+              Two powerful platforms. One seamless solution.
             </p>
           </motion.div>
 
@@ -246,138 +234,7 @@ const StyleTile = () => {
         </div>
       </section>
 
-      {/* ── Stats / Metrics ── */}
-      <section className="py-24 px-6 border-t border-border/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold">
-              The Results Speak <span className="text-gradient-purple">for Themselves</span>
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-          >
-            {[
-              { value: "10M+", label: "Conversations Handled", icon: MessageSquare },
-              { value: "<2s", label: "Average Response Time", icon: Clock },
-              { value: "98.5%", label: "Resolution Accuracy", icon: CheckCircle },
-              { value: "24/7", label: "Always Available", icon: Shield },
-            ].map((stat, i) => (
-              <motion.div key={stat.label} custom={i} variants={fadeUp} className="text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <stat.icon className="w-6 h-6 text-primary" />
-                </div>
-                <p className="text-4xl md:text-5xl font-extrabold text-gradient-purple mb-2">{stat.value}</p>
-                <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Product Showcase (Tabs) ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Built for <span className="text-gradient-purple">Enterprise Scale</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              A complete platform for deploying, managing, and optimizing AI agents across your organization.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            {/* Tab bar */}
-            <div className="flex items-center gap-1 p-1 glass rounded-xl mb-8 max-w-lg mx-auto">
-              {["Agent Studio", "Analytics", "Integrations"].map((tab, i) => (
-                <button
-                  key={tab}
-                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                    i === 0
-                      ? "bg-gradient-purple text-primary-foreground glow-purple"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Mock dashboard */}
-            <div className="glass rounded-2xl p-6 md:p-8 border border-border/50">
-              <div className="grid md:grid-cols-3 gap-6">
-                {/* Sidebar mock */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
-                    <Bot className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Sales Agent</span>
-                    <span className="ml-auto w-2 h-2 rounded-full bg-success" />
-                  </div>
-                  {["Support Agent", "Scheduling Agent", "Survey Agent"].map((name) => (
-                    <div key={name} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors cursor-pointer">
-                      <Bot className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{name}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Main content mock */}
-                <div className="md:col-span-2 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">Sales Agent — Performance</h3>
-                    <span className="text-xs px-3 py-1 rounded-full bg-success/10 text-success-foreground font-medium">Live</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { label: "Calls Today", val: "1,247" },
-                      { label: "Avg Duration", val: "3m 42s" },
-                      { label: "Conversion", val: "34.2%" },
-                    ].map((m) => (
-                      <div key={m.label} className="bg-secondary rounded-xl p-4">
-                        <p className="text-xs text-muted-foreground mb-1">{m.label}</p>
-                        <p className="text-xl font-bold text-foreground">{m.val}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Chart placeholder */}
-                  <div className="bg-secondary rounded-xl p-6 h-40 flex items-end gap-1">
-                    {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 bg-gradient-purple rounded-t-md transition-all"
-                        style={{ height: `${h}%` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Stats and Product Showcase sections removed */}
 
       {/* ── Enterprise Security Strip ── */}
       <section className="py-16 px-6 border-t border-border/30">
