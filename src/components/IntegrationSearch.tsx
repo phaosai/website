@@ -226,21 +226,21 @@ const IntegrationSearch = () => {
     switch (type) {
       case "zapier":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-green-800/30 text-green-300 border border-green-700/40 whitespace-nowrap">
             <Check className="w-3 h-3" />
             Full Integration
           </span>
         );
       case "webhook":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 whitespace-nowrap">
             <Webhook className="w-3 h-3" />
-            Webhook Possible
+            Webhook Enabled
           </span>
         );
       case "contact":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 whitespace-nowrap">
             <AlertCircle className="w-3 h-3" />
             Contact Phaos For More Info
           </span>
