@@ -1,25 +1,8 @@
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Phone,
-  Workflow,
-  ShoppingCart,
-  Calendar,
-  Users,
-  CreditCard,
-  Mail,
-  FileText,
-  Headphones,
-  Server,
-  Plug,
-  Printer,
-  MapPin,
-  MessageSquare,
-  Route,
-  Wrench,
-} from "lucide-react";
+import { ArrowRight, Phone, Workflow, Plug } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { categories, type Integration } from "@/data/integrations";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -29,70 +12,6 @@ const fadeUp = {
     transition: { delay: i * 0.08, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
 };
-
-interface Integration {
-  name: string;
-  description: string;
-  icon: React.ElementType;
-}
-
-const mpsIntegrations: Integration[] = [
-  { name: "PaperCut MF", description: "Export usage logs and track printer health, toner levels, and user print behavior in real-time", icon: Printer },
-  { name: "ezeep Blue", description: "Natively integrated — trigger workflows on new print jobs and log them automatically for billing", icon: Printer },
-  { name: "Cloudprinter.com", description: "Trigger AI voice agent calls to customers with delivery updates on order status changes", icon: Printer },
-  { name: "Print Autopilot", description: "Automate document workflows and streamline print production processes end-to-end", icon: Printer },
-  { name: "SNMP Monitoring (Syncro/MSP)", description: "Trigger service workflows when printers report error codes like paper jams or fuser errors", icon: Wrench },
-];
-
-const erpIntegrations: Integration[] = [
-  { name: "ConnectWise Manage", description: "Create tickets, update project statuses, and log ticket notes automatically from AI interactions", icon: Headphones },
-  { name: "Syncro MSP", description: "Trigger service appointments from RMM alerts and sync printer monitoring data seamlessly", icon: Server },
-  { name: "Tigerpaw", description: "Sync customer contacts and service assets via REST API and webhook integrations", icon: Server },
-  { name: "e-automate (ECI)", description: "Pull meter reads into Phaos for automated billing workflows via SQL-to-Web connections", icon: Server },
-];
-
-const crmIntegrations: Integration[] = [
-  { name: "Salesforce", description: "AI qualifies leads and creates new contacts and opportunities automatically in your CRM", icon: Users },
-  { name: "HubSpot", description: "Auto-log call transcripts, update deal stages, and trigger marketing sequences from conversations", icon: Users },
-];
-
-const ecommerceIntegrations: Integration[] = [
-  { name: "Shopify", description: "AI checks fulfillment status when customers ask about orders — real-time lookups during calls", icon: ShoppingCart },
-  { name: "WooCommerce", description: "Manage online supply catalogs and trigger AI updates on order events and inventory changes", icon: ShoppingCart },
-  { name: "Magento", description: "Sync enterprise-level catalog data for automated reordering and product availability updates", icon: ShoppingCart },
-];
-
-const documentIntegrations: Integration[] = [
-  { name: "PDF.co", description: "AI-powered document processor that reads scanned PDFs, extracts data like serial numbers, and sends it to your ERP", icon: FileText },
-];
-
-const fieldServiceIntegrations: Integration[] = [
-  { name: "WorkWave / ServiceTitan", description: "Send dispatch info from AI calls directly to a technician's mobile app via webhooks", icon: MapPin },
-  { name: "Google Maps / Route4Me", description: "Automatically calculate the best route for technicians based on AI-created service tickets", icon: Route },
-];
-
-const calendarIntegrations: Integration[] = [
-  { name: "Google Calendar", description: "AI finds open slots and books appointments during live customer conversations automatically", icon: Calendar },
-  { name: "Microsoft Outlook / Office 365", description: "Enterprise scheduling, calendar sync, and email routing for automated follow-ups", icon: Calendar },
-];
-
-const communicationIntegrations: Integration[] = [
-  { name: "Slack", description: "AI drops summaries of high-priority service calls into team channels for instant awareness", icon: MessageSquare },
-  { name: "Twilio", description: "Send automated SMS to customers — appointment confirmations, technician ETAs, and status updates", icon: Phone },
-  { name: "Gmail / Office 365 Email", description: "Send structured, automated follow-up emails post-call with full conversation context", icon: Mail },
-  { name: "Don't See Your Application?", description: "Ask us if we can quickly and easily connect to your specific systems! If there are Zapier Triggers or webhooks, we can make it happen quick and painless.", icon: Plug },
-];
-
-const categories = [
-  { title: "Managed Print Services & Print Management", integrations: mpsIntegrations, icon: Printer },
-  { title: "Industry-Specific ERPs & PSAs", integrations: erpIntegrations, icon: Server },
-  { title: "CRM & Sales", integrations: crmIntegrations, icon: Users },
-  { title: "E-Commerce & Inventory", integrations: ecommerceIntegrations, icon: ShoppingCart },
-  { title: "Document & Form Automation", integrations: documentIntegrations, icon: FileText },
-  { title: "Field Service & Logistics", integrations: fieldServiceIntegrations, icon: MapPin },
-  { title: "Scheduling & Calendar", integrations: calendarIntegrations, icon: Calendar },
-  { title: "Multi-Channel Communication", integrations: communicationIntegrations, icon: MessageSquare },
-];
 
 const IntegrationCard = ({ integration, index }: { integration: Integration; index: number }) => (
   <motion.div
