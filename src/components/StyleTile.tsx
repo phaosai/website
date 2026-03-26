@@ -98,7 +98,7 @@ const StyleTile = () => {
               variants={fadeUp}
               className="text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed"
             >
-              Deploy intelligent voice agents and workflow automation that transform how enterprises operate — from first contact to final resolution.
+              Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation.
             </motion.p>
 
             <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-4">
