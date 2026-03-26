@@ -10,7 +10,7 @@ interface SearchableIntegration {
 }
 
 const searchList: SearchableIntegration[] = [
-  // === ZAPIER FULL INTEGRATION (Green) — Mainstream apps with Zapier triggers ===
+  // === FULL INTEGRATION (Dark Green) — Apps with Zapier triggers ===
   // CRMs
   { name: "Salesforce", type: "zapier" },
   { name: "HubSpot", type: "zapier" },
@@ -32,7 +32,10 @@ const searchList: SearchableIntegration[] = [
   { name: "Bitrix24", type: "zapier" },
   { name: "SugarCRM", type: "zapier" },
   { name: "Microsoft Dynamics 365", type: "zapier" },
-  // PSAs & ERPs with Zapier
+  { name: "SalesChain", type: "zapier" },
+  { name: "AgentDealer", type: "zapier" },
+  { name: "Compass Sales Solutions", type: "zapier" },
+  // PSAs & ERPs
   { name: "ConnectWise Manage", type: "zapier" },
   { name: "Syncro MSP", type: "zapier" },
   { name: "HaloPSA", type: "zapier" },
@@ -42,6 +45,7 @@ const searchList: SearchableIntegration[] = [
   { name: "NinjaOne (NinjaRMM)", type: "zapier" },
   { name: "RepairShopr", type: "zapier" },
   { name: "Pulseway", type: "zapier" },
+  { name: "ServiceNow", type: "zapier" },
   // Field Service
   { name: "ServiceTitan", type: "zapier" },
   { name: "Housecall Pro", type: "zapier" },
@@ -78,10 +82,17 @@ const searchList: SearchableIntegration[] = [
   // E-Commerce
   { name: "Shopify", type: "zapier" },
   { name: "WooCommerce", type: "zapier" },
-  { name: "Magento", type: "zapier" },
   { name: "BigCommerce", type: "zapier" },
   { name: "Square", type: "zapier" },
   { name: "Stripe", type: "zapier" },
+  { name: "ShipStation", type: "zapier" },
+  { name: "Cin7 Core", type: "zapier" },
+  { name: "Katana Cloud Manufacturing", type: "zapier" },
+  { name: "Zoho Inventory", type: "zapier" },
+  { name: "Order Desk", type: "zapier" },
+  { name: "Brightpearl", type: "zapier" },
+  { name: "SkuVault", type: "zapier" },
+  { name: "Linnworks", type: "zapier" },
   // Documents & Forms
   { name: "PandaDoc", type: "zapier" },
   { name: "DocuSign", type: "zapier" },
@@ -149,7 +160,6 @@ const searchList: SearchableIntegration[] = [
   { name: "Make (Integromat)", type: "zapier" },
   { name: "Webflow", type: "zapier" },
   { name: "WordPress", type: "zapier" },
-  { name: "Twitch", type: "zapier" },
   { name: "Telegram", type: "zapier" },
   { name: "GitHub", type: "zapier" },
   { name: "GitLab", type: "zapier" },
@@ -158,24 +168,34 @@ const searchList: SearchableIntegration[] = [
   { name: "Samsara", type: "zapier" },
   { name: "Route4Me", type: "zapier" },
   { name: "Bringg", type: "zapier" },
-  { name: "ServiceNow", type: "zapier" },
   { name: "Docurama", type: "zapier" },
+  // Print Management with Zapier
+  { name: "PaperCut", type: "zapier" },
+  { name: "PrinterLogic", type: "zapier" },
+  { name: "ezeep Blue", type: "zapier" },
+  { name: "PrintTracker", type: "zapier" },
 
-  // === WEBHOOK POSSIBLE (Yellow) — Niche/print-specific with webhook or API capability ===
+  // === WEBHOOK ENABLED (Light Green) — Niche/print-specific with webhook or API ===
   { name: "ECI e-automate", type: "webhook" },
-  { name: "SalesChain", type: "webhook" },
+  { name: "Sherpa CRM (White Cup)", type: "webhook" },
   { name: "PrintFleet", type: "webhook" },
-  { name: "FMAudit", type: "webhook" },
-  { name: "Print Tracker", type: "webhook" },
+  { name: "FMAudit (ECI)", type: "webhook" },
   { name: "Tigerpaw", type: "webhook" },
-  { name: "PaperCut MF", type: "webhook" },
-  { name: "ezeep Blue", type: "webhook" },
+  { name: "Printix (by Kofax)", type: "webhook" },
+  { name: "YSoft SafeQ", type: "webhook" },
+  { name: "MyQ Solution", type: "webhook" },
+  { name: "Printanista (ECI)", type: "webhook" },
+  { name: "Xerox Workplace Cloud", type: "webhook" },
+  { name: "HP JetAdvantage Insights", type: "webhook" },
+  { name: "Lexmark Cloud Services", type: "webhook" },
   { name: "Print Autopilot", type: "webhook" },
   { name: "Cloudprinter.com", type: "webhook" },
   { name: "MFR Field Service Management", type: "webhook" },
   { name: "Kaseya VSA", type: "webhook" },
+  { name: "Liftoff (Promo Industry)", type: "webhook" },
+  { name: "SNMP Monitoring (Syncro/MSP)", type: "webhook" },
 
-  // === CONTACT PHAOS (Red) — Legacy/proprietary with no known Zapier or webhook ===
+  // === CONTACT PHAOS (Yellow) — Legacy/proprietary ===
   { name: "SAP ERP (On-Premise)", type: "contact" },
   { name: "Oracle E-Business Suite", type: "contact" },
   { name: "AS/400 Legacy Systems", type: "contact" },
@@ -206,21 +226,21 @@ const IntegrationSearch = () => {
     switch (type) {
       case "zapier":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-green-800/30 text-green-300 border border-green-700/40 whitespace-nowrap">
             <Check className="w-3 h-3" />
             Full Integration
           </span>
         );
       case "webhook":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 whitespace-nowrap">
             <Webhook className="w-3 h-3" />
-            Webhook Possible
+            Webhook Enabled
           </span>
         );
       case "contact":
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 whitespace-nowrap">
             <AlertCircle className="w-3 h-3" />
             Contact Phaos For More Info
           </span>
