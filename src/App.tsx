@@ -47,6 +47,7 @@ const App = () => (
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <ChatWidget />
     </TooltipProvider>
   </QueryClientProvider>
 );
