@@ -15,16 +15,19 @@ interface VisitorContext {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
 const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
+const RESEARCH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-visitor`;
 
 async function streamChat({
   messages,
   visitorContext,
+  visitorResearch,
   onDelta,
   onDone,
   onError,
 }: {
   messages: Message[];
   visitorContext: VisitorContext;
+  visitorResearch?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -36,7 +39,7 @@ async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, visitorContext }),
+      body: JSON.stringify({ messages, visitorContext, visitorResearch }),
     });
 
     if (!resp.ok || !resp.body) {
