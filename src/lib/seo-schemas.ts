@@ -21,7 +21,7 @@ export const organizationSchema = {
     "@type": "ContactPoint",
     telephone: "+1-617-678-2426",
     contactType: "sales",
-    email: "info@phaosai.com",
+    email: "daniel@phaosai.com",
   },
   sameAs: [],
 };
