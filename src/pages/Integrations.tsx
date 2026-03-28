@@ -6,12 +6,12 @@ import IntegrationSearch from "@/components/IntegrationSearch";
 import { categories, type Integration } from "@/data/integrations";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i: number) => ({
+  hidden: { opacity: 0, y: 20 },
+  visible: {
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
-  }),
+    transition: { duration: 0.3, ease: "easeOut" },
+  },
 };
 
 const IntegrationCard = ({ integration, index }: { integration: Integration; index: number }) => {
@@ -32,10 +32,9 @@ const IntegrationCard = ({ integration, index }: { integration: Integration; ind
 
   return (
     <motion.div
-      custom={index}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true }}
+      viewport={{ once: true, amount: 0.1 }}
       variants={fadeUp}
       onClick={handleClick}
       className={`rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all group ${isCtaCard ? "cursor-pointer" : ""}`}
