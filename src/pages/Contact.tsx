@@ -5,22 +5,48 @@ import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
+const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
+
 const Contact = () => {
   const [reason, setReason] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot) return;
+    if (honeypot || !reason.trim() || submitting) return;
+
     setSubmitting(true);
-    const mailtoLink = `mailto:info@phaosai.com?subject=${encodeURIComponent("Contact Form Submission")}&body=${encodeURIComponent(reason)}`;
-    window.open(mailtoLink, '_blank');
-    setTimeout(() => {
-      toast.success("Opening your email client to send your message to info@phaosai.com");
+
+    try {
+      const response = await fetch(LEAD_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          name: "Website Contact Form",
+          title: "Contact Request",
+          company: "",
+          website: window.location.origin,
+          email: "",
+          phone: "",
+          transcript: `Contact page inquiry:\n${reason.trim()}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit contact request");
+      }
+
+      toast.success("Message sent successfully. Our team will reach out shortly.");
       setReason("");
+    } catch {
+      toast.error("We couldn't send your message right now. Please try again in a moment.");
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
