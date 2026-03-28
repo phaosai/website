@@ -7,45 +7,32 @@ import phaosCrown from "@/assets/phaos-crown.png";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-interface VisitorContext {
-  name: string;
-  title: string;
-  company: string;
-  website: string;
-}
-
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
 const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
 
-const QUICK_CHIPS = [
-  { label: "Audit my Workflow", message: "I'd like you to audit my current workflow for operational waste using Lean Six Sigma methodology." },
-  { label: "Calculate Voice ROI", message: "I want to calculate the ROI of switching to AI voice agents for our call center operations." },
-  { label: "Security & Compliance", message: "Tell me about Phaos AI's security standards, compliance frameworks, and data privacy protocols." },
+const SUGGESTED_PROMPTS = [
+  "How can AI handle my inbound calls 24/7?",
+  "What ROI can I expect from Voice AI?",
+  "How does workflow automation reduce labor costs?",
+  "Can Phaos AI integrate with my CRM?",
+  "What industries does Phaos AI serve?",
+  "How quickly can I get started?",
+  "Tell me about your Voice AI agents",
+  "How do you handle after-hours calls?",
+  "What's the difference between AI and a call center?",
+  "Can you automate our lead follow-up process?",
+  "How does AI reduce missed call revenue loss?",
+  "What integrations are available?",
 ];
-
-function getPageGreeting(pathname: string): string {
-  if (pathname.includes("/voice-ai")) {
-    return "Welcome. Based on industry benchmarks, missed calls cost businesses **15% in revenue leakage**. Want to calculate your specific Revenue Recovery potential?";
-  }
-  if (pathname.includes("/workflows") || pathname.includes("/automation")) {
-    return "I've analyzed the COPQ standards. Most manual workflows are losing **30% of margin** to 'The Hidden Factory.' Ready to audit your process?";
-  }
-  if (pathname.includes("/pricing") || pathname.includes("/roi-calculator")) {
-    return "Pricing is just an investment in capital recovery. If I could show you how to reclaim **$10k/mo** in wasted labor, would you want to see the math?";
-  }
-  return "Phaos AI Operations Consultant here. I'm trained on Six Sigma methodologies to identify and eliminate operational waste. How can I help you reclaim capital today?";
-}
 
 async function streamChat({
   messages,
-  visitorContext,
   currentPage,
   onDelta,
   onDone,
   onError,
 }: {
   messages: Message[];
-  visitorContext?: VisitorContext;
   currentPage?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
@@ -58,16 +45,16 @@ async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, visitorContext, currentPage }),
+      body: JSON.stringify({ messages, currentPage }),
     });
 
     if (!resp.ok || !resp.body) {
       if (resp.status === 429) {
-        onError("I'm processing a high volume of operational audits right now. Please try again in a moment.");
+        onError("We're experiencing high demand right now. Please try again in a moment.");
         return;
       }
       if (resp.status === 402) {
-        onError("Our diagnostic service is temporarily unavailable. Please email us at daniel@phaosai.com");
+        onError("Our service is temporarily unavailable. Please email us at daniel@phaosai.com");
         return;
       }
       onError("Something went wrong. Please try again or reach us at daniel@phaosai.com");
@@ -110,7 +97,6 @@ async function streamChat({
       }
     }
 
-    // Final flush
     if (textBuffer.trim()) {
       for (let raw of textBuffer.split("\n")) {
         if (!raw) continue;
@@ -128,7 +114,7 @@ async function streamChat({
     }
 
     onDone();
-  } catch (e) {
+  } catch {
     onError("Connection error. Please try again or contact daniel@phaosai.com");
   }
 }
@@ -140,11 +126,7 @@ const ChatWidget = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
-  const [showChips, setShowChips] = useState(true);
   const [showCTA, setShowCTA] = useState(false);
-  const [chatStarted, setChatStarted] = useState(false);
-
-  // Lead capture state
   const [leadCaptured, setLeadCaptured] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -154,7 +136,13 @@ const ChatWidget = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Check if CTA should appear (COPQ or Revenue Recovery > $10k)
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Check if CTA should appear
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
     if (lastMsg?.role === "assistant") {
@@ -169,39 +157,26 @@ const ChatWidget = () => {
     }
   }, [messages, showCTA]);
 
-  // Show greeting when chat opens
-  useEffect(() => {
-    if (isOpen && !chatStarted && messages.length === 0) {
-      const greeting = getPageGreeting(location.pathname);
-      setMessages([{ role: "assistant", content: greeting }]);
-    }
-  }, [isOpen, chatStarted, messages.length, location.pathname]);
-
   const sendMessage = useCallback(async (overrideInput?: string) => {
     const msgText = overrideInput || input.trim();
     if (!msgText || isLoading) return;
-
-    if (!chatStarted) setChatStarted(true);
 
     const userMsg: Message = { role: "user", content: msgText };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
-    setShowChips(false);
 
-    // Check if user is providing lead contact info
+    // Lead capture on email/phone detection
     const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(msgText);
     const hasPhone = /[\d\s()-]{7,}/.test(msgText);
     if ((hasEmail || hasPhone) && !leadCaptured) {
       const emailMatch = msgText.match(/[\w.-]+@[\w.-]+\.\w+/);
       const phoneMatch = msgText.match(/[\d\s()+.-]{7,}/);
-
       try {
         const transcript = newMessages
           .map((m) => `${m.role === "user" ? "Visitor" : "Phaos AI"}: ${m.content}`)
           .join("\n");
-
         await fetch(LEAD_URL, {
           method: "POST",
           headers: {
@@ -210,9 +185,6 @@ const ChatWidget = () => {
           },
           body: JSON.stringify({
             name: "Chat Visitor",
-            title: "",
-            company: "",
-            website: "",
             email: emailMatch?.[0] || "",
             phone: phoneMatch?.[0] || "",
             transcript,
@@ -246,11 +218,9 @@ const ChatWidget = () => {
         setIsLoading(false);
       },
     });
-  }, [input, isLoading, messages, leadCaptured, location.pathname, chatStarted]);
+  }, [input, isLoading, messages, leadCaptured, location.pathname]);
 
-  const handleChipClick = (message: string) => {
-    sendMessage(message);
-  };
+  const hasStarted = messages.length > 0;
 
   return (
     <>
@@ -266,13 +236,14 @@ const ChatWidget = () => {
             onClick={() => { setIsOpen(true); setShowPulse(false); }}
             className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-shadow"
             style={{ background: "#8A2BE2", boxShadow: "0 0 20px rgba(138,43,226,0.4)" }}
-            aria-label="Open Operations Consultant"
+            aria-label="Open Chat"
           >
             {showPulse && (
               <>
-                <span className="absolute -inset-3 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.2)", animationDuration: "1.5s" }} />
-                <span className="absolute -inset-6 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.1)", animationDuration: "2s", animationDelay: "0.3s" }} />
-                <span className="absolute -inset-9 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.05)", animationDuration: "2.5s", animationDelay: "0.6s" }} />
+                <span className="absolute -inset-4 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.2)", animationDuration: "1.5s" }} />
+                <span className="absolute -inset-8 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.1)", animationDuration: "2s", animationDelay: "0.3s" }} />
+                <span className="absolute -inset-12 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.05)", animationDuration: "2.5s", animationDelay: "0.6s" }} />
+                <span className="absolute -inset-16 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.03)", animationDuration: "3s", animationDelay: "0.9s" }} />
               </>
             )}
             <MessageCircle className="w-6 h-6 text-white" />
@@ -303,7 +274,7 @@ const ChatWidget = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-white">Phaos AI | Operations Consultant</h3>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Online • Six Sigma Certified Diagnostic</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Online • Ready to help</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -317,6 +288,31 @@ const ChatWidget = () => {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: "#0b0b0f" }}>
+              {/* Suggested Prompts - shown before any messages */}
+              {!hasStarted && !isLoading && (
+                <div className="space-y-3">
+                  <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.4)" }}>Ask us anything — here are some ideas:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {SUGGESTED_PROMPTS.map((prompt) => (
+                      <motion.button
+                        key={prompt}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => sendMessage(prompt)}
+                        className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105 text-left"
+                        style={{
+                          background: "rgba(138,43,226,0.1)",
+                          border: "1px solid rgba(138,43,226,0.25)",
+                          color: "#c084fc",
+                        }}
+                      >
+                        {prompt}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Messages */}
               {messages.map((msg, i) => (
                 <div key={i} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -350,28 +346,6 @@ const ChatWidget = () => {
                 </div>
               ))}
 
-              {/* Quick Action Chips */}
-              {showChips && !isLoading && (
-                <div className="flex flex-wrap gap-2 ml-10">
-                  {QUICK_CHIPS.map((chip) => (
-                    <motion.button
-                      key={chip.label}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={() => handleChipClick(chip.message)}
-                      className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
-                      style={{
-                        background: "rgba(138,43,226,0.15)",
-                        border: "1px solid rgba(138,43,226,0.3)",
-                        color: "#c084fc",
-                      }}
-                    >
-                      {chip.label}
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-
               {/* High-Value CTA */}
               {showCTA && (
                 <motion.div
@@ -384,7 +358,7 @@ const ChatWidget = () => {
                     className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 group"
                     style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
                   >
-                    Book Priority Strategy Session
+                    Schedule a Call
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </motion.div>
@@ -408,13 +382,13 @@ const ChatWidget = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - always visible */}
+            {/* Input Area */}
             <div className="p-3 border-t" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(255,255,255,0.02)" }}>
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Ask me anything about operational efficiency..."
+                  placeholder="Type your question..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
@@ -437,7 +411,7 @@ const ChatWidget = () => {
                 </button>
               </div>
               <p className="text-[10px] text-center mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
-                Powered by Phaos AI • Six Sigma Certified
+                Powered by Phaos AI
               </p>
             </div>
           </motion.div>

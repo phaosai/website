@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -21,7 +21,60 @@ const InfoTip = ({ text }: { text: string }) => (
   </Tooltip>
 );
 
-/* ── Slider Row ── */
+/* ── Editable Number Input ── */
+const EditableValue = ({ value, onChange, prefix = "", suffix = "", fmt }: {
+  value: number; onChange: (v: number) => void; prefix?: string; suffix?: string; fmt: (v: number) => string;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const startEdit = () => {
+    setEditText(value.toString());
+    setEditing(true);
+  };
+
+  const commitEdit = () => {
+    const parsed = parseFloat(editText.replace(/[^0-9.-]/g, ""));
+    if (!isNaN(parsed) && parsed >= 0) {
+      onChange(parsed);
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={editText}
+        onChange={(e) => setEditText(e.target.value)}
+        onBlur={commitEdit}
+        onKeyDown={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditing(false); }}
+        className="w-24 text-right text-sm font-semibold bg-secondary border border-primary/30 rounded px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={startEdit}
+      className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-text border-b border-dashed border-muted-foreground/30 hover:border-primary/50"
+      title="Click to type a custom value"
+    >
+      {fmt(value)}
+    </button>
+  );
+};
+
+/* ── Slider Row with Editable Value ── */
 const SliderRow = ({ label, tooltip, value, set, min, max, step, fmt }: {
   label: string; tooltip?: string; value: number; set: (v: number) => void;
   min: number; max: number; step: number; fmt: (v: number) => string;
@@ -32,9 +85,9 @@ const SliderRow = ({ label, tooltip, value, set, min, max, step, fmt }: {
         {label}
         {tooltip && <InfoTip text={tooltip} />}
       </span>
-      <span className="text-sm font-semibold text-foreground">{fmt(value)}</span>
+      <EditableValue value={value} onChange={set} fmt={fmt} />
     </div>
-    <Slider value={[value]} onValueChange={([v]) => set(v)} min={min} max={max} step={step} className="w-full" />
+    <Slider value={[Math.min(value, max)]} onValueChange={([v]) => set(v)} min={min} max={max} step={step} className="w-full" />
   </div>
 );
 
@@ -69,20 +122,16 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
   const [callVolume, setCallVolume] = useState(500);
   const [missedCalls, setMissedCalls] = useState(75);
   const [saleValue, setSaleValue] = useState(500);
-  // Advanced
   const [aht, setAht] = useState(5);
   const [fullyLoadedRate, setFullyLoadedRate] = useState(35);
   const [afterHoursVolume, setAfterHoursVolume] = useState(100);
 
   const results = useMemo(() => {
     if (!advanced) {
-      // Simple: conservative hidden formulas
       const annualRecovery = (missedCalls * saleValue * 0.15) * 12;
       return { annualRecovery, laborSpend: 0, showLabor: false };
     }
-    // Advanced
     const laborSpend = (callVolume * (aht / 60) * fullyLoadedRate) * 12;
-    const missedPct = callVolume > 0 ? (missedCalls / callVolume) * 100 : 0;
     const recoveredRevenue = (missedCalls * saleValue * 0.20) * 12;
     const afterHoursRecovery = (afterHoursVolume * saleValue * 0.15) * 12;
     const annualRecovery = laborSpend + recoveredRevenue + afterHoursRecovery;
@@ -106,18 +155,18 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
       <div className="grid gap-5">
         {!advanced ? (
           <>
-            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={50} max={1000000} step={50} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month. Industry average is 10-20% of total volume. Each missed call represents a lost revenue opportunity." value={missedCalls} set={setMissedCalls} min={1} max={100000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The immediate value of a successfully handled call or conversion." value={saleValue} set={setSaleValue} min={50} max={100000000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={1} max={50000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month. Industry average is 10-20% of total volume." value={missedCalls} set={setMissedCalls} min={1} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={1} max={50000} step={1} fmt={(v) => `$${v.toLocaleString()}`} />
           </>
         ) : (
           <>
-            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={50} max={1000000} step={50} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month." value={missedCalls} set={setMissedCalls} min={1} max={100000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The immediate value of a successfully handled call or conversion." value={saleValue} set={setSaleValue} min={50} max={100000000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={1} max={50000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month." value={missedCalls} set={setMissedCalls} min={1} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={1} max={50000} step={1} fmt={(v) => `$${v.toLocaleString()}`} />
             <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={1} max={60} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Fully Loaded Labor Rate" tooltip="Includes base salary + 25-40% for taxes, benefits, and overhead. This is the true 'Burn Rate' per hour." value={fullyLoadedRate} set={setFullyLoadedRate} min={15} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
-            <SliderRow label="After-Hours Call Volume" tooltip="Monthly calls received outside business hours. AI provides 24/7 availability at no additional cost." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={100000} step={25} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Fully Loaded Labor Rate" tooltip="Includes base salary + 25-40% for taxes, benefits, and overhead." value={fullyLoadedRate} set={setFullyLoadedRate} min={10} max={250} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="After-Hours Call Volume" tooltip="Monthly calls received outside business hours." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
           </>
         )}
       </div>
@@ -163,11 +212,9 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
 
 /* ── Lean Workflow Section ── */
 const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
-  // Simple
   const [teamSize, setTeamSize] = useState(5);
   const [hoursWasted, setHoursWasted] = useState(10);
   const [hourlyPay, setHourlyPay] = useState(30);
-  // Advanced
   const [processFrequency, setProcessFrequency] = useState(200);
   const [touchTime, setTouchTime] = useState(15);
   const [waitTime, setWaitTime] = useState(45);
@@ -177,11 +224,9 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
 
   const results = useMemo(() => {
     if (!advanced) {
-      // Simple with 1.25 burden factor
       const annualCOPQ = (teamSize * hoursWasted * hourlyPay * 1.25) * 52;
       return { annualCOPQ, pce: 0, wasteHours: 0, showPCE: false };
     }
-    // Advanced: DOWNTIME model
     const totalCycleTime = touchTime + waitTime;
     const pce = totalCycleTime > 0 ? (touchTime / totalCycleTime) * 100 : 0;
     const monthlyWasteHours = ((waitTime + ((defectRate / 100) * reworkTime)) / 60) * processFrequency;
@@ -191,7 +236,7 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
     return { annualCOPQ, pce, wasteHours: annualWasteHours, showPCE: true };
   }, [teamSize, hoursWasted, hourlyPay, processFrequency, touchTime, waitTime, defectRate, reworkTime, employeeRate, advanced]);
 
-  const LABOR_EXPLANATION = `This calculation uses the formula: Team Size × Hours Wasted/Week × Hourly Pay × 1.25 (Labor Burden) × 52 weeks. The 1.25x burden factor accounts for employer taxes, benefits, and overhead — a conservative multiplier validated by the Bureau of Labor Statistics (BLS), which reports total compensation costs average 30-40% above base wages. McKinsey Global Institute research confirms that knowledge workers spend 28% of their workweek on email alone, with an additional 19% on information gathering — validating the "hours wasted" input. Deloitte's operational excellence studies show that eliminating non-value-add labor through automation yields measurable annual savings consistent with this formula.`;
+  const LABOR_EXPLANATION = `This calculation uses the formula: Team Size × Hours Wasted/Week × Hourly Pay × 1.25 (Labor Burden) × 52 weeks. The 1.25x burden factor accounts for employer taxes, benefits, and overhead — validated by the Bureau of Labor Statistics (BLS). McKinsey confirms knowledge workers spend 28% of their workweek on email alone, with 19% on information gathering. Deloitte's operational excellence studies show automation yields measurable annual savings consistent with this formula.`;
 
   return (
     <div className="space-y-6">
@@ -208,18 +253,18 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
       <div className="grid gap-5">
         {!advanced ? (
           <>
-            <SliderRow label="Team Size" tooltip="Number of people performing this task or process." value={teamSize} set={setTeamSize} min={1} max={1000} step={1} fmt={(v) => `${v} people`} />
+            <SliderRow label="Team Size" tooltip="Number of people performing this task or process." value={teamSize} set={setTeamSize} min={1} max={500} step={1} fmt={(v) => `${v} people`} />
             <SliderRow label="Hours Wasted / Week / Person" tooltip="Estimated hours per week each person spends on non-value-add activities." value={hoursWasted} set={setHoursWasted} min={1} max={40} step={1} fmt={(v) => `${v} hrs`} />
-            <SliderRow label="Avg. Hourly Pay" tooltip="Base pay rate. We apply a 1.25x burden factor for taxes/benefits automatically." value={hourlyPay} set={setHourlyPay} min={10} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="Avg. Hourly Pay" tooltip="Base pay rate. We apply a 1.25x burden factor for taxes/benefits automatically." value={hourlyPay} set={setHourlyPay} min={10} max={250} step={1} fmt={(v) => `$${v}/hr`} />
           </>
         ) : (
           <>
             <SliderRow label="Monthly Process Frequency" tooltip="How many times this task or process is executed per month." value={processFrequency} set={setProcessFrequency} min={10} max={5000} step={10} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Touch Time (min)" tooltip="Active human working time per task. In Lean, this is the only 'Value-Add' time in the cycle." value={touchTime} set={setTouchTime} min={1} max={120} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Wait Time (min)" tooltip="The 'Queue' time where a task sits idle between steps. AI virtually eliminates this, slashing your total lead time." value={waitTime} set={setWaitTime} min={0} max={480} step={5} fmt={(v) => `${v} min`} />
-            <SliderRow label="Defect Rate" tooltip="The % of tasks that require human rework. In Six Sigma, this is the primary driver of the 'Hidden Factory' — wasted effort fixing mistakes." value={defectRate} set={setDefectRate} min={0} max={50} step={1} fmt={(v) => `${v}%`} />
-            <SliderRow label="Rework Time (min)" tooltip="Time spent correcting an error. This is a 100% loss of margin and the most expensive form of operational waste." value={reworkTime} set={setReworkTime} min={1} max={120} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Employee Blended Rate" tooltip="Fully loaded labor rate including salary, benefits, taxes, and overhead (typically 1.25-1.4x base salary)." value={employeeRate} set={setEmployeeRate} min={15} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="Touch Time (min)" tooltip="Active human working time per task." value={touchTime} set={setTouchTime} min={1} max={120} step={1} fmt={(v) => `${v} min`} />
+            <SliderRow label="Wait Time (min)" tooltip="Queue time where a task sits idle between steps." value={waitTime} set={setWaitTime} min={0} max={480} step={5} fmt={(v) => `${v} min`} />
+            <SliderRow label="Defect Rate" tooltip="% of tasks requiring human rework." value={defectRate} set={setDefectRate} min={0} max={50} step={1} fmt={(v) => `${v}%`} />
+            <SliderRow label="Rework Time (min)" tooltip="Time spent correcting an error." value={reworkTime} set={setReworkTime} min={1} max={120} step={1} fmt={(v) => `${v} min`} />
+            <SliderRow label="Employee Blended Rate" tooltip="Fully loaded labor rate including salary, benefits, taxes, and overhead." value={employeeRate} set={setEmployeeRate} min={10} max={250} step={1} fmt={(v) => `$${v}/hr`} />
           </>
         )}
       </div>
@@ -296,13 +341,13 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
           >
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
               <Calculator className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Six Sigma Certified Diagnostic Tool</span>
+              <span className="text-sm text-primary font-medium">Operational Diagnostic Tool</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold leading-[1.05] tracking-tight mb-4">
               Operational <span className="text-gradient-purple">ROI Engine</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Quantify your Cost of Poor Quality and Revenue Leakage with Lean Six Sigma precision. Adjust the sliders to match your business — get your diagnostic instantly.
+              Quantify your Cost of Poor Quality and Revenue Leakage. Adjust the sliders or click any value to type your own — get your diagnostic instantly.
             </p>
           </motion.div>
         )}
@@ -311,7 +356,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
         <div className="flex items-center justify-center gap-3 mb-8">
           <span className={`text-sm font-medium transition-colors ${!advanced ? "text-foreground" : "text-muted-foreground"}`}>Quick Estimate</span>
           <Switch checked={advanced} onCheckedChange={setAdvanced} />
-          <span className={`text-sm font-medium transition-colors ${advanced ? "text-foreground" : "text-muted-foreground"}`}>Advanced Six Sigma Audit</span>
+          <span className={`text-sm font-medium transition-colors ${advanced ? "text-foreground" : "text-muted-foreground"}`}>Advanced Audit</span>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -347,7 +392,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
         >
           <h3 className="text-2xl font-bold text-foreground mb-2">Total Reclaimable Capital Identified</h3>
           <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-            These are conservative estimates using industry benchmarks. Your actual COPQ elimination could yield significantly higher returns. Let's discuss your specific operation.
+            These are conservative estimates using industry benchmarks. Your actual savings could be significantly higher. Let's discuss your specific operation.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
