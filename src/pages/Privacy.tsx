@@ -25,13 +25,13 @@ const Privacy = () => {
               <p>All data is encrypted at rest and in transit using industry-standard protocols. We implement role-based access controls, audit trails, and comply with GDPR, CCPA, HIPAA, and PCI-DSS standards.</p>
 
               <h2 className="text-xl font-bold text-foreground">4. Data Retention</h2>
-              <p>We retain personal data only as long as necessary to fulfill the purposes for which it was collected. You may request deletion of your data at any time by contacting us at Info@PhaosAI.com.</p>
+              <p>We retain personal data only as long as necessary to fulfill the purposes for which it was collected. You may request deletion of your data at any time by contacting us at daniel@phaosai.com.</p>
 
               <h2 className="text-xl font-bold text-foreground">5. Your Rights</h2>
               <p>You have the right to access, correct, or delete your personal data. You may also opt out of communications at any time. For EU residents, additional rights under GDPR apply including data portability and the right to object.</p>
 
               <h2 className="text-xl font-bold text-foreground">6. Contact</h2>
-              <p>For privacy-related inquiries, contact us at <a href="mailto:Info@PhaosAI.com" className="text-primary hover:underline">Info@PhaosAI.com</a>.</p>
+              <p>For privacy-related inquiries, contact us at <a href="mailto:daniel@phaosai.com" className="text-primary hover:underline">daniel@phaosai.com</a>.</p>
             </div>
           </motion.div>
         </div>

@@ -15,7 +15,7 @@ const InfoTip = ({ text }: { text: string }) => (
         <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
       </button>
     </TooltipTrigger>
-    <TooltipContent side="top" className="max-w-[260px] text-xs">
+    <TooltipContent side="top" className="max-w-[320px] text-xs leading-relaxed">
       {text}
     </TooltipContent>
   </Tooltip>
@@ -67,7 +67,7 @@ const PCEGauge = ({ pce }: { pce: number }) => {
 /* ── Voice AI Section ── */
 const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
   const [callVolume, setCallVolume] = useState(500);
-  const [missedPct, setMissedPct] = useState(15);
+  const [missedCalls, setMissedCalls] = useState(75);
   const [saleValue, setSaleValue] = useState(500);
   // Advanced
   const [aht, setAht] = useState(5);
@@ -77,16 +77,19 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
   const results = useMemo(() => {
     if (!advanced) {
       // Simple: conservative hidden formulas
-      const annualRecovery = (callVolume * (missedPct / 100) * saleValue * 0.15) * 12;
+      const annualRecovery = (missedCalls * saleValue * 0.15) * 12;
       return { annualRecovery, laborSpend: 0, showLabor: false };
     }
     // Advanced
     const laborSpend = (callVolume * (aht / 60) * fullyLoadedRate) * 12;
-    const recoveredRevenue = (callVolume * (missedPct / 100) * saleValue * 0.20) * 12;
+    const missedPct = callVolume > 0 ? (missedCalls / callVolume) * 100 : 0;
+    const recoveredRevenue = (missedCalls * saleValue * 0.20) * 12;
     const afterHoursRecovery = (afterHoursVolume * saleValue * 0.15) * 12;
     const annualRecovery = laborSpend + recoveredRevenue + afterHoursRecovery;
     return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue, afterHoursRecovery };
-  }, [callVolume, missedPct, saleValue, aht, fullyLoadedRate, afterHoursVolume, advanced]);
+  }, [callVolume, missedCalls, saleValue, aht, fullyLoadedRate, afterHoursVolume, advanced]);
+
+  const RECOVERY_EXPLANATION = `This calculation uses a conservative 15% recovery rate (20% in Advanced mode). Industry research supports this: Harvard Business Review found that 85% of callers who can't reach a business won't call back. BIA/Kelsey research shows inbound calls convert at 25-40% — significantly higher than web leads (1-3%). The formula is: Missed Calls × Avg. Transaction Value × Recovery Rate × 12 months. Even a 15% capture rate is conservative — many AI implementations achieve 30-50% recovery by providing 24/7 instant response.`;
 
   return (
     <div className="space-y-6">
@@ -101,15 +104,20 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
       </div>
 
       <div className="grid gap-5">
-        <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={50} max={10000} step={50} fmt={(v) => v.toLocaleString()} />
-        <SliderRow label="Call Abandonment Rate" tooltip="Represents revenue leakage. Industry standard is 5-10%." value={missedPct} set={setMissedPct} min={1} max={50} step={1} fmt={(v) => `${v}%`} />
-        <SliderRow label="Avg. Transaction Value" tooltip="The immediate value of a successfully handled call or conversion." value={saleValue} set={setSaleValue} min={50} max={5000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
-        
-        {advanced && (
+        {!advanced ? (
           <>
-            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={1} max={20} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Fully Loaded Labor Rate" tooltip="Includes base salary + 25-40% for taxes, benefits, and overhead. This is the true 'Burn Rate' per hour." value={fullyLoadedRate} set={setFullyLoadedRate} min={15} max={100} step={1} fmt={(v) => `$${v}/hr`} />
-            <SliderRow label="After-Hours Call Volume" tooltip="Monthly calls received outside business hours. AI provides 24/7 availability at no additional cost." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={2000} step={25} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={50} max={1000000} step={50} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month. Industry average is 10-20% of total volume. Each missed call represents a lost revenue opportunity." value={missedCalls} set={setMissedCalls} min={1} max={100000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The immediate value of a successfully handled call or conversion." value={saleValue} set={setSaleValue} min={50} max={100000000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
+          </>
+        ) : (
+          <>
+            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={50} max={1000000} step={50} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month." value={missedCalls} set={setMissedCalls} min={1} max={100000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The immediate value of a successfully handled call or conversion." value={saleValue} set={setSaleValue} min={50} max={100000000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={1} max={60} step={1} fmt={(v) => `${v} min`} />
+            <SliderRow label="Fully Loaded Labor Rate" tooltip="Includes base salary + 25-40% for taxes, benefits, and overhead. This is the true 'Burn Rate' per hour." value={fullyLoadedRate} set={setFullyLoadedRate} min={15} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="After-Hours Call Volume" tooltip="Monthly calls received outside business hours. AI provides 24/7 availability at no additional cost." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={100000} step={25} fmt={(v) => v.toLocaleString()} />
           </>
         )}
       </div>
@@ -140,7 +148,10 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
           className="rounded-xl p-5 text-center"
           style={{ background: "rgba(0,255,65,0.06)", border: "1px solid rgba(0,255,65,0.2)" }}
         >
-          <p className="text-sm text-muted-foreground mb-1">Total Annual {advanced ? "Value Captured" : "Revenue Recovery"}</p>
+          <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center">
+            Total Annual {advanced ? "Value Captured" : "Revenue Recovery"}
+            <InfoTip text={RECOVERY_EXPLANATION} />
+          </p>
           <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
             ${results.annualRecovery.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
@@ -180,6 +191,8 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
     return { annualCOPQ, pce, wasteHours: annualWasteHours, showPCE: true };
   }, [teamSize, hoursWasted, hourlyPay, processFrequency, touchTime, waitTime, defectRate, reworkTime, employeeRate, advanced]);
 
+  const LABOR_EXPLANATION = `This calculation uses the formula: Team Size × Hours Wasted/Week × Hourly Pay × 1.25 (Labor Burden) × 52 weeks. The 1.25x burden factor accounts for employer taxes, benefits, and overhead — a conservative multiplier validated by the Bureau of Labor Statistics (BLS), which reports total compensation costs average 30-40% above base wages. McKinsey Global Institute research confirms that knowledge workers spend 28% of their workweek on email alone, with an additional 19% on information gathering — validating the "hours wasted" input. Deloitte's operational excellence studies show that eliminating non-value-add labor through automation yields measurable annual savings consistent with this formula.`;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
@@ -195,9 +208,9 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
       <div className="grid gap-5">
         {!advanced ? (
           <>
-            <SliderRow label="Team Size" tooltip="Number of people performing this task or process." value={teamSize} set={setTeamSize} min={1} max={50} step={1} fmt={(v) => `${v} people`} />
+            <SliderRow label="Team Size" tooltip="Number of people performing this task or process." value={teamSize} set={setTeamSize} min={1} max={1000} step={1} fmt={(v) => `${v} people`} />
             <SliderRow label="Hours Wasted / Week / Person" tooltip="Estimated hours per week each person spends on non-value-add activities." value={hoursWasted} set={setHoursWasted} min={1} max={40} step={1} fmt={(v) => `${v} hrs`} />
-            <SliderRow label="Avg. Hourly Pay" tooltip="Base pay rate. We apply a 1.25x burden factor for taxes/benefits automatically." value={hourlyPay} set={setHourlyPay} min={10} max={100} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="Avg. Hourly Pay" tooltip="Base pay rate. We apply a 1.25x burden factor for taxes/benefits automatically." value={hourlyPay} set={setHourlyPay} min={10} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
           </>
         ) : (
           <>
@@ -206,7 +219,7 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
             <SliderRow label="Wait Time (min)" tooltip="The 'Queue' time where a task sits idle between steps. AI virtually eliminates this, slashing your total lead time." value={waitTime} set={setWaitTime} min={0} max={480} step={5} fmt={(v) => `${v} min`} />
             <SliderRow label="Defect Rate" tooltip="The % of tasks that require human rework. In Six Sigma, this is the primary driver of the 'Hidden Factory' — wasted effort fixing mistakes." value={defectRate} set={setDefectRate} min={0} max={50} step={1} fmt={(v) => `${v}%`} />
             <SliderRow label="Rework Time (min)" tooltip="Time spent correcting an error. This is a 100% loss of margin and the most expensive form of operational waste." value={reworkTime} set={setReworkTime} min={1} max={120} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Employee Blended Rate" tooltip="Fully loaded labor rate including salary, benefits, taxes, and overhead (typically 1.25-1.4x base salary)." value={employeeRate} set={setEmployeeRate} min={15} max={100} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="Employee Blended Rate" tooltip="Fully loaded labor rate including salary, benefits, taxes, and overhead (typically 1.25-1.4x base salary)." value={employeeRate} set={setEmployeeRate} min={15} max={1000} step={1} fmt={(v) => `$${v}/hr`} />
           </>
         )}
       </div>
@@ -236,9 +249,13 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
           className="rounded-xl p-5 text-center"
           style={{ background: "rgba(0,255,65,0.06)", border: "1px solid rgba(0,255,65,0.2)" }}
         >
-          <p className="text-sm text-muted-foreground mb-1">
+          <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center">
             {advanced ? "Annual Cost of Poor Quality (COPQ)" : "Annual Labor Reclaimed"}
-            {advanced && <InfoTip text="Cost of Poor Quality quantifies the financial burden of errors, rework, and missed opportunities caused by manual friction." />}
+            {advanced ? (
+              <InfoTip text="Cost of Poor Quality quantifies the financial burden of errors, rework, and missed opportunities caused by manual friction." />
+            ) : (
+              <InfoTip text={LABOR_EXPLANATION} />
+            )}
           </p>
           <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
             ${results.annualCOPQ.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -339,7 +356,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
               className="font-semibold px-8 py-3.5 rounded-full text-white hover:opacity-90 transition-all flex items-center gap-2 group"
               style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
             >
-              Schedule Six Sigma Review
+              Schedule a Call
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>

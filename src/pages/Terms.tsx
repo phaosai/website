@@ -34,7 +34,7 @@ const Terms = () => {
               <p>We reserve the right to modify these terms at any time. Continued use of the platform after changes constitutes acceptance of the updated terms.</p>
 
               <h2 className="text-xl font-bold text-foreground">7. Contact</h2>
-              <p>For questions about these terms, contact us at <a href="mailto:Info@PhaosAI.com" className="text-primary hover:underline">Info@PhaosAI.com</a>.</p>
+              <p>For questions about these terms, contact us at <a href="mailto:daniel@phaosai.com" className="text-primary hover:underline">daniel@phaosai.com</a>.</p>
             </div>
           </motion.div>
         </div>

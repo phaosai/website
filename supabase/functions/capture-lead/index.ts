@@ -65,7 +65,7 @@ via the Phaos AI website chat agent.
     }
 
     // Log the lead for now (email delivery will be set up with email infrastructure)
-    console.log("=== NEW LEAD CAPTURED (info@phaosai.com) ===");
+    console.log("=== NEW LEAD CAPTURED (daniel@phaosai.com) ===");
     console.log(emailBody);
     console.log("=========================");
 

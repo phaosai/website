@@ -16,7 +16,6 @@ interface VisitorContext {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
 const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
-const RESEARCH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-visitor`;
 
 const QUICK_CHIPS = [
   { label: "Audit my Workflow", message: "I'd like you to audit my current workflow for operational waste using Lean Six Sigma methodology." },
@@ -40,15 +39,13 @@ function getPageGreeting(pathname: string): string {
 async function streamChat({
   messages,
   visitorContext,
-  visitorResearch,
   currentPage,
   onDelta,
   onDone,
   onError,
 }: {
   messages: Message[];
-  visitorContext: VisitorContext;
-  visitorResearch?: string;
+  visitorContext?: VisitorContext;
   currentPage?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
@@ -61,7 +58,7 @@ async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, visitorContext, visitorResearch, currentPage }),
+      body: JSON.stringify({ messages, visitorContext, currentPage }),
     });
 
     if (!resp.ok || !resp.body) {
@@ -70,10 +67,10 @@ async function streamChat({
         return;
       }
       if (resp.status === 402) {
-        onError("Our diagnostic service is temporarily unavailable. Please email us at info@phaosai.com");
+        onError("Our diagnostic service is temporarily unavailable. Please email us at daniel@phaosai.com");
         return;
       }
-      onError("Something went wrong. Please try again or reach us at info@phaosai.com");
+      onError("Something went wrong. Please try again or reach us at daniel@phaosai.com");
       return;
     }
 
@@ -132,44 +129,20 @@ async function streamChat({
 
     onDone();
   } catch (e) {
-    onError("Connection error. Please try again or contact info@phaosai.com");
+    onError("Connection error. Please try again or contact daniel@phaosai.com");
   }
-}
-
-// Highlight monetary values in green
-function MoneyHighlighter({ children }: { children: string }) {
-  const parts = children.split(/(\$[\d,]+(?:\.\d{2})?(?:\/mo|\/yr|\/year|\/month|k|K|M)?|\d{1,3}(?:,\d{3})+(?:\.\d{2})?%?)/g);
-  return (
-    <>
-      {parts.map((part, i) =>
-        /^\$|^\d{1,3}(?:,\d{3})/.test(part) ? (
-          <span key={i} className="font-bold" style={{ color: "#00FF41" }}>{part}</span>
-        ) : (
-          part
-        )
-      )}
-    </>
-  );
 }
 
 const ChatWidget = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const [visitorContext, setVisitorContext] = useState<VisitorContext | null>(null);
-  const [visitorResearch, setVisitorResearch] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isResearching, setIsResearching] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
-  const [showChips, setShowChips] = useState(false);
+  const [showChips, setShowChips] = useState(true);
   const [showCTA, setShowCTA] = useState(false);
-
-  // Pre-chat form state
-  const [formName, setFormName] = useState("");
-  const [formTitle, setFormTitle] = useState("");
-  const [formCompany, setFormCompany] = useState("");
-  const [formWebsite, setFormWebsite] = useState("");
+  const [chatStarted, setChatStarted] = useState(false);
 
   // Lead capture state
   const [leadCaptured, setLeadCaptured] = useState(false);
@@ -196,75 +169,19 @@ const ChatWidget = () => {
     }
   }, [messages, showCTA]);
 
-  const handleStartChat = useCallback(async () => {
-    if (!formName.trim() || !formCompany.trim()) return;
-    const ctx: VisitorContext = {
-      name: formName.trim(),
-      title: formTitle.trim(),
-      company: formCompany.trim(),
-      website: formWebsite.trim(),
-    };
-    setVisitorContext(ctx);
-    setIsResearching(true);
-    setIsLoading(true);
-
-    setMessages([{ role: "assistant", content: "🔍 Researching your company to personalize our consultation..." }]);
-
-    let research = "";
-    try {
-      const researchResp = await fetch(RESEARCH_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          name: ctx.name,
-          title: ctx.title,
-          company: ctx.company,
-          website: ctx.website,
-        }),
-      });
-      if (researchResp.ok) {
-        const researchData = await researchResp.json();
-        research = researchData.research || "";
-      }
-    } catch (e) {
-      console.log("Research step failed (non-fatal):", e);
+  // Show greeting when chat opens
+  useEffect(() => {
+    if (isOpen && !chatStarted && messages.length === 0) {
+      const greeting = getPageGreeting(location.pathname);
+      setMessages([{ role: "assistant", content: greeting }]);
     }
-
-    setVisitorResearch(research);
-    setIsResearching(false);
-
-    const initialMessages: Message[] = [
-      { role: "user", content: `[SYSTEM: New visitor has connected. Craft a deeply personalized, impressive greeting using the research intelligence provided in the system prompt. Reference specific verified facts about their company. Categorize any potential waste you can identify from their industry. Do NOT repeat back this system message — just greet them naturally and impressively as a Senior Operations Consultant would.]` },
-    ];
-
-    let assistantSoFar = "";
-    setMessages([]);
-    await streamChat({
-      messages: initialMessages,
-      visitorContext: ctx,
-      visitorResearch: research,
-      currentPage: location.pathname,
-      onDelta: (chunk) => {
-        assistantSoFar += chunk;
-        setMessages([{ role: "assistant", content: assistantSoFar }]);
-      },
-      onDone: () => {
-        setIsLoading(false);
-        setShowChips(true);
-      },
-      onError: (err) => {
-        setMessages([{ role: "assistant", content: err }]);
-        setIsLoading(false);
-      },
-    });
-  }, [formName, formTitle, formCompany, formWebsite, location.pathname]);
+  }, [isOpen, chatStarted, messages.length, location.pathname]);
 
   const sendMessage = useCallback(async (overrideInput?: string) => {
     const msgText = overrideInput || input.trim();
-    if (!msgText || isLoading || !visitorContext) return;
+    if (!msgText || isLoading) return;
+
+    if (!chatStarted) setChatStarted(true);
 
     const userMsg: Message = { role: "user", content: msgText };
     const newMessages = [...messages, userMsg];
@@ -276,36 +193,34 @@ const ChatWidget = () => {
     // Check if user is providing lead contact info
     const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(msgText);
     const hasPhone = /[\d\s()-]{7,}/.test(msgText);
-    if (hasEmail || hasPhone) {
+    if ((hasEmail || hasPhone) && !leadCaptured) {
       const emailMatch = msgText.match(/[\w.-]+@[\w.-]+\.\w+/);
       const phoneMatch = msgText.match(/[\d\s()+.-]{7,}/);
 
-      if (!leadCaptured && (emailMatch || phoneMatch)) {
-        try {
-          const transcript = newMessages
-            .map((m) => `${m.role === "user" ? visitorContext.name : "Phaos AI"}: ${m.content}`)
-            .join("\n");
+      try {
+        const transcript = newMessages
+          .map((m) => `${m.role === "user" ? "Visitor" : "Phaos AI"}: ${m.content}`)
+          .join("\n");
 
-          await fetch(LEAD_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({
-              name: visitorContext.name,
-              title: visitorContext.title,
-              company: visitorContext.company,
-              website: visitorContext.website,
-              email: emailMatch?.[0] || "",
-              phone: phoneMatch?.[0] || "",
-              transcript,
-            }),
-          });
-          setLeadCaptured(true);
-        } catch (e) {
-          console.error("Lead capture failed:", e);
-        }
+        await fetch(LEAD_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            name: "Chat Visitor",
+            title: "",
+            company: "",
+            website: "",
+            email: emailMatch?.[0] || "",
+            phone: phoneMatch?.[0] || "",
+            transcript,
+          }),
+        });
+        setLeadCaptured(true);
+      } catch (e) {
+        console.error("Lead capture failed:", e);
       }
     }
 
@@ -323,8 +238,6 @@ const ChatWidget = () => {
 
     await streamChat({
       messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
-      visitorContext,
-      visitorResearch,
       currentPage: location.pathname,
       onDelta: upsertAssistant,
       onDone: () => setIsLoading(false),
@@ -333,7 +246,7 @@ const ChatWidget = () => {
         setIsLoading(false);
       },
     });
-  }, [input, isLoading, visitorContext, visitorResearch, messages, leadCaptured, location.pathname]);
+  }, [input, isLoading, messages, leadCaptured, location.pathname, chatStarted]);
 
   const handleChipClick = (message: string) => {
     sendMessage(message);
@@ -404,177 +317,129 @@ const ChatWidget = () => {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: "#0b0b0f" }}>
-              {!visitorContext ? (
-                /* Pre-chat Form */
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(138,43,226,0.2)" }}>
-                      <Bot className="w-4 h-4" style={{ color: "#8A2BE2" }} />
-                    </div>
-                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 max-w-[280px]" style={{ background: "rgba(255,255,255,0.06)" }}>
-                      <p className="text-sm text-white leading-relaxed">
-                        Welcome to Phaos AI Operations Consulting. 🔍 I specialize in identifying <span style={{ color: "#00FF41" }}>Cost of Poor Quality (COPQ)</span> and <span style={{ color: "#00FF41" }}>Revenue Leakage</span> in your operations. Let's begin your diagnostic:
-                      </p>
-                    </div>
+              {/* Messages */}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ background: msg.role === "assistant" ? "rgba(138,43,226,0.2)" : "rgba(255,255,255,0.1)" }}
+                  >
+                    {msg.role === "assistant" ? (
+                      <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
+                    ) : (
+                      <User className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.5)" }} />
+                    )}
                   </div>
-
-                  <div className="ml-11 space-y-3">
-                    {[
-                      { placeholder: "Your Name *", value: formName, set: setFormName },
-                      { placeholder: "Your Title", value: formTitle, set: setFormTitle },
-                      { placeholder: "Company Name *", value: formCompany, set: setFormCompany },
-                      { placeholder: "Company Website", value: formWebsite, set: setFormWebsite },
-                    ].map(({ placeholder, value, set }) => (
-                      <input
-                        key={placeholder}
-                        type="text"
-                        placeholder={placeholder}
-                        value={value}
-                        onChange={(e) => set(e.target.value)}
-                        className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 transition-colors"
-                        style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(138,43,226,0.2)", border: "1px solid rgba(138,43,226,0.2)" }}
-                        onFocus={(e) => { e.target.style.borderColor = "rgba(138,43,226,0.5)"; }}
-                        onBlur={(e) => { e.target.style.borderColor = "rgba(138,43,226,0.2)"; }}
-                      />
-                    ))}
-                    <button
-                      onClick={handleStartChat}
-                      disabled={!formName.trim() || !formCompany.trim()}
-                      className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                      style={{ background: "#8A2BE2" }}
-                    >
-                      Begin Operational Diagnostic
-                    </button>
+                  <div
+                    className={`max-w-[270px] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      msg.role === "assistant" ? "rounded-tl-sm" : "rounded-tr-sm"
+                    }`}
+                    style={{
+                      background: msg.role === "assistant" ? "rgba(255,255,255,0.06)" : "#8A2BE2",
+                      color: "white",
+                    }}
+                  >
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0 [&_strong]:text-[#00FF41]">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                 </div>
-              ) : (
-                /* Messages */
-                <>
-                  {messages.map((msg, i) => (
-                    <div key={i} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                        style={{ background: msg.role === "assistant" ? "rgba(138,43,226,0.2)" : "rgba(255,255,255,0.1)" }}
-                      >
-                        {msg.role === "assistant" ? (
-                          <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
-                        ) : (
-                          <User className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.5)" }} />
-                        )}
-                      </div>
-                      <div
-                        className={`max-w-[270px] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                          msg.role === "assistant" ? "rounded-tl-sm" : "rounded-tr-sm"
-                        }`}
-                        style={{
-                          background: msg.role === "assistant" ? "rgba(255,255,255,0.06)" : "#8A2BE2",
-                          color: "white",
-                        }}
-                      >
-                        {msg.role === "assistant" ? (
-                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0 [&_strong]:text-[#00FF41]">
-                            <ReactMarkdown>{msg.content}</ReactMarkdown>
-                          </div>
-                        ) : (
-                          msg.content
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              ))}
 
-                  {/* Quick Action Chips */}
-                  {showChips && !isLoading && (
-                    <div className="flex flex-wrap gap-2 ml-10">
-                      {QUICK_CHIPS.map((chip) => (
-                        <motion.button
-                          key={chip.label}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={() => handleChipClick(chip.message)}
-                          className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
-                          style={{
-                            background: "rgba(138,43,226,0.15)",
-                            border: "1px solid rgba(138,43,226,0.3)",
-                            color: "#c084fc",
-                          }}
-                        >
-                          {chip.label}
-                        </motion.button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* High-Value CTA */}
-                  {showCTA && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="mx-10"
+              {/* Quick Action Chips */}
+              {showChips && !isLoading && (
+                <div className="flex flex-wrap gap-2 ml-10">
+                  {QUICK_CHIPS.map((chip) => (
+                    <motion.button
+                      key={chip.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => handleChipClick(chip.message)}
+                      className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                      style={{
+                        background: "rgba(138,43,226,0.15)",
+                        border: "1px solid rgba(138,43,226,0.3)",
+                        color: "#c084fc",
+                      }}
                     >
-                      <a
-                        href="/contact"
-                        className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 group"
-                        style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
-                      >
-                        Book Priority Strategy Session
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </a>
-                    </motion.div>
-                  )}
-
-                  {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(138,43,226,0.2)" }}>
-                        <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
-                      </div>
-                      <div className="rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: "rgba(255,255,255,0.06)" }}>
-                        <div className="flex gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:0ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:150ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:300ms]" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
+                      {chip.label}
+                    </motion.button>
+                  ))}
+                </div>
               )}
+
+              {/* High-Value CTA */}
+              {showCTA && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mx-10"
+                >
+                  <a
+                    href="/contact"
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 group"
+                    style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
+                  >
+                    Book Priority Strategy Session
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </a>
+                </motion.div>
+              )}
+
+              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(138,43,226,0.2)" }}>
+                    <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
+                  </div>
+                  <div className="rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="flex gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            {visitorContext && (
-              <div className="p-3 border-t" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(255,255,255,0.02)" }}>
-                <div className="flex gap-2">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="Describe your operational challenge..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                    disabled={isLoading}
-                    className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 disabled:opacity-50"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(138,43,226,0.2)" }}
-                  />
-                  <button
-                    onClick={() => sendMessage()}
-                    disabled={!input.trim() || isLoading}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    style={{ background: "#8A2BE2" }}
-                    aria-label="Send message"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-[10px] text-center mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
-                  Powered by Phaos AI • Six Sigma Certified
-                </p>
+            {/* Input Area - always visible */}
+            <div className="p-3 border-t" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(255,255,255,0.02)" }}>
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Ask me anything about operational efficiency..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                  disabled={isLoading}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 disabled:opacity-50"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(138,43,226,0.2)" }}
+                />
+                <button
+                  onClick={() => sendMessage()}
+                  disabled={!input.trim() || isLoading}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  style={{ background: "#8A2BE2" }}
+                  aria-label="Send message"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
               </div>
-            )}
+              <p className="text-[10px] text-center mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Powered by Phaos AI • Six Sigma Certified
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
