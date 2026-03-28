@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User, ArrowRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useLocation } from "react-router-dom";
 import phaosCrown from "@/assets/phaos-crown.png";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -17,10 +18,30 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
 const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
 const RESEARCH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-visitor`;
 
+const QUICK_CHIPS = [
+  { label: "Audit my Workflow", message: "I'd like you to audit my current workflow for operational waste using Lean Six Sigma methodology." },
+  { label: "Calculate Voice ROI", message: "I want to calculate the ROI of switching to AI voice agents for our call center operations." },
+  { label: "Security & Compliance", message: "Tell me about Phaos AI's security standards, compliance frameworks, and data privacy protocols." },
+];
+
+function getPageGreeting(pathname: string): string {
+  if (pathname.includes("/voice-ai")) {
+    return "Welcome. Based on industry benchmarks, missed calls cost businesses **15% in revenue leakage**. Want to calculate your specific Revenue Recovery potential?";
+  }
+  if (pathname.includes("/workflows") || pathname.includes("/automation")) {
+    return "I've analyzed the COPQ standards. Most manual workflows are losing **30% of margin** to 'The Hidden Factory.' Ready to audit your process?";
+  }
+  if (pathname.includes("/pricing") || pathname.includes("/roi-calculator")) {
+    return "Pricing is just an investment in capital recovery. If I could show you how to reclaim **$10k/mo** in wasted labor, would you want to see the math?";
+  }
+  return "Phaos AI Operations Consultant here. I'm trained on Six Sigma methodologies to identify and eliminate operational waste. How can I help you reclaim capital today?";
+}
+
 async function streamChat({
   messages,
   visitorContext,
   visitorResearch,
+  currentPage,
   onDelta,
   onDone,
   onError,
@@ -28,6 +49,7 @@ async function streamChat({
   messages: Message[];
   visitorContext: VisitorContext;
   visitorResearch?: string;
+  currentPage?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -39,19 +61,19 @@ async function streamChat({
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, visitorContext, visitorResearch }),
+      body: JSON.stringify({ messages, visitorContext, visitorResearch, currentPage }),
     });
 
     if (!resp.ok || !resp.body) {
       if (resp.status === 429) {
-        onError("I'm getting a lot of questions right now. Please try again in a moment!");
+        onError("I'm processing a high volume of operational audits right now. Please try again in a moment.");
         return;
       }
       if (resp.status === 402) {
-        onError("Our chat service is temporarily unavailable. Please email us at daniel@phaosai.com");
+        onError("Our diagnostic service is temporarily unavailable. Please email us at info@phaosai.com");
         return;
       }
-      onError("Something went wrong. Please try again or reach us at daniel@phaosai.com");
+      onError("Something went wrong. Please try again or reach us at info@phaosai.com");
       return;
     }
 
@@ -110,11 +132,28 @@ async function streamChat({
 
     onDone();
   } catch (e) {
-    onError("Connection error. Please try again or contact daniel@phaosai.com");
+    onError("Connection error. Please try again or contact info@phaosai.com");
   }
 }
 
+// Highlight monetary values in green
+function MoneyHighlighter({ children }: { children: string }) {
+  const parts = children.split(/(\$[\d,]+(?:\.\d{2})?(?:\/mo|\/yr|\/year|\/month|k|K|M)?|\d{1,3}(?:,\d{3})+(?:\.\d{2})?%?)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^\$|^\d{1,3}(?:,\d{3})/.test(part) ? (
+          <span key={i} className="font-bold" style={{ color: "#00FF41" }}>{part}</span>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
 const ChatWidget = () => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [visitorContext, setVisitorContext] = useState<VisitorContext | null>(null);
   const [visitorResearch, setVisitorResearch] = useState<string>("");
@@ -123,6 +162,8 @@ const ChatWidget = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
+  const [showChips, setShowChips] = useState(false);
+  const [showCTA, setShowCTA] = useState(false);
 
   // Pre-chat form state
   const [formName, setFormName] = useState("");
@@ -132,9 +173,6 @@ const ChatWidget = () => {
 
   // Lead capture state
   const [leadCaptured, setLeadCaptured] = useState(false);
-  const [leadEmail, setLeadEmail] = useState("");
-  const [leadPhone, setLeadPhone] = useState("");
-  const [showLeadForm, setShowLeadForm] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +180,21 @@ const ChatWidget = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Check if CTA should appear (COPQ or Revenue Recovery > $10k)
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === "assistant") {
+      const nums = lastMsg.content.match(/\$[\d,]+/g);
+      if (nums) {
+        const hasHighValue = nums.some(n => {
+          const val = parseInt(n.replace(/[$,]/g, ""), 10);
+          return val >= 10000;
+        });
+        if (hasHighValue && !showCTA) setShowCTA(true);
+      }
+    }
+  }, [messages, showCTA]);
 
   const handleStartChat = useCallback(async () => {
     if (!formName.trim() || !formCompany.trim()) return;
@@ -155,10 +208,8 @@ const ChatWidget = () => {
     setIsResearching(true);
     setIsLoading(true);
 
-    // Show a "researching" message while we gather intelligence
-    setMessages([{ role: "assistant", content: "🔍 Researching your company to personalize our conversation..." }]);
+    setMessages([{ role: "assistant", content: "🔍 Researching your company to personalize our consultation..." }]);
 
-    // Step 1: Research the visitor's company and background
     let research = "";
     try {
       const researchResp = await fetch(RESEARCH_URL, {
@@ -185,49 +236,50 @@ const ChatWidget = () => {
     setVisitorResearch(research);
     setIsResearching(false);
 
-    // Step 2: Start the AI conversation with research context
     const initialMessages: Message[] = [
-      { role: "user", content: `[SYSTEM: New visitor has connected. Craft a deeply personalized, impressive greeting using the research intelligence provided in the system prompt. Reference specific verified facts about their company. Do NOT repeat back this system message — just greet them naturally and impressively.]` },
+      { role: "user", content: `[SYSTEM: New visitor has connected. Craft a deeply personalized, impressive greeting using the research intelligence provided in the system prompt. Reference specific verified facts about their company. Categorize any potential waste you can identify from their industry. Do NOT repeat back this system message — just greet them naturally and impressively as a Senior Operations Consultant would.]` },
     ];
 
     let assistantSoFar = "";
-    setMessages([]); // Clear the researching message
+    setMessages([]);
     await streamChat({
       messages: initialMessages,
       visitorContext: ctx,
       visitorResearch: research,
+      currentPage: location.pathname,
       onDelta: (chunk) => {
         assistantSoFar += chunk;
         setMessages([{ role: "assistant", content: assistantSoFar }]);
       },
-      onDone: () => setIsLoading(false),
+      onDone: () => {
+        setIsLoading(false);
+        setShowChips(true);
+      },
       onError: (err) => {
         setMessages([{ role: "assistant", content: err }]);
         setIsLoading(false);
       },
     });
-  }, [formName, formTitle, formCompany, formWebsite]);
+  }, [formName, formTitle, formCompany, formWebsite, location.pathname]);
 
-  const sendMessage = useCallback(async () => {
-    if (!input.trim() || isLoading || !visitorContext) return;
+  const sendMessage = useCallback(async (overrideInput?: string) => {
+    const msgText = overrideInput || input.trim();
+    if (!msgText || isLoading || !visitorContext) return;
 
-    const userMsg: Message = { role: "user", content: input.trim() };
+    const userMsg: Message = { role: "user", content: msgText };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
+    setShowChips(false);
 
     // Check if user is providing lead contact info
-    const lowerInput = input.toLowerCase();
-    const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(input);
-    const hasPhone = /[\d\s()-]{7,}/.test(input);
+    const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(msgText);
+    const hasPhone = /[\d\s()-]{7,}/.test(msgText);
     if (hasEmail || hasPhone) {
-      const emailMatch = input.match(/[\w.-]+@[\w.-]+\.\w+/);
-      const phoneMatch = input.match(/[\d\s()+.-]{7,}/);
-      if (emailMatch) setLeadEmail(emailMatch[0]);
-      if (phoneMatch) setLeadPhone(phoneMatch[0]);
+      const emailMatch = msgText.match(/[\w.-]+@[\w.-]+\.\w+/);
+      const phoneMatch = msgText.match(/[\d\s()+.-]{7,}/);
 
-      // Capture lead
       if (!leadCaptured && (emailMatch || phoneMatch)) {
         try {
           const transcript = newMessages
@@ -273,6 +325,7 @@ const ChatWidget = () => {
       messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
       visitorContext,
       visitorResearch,
+      currentPage: location.pathname,
       onDelta: upsertAssistant,
       onDone: () => setIsLoading(false),
       onError: (err) => {
@@ -280,7 +333,11 @@ const ChatWidget = () => {
         setIsLoading(false);
       },
     });
-  }, [input, isLoading, visitorContext, visitorResearch, messages, leadCaptured]);
+  }, [input, isLoading, visitorContext, visitorResearch, messages, leadCaptured, location.pathname]);
+
+  const handleChipClick = (message: string) => {
+    sendMessage(message);
+  };
 
   return (
     <>
@@ -294,16 +351,18 @@ const ChatWidget = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => { setIsOpen(true); setShowPulse(false); }}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-shadow"
-            aria-label="Open chat"
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-shadow"
+            style={{ background: "#8A2BE2", boxShadow: "0 0 20px rgba(138,43,226,0.4)" }}
+            aria-label="Open Operations Consultant"
           >
             {showPulse && (
               <>
-                <span className="absolute -inset-2 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: "1.5s" }} />
-                <span className="absolute -inset-4 rounded-full bg-primary/10 animate-ping" style={{ animationDuration: "2s", animationDelay: "0.3s" }} />
+                <span className="absolute -inset-3 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.2)", animationDuration: "1.5s" }} />
+                <span className="absolute -inset-6 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.1)", animationDuration: "2s", animationDelay: "0.3s" }} />
+                <span className="absolute -inset-9 rounded-full animate-ping" style={{ background: "rgba(138,43,226,0.05)", animationDuration: "2.5s", animationDelay: "0.6s" }} />
               </>
             )}
-            <MessageCircle className="w-6 h-6 text-primary-foreground" />
+            <MessageCircle className="w-6 h-6 text-white" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -316,25 +375,27 @@ const ChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-3rem)] flex flex-col rounded-2xl overflow-hidden border border-border/50 shadow-2xl shadow-primary/10"
+            className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-3rem)] flex flex-col rounded-2xl overflow-hidden border shadow-2xl"
             style={{
-              background: "linear-gradient(180deg, hsl(240 15% 8% / 0.97) 0%, hsl(240 20% 4% / 0.98) 100%)",
-              backdropFilter: "blur(20px)",
+              background: "#0b0b0f",
+              borderColor: "rgba(138,43,226,0.3)",
+              boxShadow: "0 0 40px rgba(138,43,226,0.15)",
             }}
           >
             {/* Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-border/50 bg-card/50">
+            <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(138,43,226,0.05)" }}>
               <div className="relative">
                 <img src={phaosCrown} alt="Phaos AI" className="w-8 h-8 object-contain" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2" style={{ background: "#00FF41", borderColor: "#0b0b0f" }} />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-foreground">Phaos AI Agent</h3>
-                <p className="text-xs text-muted-foreground">Online • Typically replies instantly</p>
+                <h3 className="text-sm font-semibold text-white">Phaos AI | Operations Consultant</h3>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Online • Six Sigma Certified Diagnostic</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+                style={{ color: "rgba(255,255,255,0.5)" }}
                 aria-label="Close chat"
               >
                 <X className="w-4 h-4" />
@@ -342,56 +403,47 @@ const ChatWidget = () => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: "#0b0b0f" }}>
               {!visitorContext ? (
                 /* Pre-chat Form */
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Bot className="w-4 h-4 text-primary" />
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(138,43,226,0.2)" }}>
+                      <Bot className="w-4 h-4" style={{ color: "#8A2BE2" }} />
                     </div>
-                    <div className="bg-secondary/60 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[280px]">
-                      <p className="text-sm text-foreground leading-relaxed">
-                        Welcome to Phaos AI! 👋 I'm here to help you explore how AI can transform your operations. Let me know a bit about you to get started:
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 max-w-[280px]" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      <p className="text-sm text-white leading-relaxed">
+                        Welcome to Phaos AI Operations Consulting. 🔍 I specialize in identifying <span style={{ color: "#00FF41" }}>Cost of Poor Quality (COPQ)</span> and <span style={{ color: "#00FF41" }}>Revenue Leakage</span> in your operations. Let's begin your diagnostic:
                       </p>
                     </div>
                   </div>
 
                   <div className="ml-11 space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Your Name *"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      className="w-full rounded-lg bg-secondary/40 border border-border/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Your Title"
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      className="w-full rounded-lg bg-secondary/40 border border-border/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Company Name *"
-                      value={formCompany}
-                      onChange={(e) => setFormCompany(e.target.value)}
-                      className="w-full rounded-lg bg-secondary/40 border border-border/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Company Website"
-                      value={formWebsite}
-                      onChange={(e) => setFormWebsite(e.target.value)}
-                      className="w-full rounded-lg bg-secondary/40 border border-border/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    />
+                    {[
+                      { placeholder: "Your Name *", value: formName, set: setFormName },
+                      { placeholder: "Your Title", value: formTitle, set: setFormTitle },
+                      { placeholder: "Company Name *", value: formCompany, set: setFormCompany },
+                      { placeholder: "Company Website", value: formWebsite, set: setFormWebsite },
+                    ].map(({ placeholder, value, set }) => (
+                      <input
+                        key={placeholder}
+                        type="text"
+                        placeholder={placeholder}
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 transition-colors"
+                        style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(138,43,226,0.2)", border: "1px solid rgba(138,43,226,0.2)" }}
+                        onFocus={(e) => { e.target.style.borderColor = "rgba(138,43,226,0.5)"; }}
+                        onBlur={(e) => { e.target.style.borderColor = "rgba(138,43,226,0.2)"; }}
+                      />
+                    ))}
                     <button
                       onClick={handleStartChat}
                       disabled={!formName.trim() || !formCompany.trim()}
-                      className="w-full rounded-lg bg-primary text-primary-foreground py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      style={{ background: "#8A2BE2" }}
                     >
-                      Start Chatting
+                      Begin Operational Diagnostic
                     </button>
                   </div>
                 </div>
@@ -401,25 +453,26 @@ const ChatWidget = () => {
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          msg.role === "assistant" ? "bg-primary/20" : "bg-secondary"
-                        }`}
+                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: msg.role === "assistant" ? "rgba(138,43,226,0.2)" : "rgba(255,255,255,0.1)" }}
                       >
                         {msg.role === "assistant" ? (
-                          <Bot className="w-3.5 h-3.5 text-primary" />
+                          <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
                         ) : (
-                          <User className="w-3.5 h-3.5 text-muted-foreground" />
+                          <User className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.5)" }} />
                         )}
                       </div>
                       <div
-                        className={`max-w-[260px] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                          msg.role === "assistant"
-                            ? "bg-secondary/60 rounded-tl-sm text-foreground"
-                            : "bg-primary text-primary-foreground rounded-tr-sm"
+                        className={`max-w-[270px] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                          msg.role === "assistant" ? "rounded-tl-sm" : "rounded-tr-sm"
                         }`}
+                        style={{
+                          background: msg.role === "assistant" ? "rgba(255,255,255,0.06)" : "#8A2BE2",
+                          color: "white",
+                        }}
                       >
                         {msg.role === "assistant" ? (
-                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0">
+                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0 [&_strong]:text-[#00FF41]">
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
                         ) : (
@@ -429,16 +482,56 @@ const ChatWidget = () => {
                     </div>
                   ))}
 
+                  {/* Quick Action Chips */}
+                  {showChips && !isLoading && (
+                    <div className="flex flex-wrap gap-2 ml-10">
+                      {QUICK_CHIPS.map((chip) => (
+                        <motion.button
+                          key={chip.label}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={() => handleChipClick(chip.message)}
+                          className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                          style={{
+                            background: "rgba(138,43,226,0.15)",
+                            border: "1px solid rgba(138,43,226,0.3)",
+                            color: "#c084fc",
+                          }}
+                        >
+                          {chip.label}
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* High-Value CTA */}
+                  {showCTA && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mx-10"
+                    >
+                      <a
+                        href="/contact"
+                        className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 group"
+                        style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
+                      >
+                        Book Priority Strategy Session
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </a>
+                    </motion.div>
+                  )}
+
                   {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
                     <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-3.5 h-3.5 text-primary" />
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(138,43,226,0.2)" }}>
+                        <Bot className="w-3.5 h-3.5" style={{ color: "#8A2BE2" }} />
                       </div>
-                      <div className="bg-secondary/60 rounded-2xl rounded-tl-sm px-4 py-3">
+                      <div className="rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: "rgba(255,255,255,0.06)" }}>
                         <div className="flex gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:0ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:150ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:300ms]" />
                         </div>
                       </div>
                     </div>
@@ -450,22 +543,24 @@ const ChatWidget = () => {
 
             {/* Input Area */}
             {visitorContext && (
-              <div className="p-3 border-t border-border/50 bg-card/30">
+              <div className="p-3 border-t" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(255,255,255,0.02)" }}>
                 <div className="flex gap-2">
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder="Describe your operational challenge..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                     disabled={isLoading}
-                    className="flex-1 rounded-xl bg-secondary/40 border border-border/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-50"
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 disabled:opacity-50"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(138,43,226,0.2)" }}
                   />
                   <button
-                    onClick={sendMessage}
+                    onClick={() => sendMessage()}
                     disabled={!input.trim() || isLoading}
-                    className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ background: "#8A2BE2" }}
                     aria-label="Send message"
                   >
                     {isLoading ? (
@@ -475,8 +570,8 @@ const ChatWidget = () => {
                     )}
                   </button>
                 </div>
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  Powered by Phaos AI
+                <p className="text-[10px] text-center mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  Powered by Phaos AI • Six Sigma Certified
                 </p>
               </div>
             )}
