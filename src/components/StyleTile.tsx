@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   Zap,
@@ -16,8 +17,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import ROICalculator from "@/components/ROICalculator";
+import KineticText from "@/components/KineticText";
+import MagneticButton from "@/components/MagneticButton";
 
 import { organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema } from "@/lib/seo-schemas";
+
+const HeroLightCore = lazy(() => import("@/components/HeroLightCore"));
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -49,25 +54,33 @@ const StyleTile = () => {
           aria-label="Phaos AI hero background"
         />
         <div className="absolute inset-0 bg-background/85" />
+
+        {/* 3D Light Core — lazy loaded */}
+        <Suspense fallback={null}>
+          <HeroLightCore />
+        </Suspense>
+
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-light/6 blur-[150px] pointer-events-none" aria-hidden="true" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full pt-24">
           <div className="max-w-2xl">
-            <motion.h1
+            <motion.div
               custom={1}
               initial="hidden"
               animate="visible"
               variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6"
               style={{ willChange: "transform, opacity" }}
             >
-              <span className="text-gradient-purple">AI-Powered</span> Voice &
-              <br />
-              Agentic Workflow
-              <br />
-              Automation
-            </motion.h1>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+                <KineticText className="text-gradient-purple shimmer-light">AI-Powered</KineticText>{" "}
+                <KineticText delay={0.3}>Voice &</KineticText>
+                <br />
+                <KineticText delay={0.5}>Agentic Workflow</KineticText>
+                <br />
+                <KineticText delay={0.8}>Automation</KineticText>
+              </h1>
+            </motion.div>
 
             <motion.p
               custom={2}
@@ -81,11 +94,13 @@ const StyleTile = () => {
             </motion.p>
 
             <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center gap-4" style={{ willChange: "transform, opacity" }}>
-              <Link to="/contact" className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base flex items-center gap-2 group">
-                Schedule a Call
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/about" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base">
+              <MagneticButton>
+                <Link to="/contact" className="bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base flex items-center gap-2 group" data-interactive>
+                  Schedule a Call
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </MagneticButton>
+              <Link to="/about" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base" data-interactive>
                 Learn More
               </Link>
             </motion.div>
@@ -103,15 +118,17 @@ const StyleTile = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Seeking <span className="text-gradient-purple">Strategic Partners</span>
+              Seeking <span className="text-gradient-purple shimmer-light">Strategic Partners</span>
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
               Phaos AI is actively seeking strategic partners and investors who share our vision of transforming enterprise operations through AI. We're building the infrastructure that will power the next generation of customer engagement — and we're looking for the right partners to scale with us.
             </p>
-            <Link to="/investors" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group">
-              Get in Touch
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <MagneticButton>
+              <Link to="/investors" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group" data-interactive>
+                Get in Touch
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </MagneticButton>
           </motion.div>
         </div>
       </section>
@@ -127,7 +144,7 @@ const StyleTile = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Voice AI Meets <span className="text-gradient-purple">Agentic Automation</span>
+              Voice AI Meets <span className="text-gradient-purple shimmer-light">Agentic Automation</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Two powerful platforms. One seamless solution.
@@ -237,7 +254,7 @@ const StyleTile = () => {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Free <span className="text-gradient-purple">System Audit Tool</span>
+              Free <span className="text-gradient-purple shimmer-light">System Audit Tool</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               See how much you could save with AI-powered voice agents and workflow automation.
