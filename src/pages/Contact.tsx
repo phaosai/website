@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
