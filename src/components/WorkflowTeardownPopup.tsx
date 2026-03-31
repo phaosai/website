@@ -113,7 +113,7 @@ const WorkflowTeardownPopup = () => {
               <img
                 src={phaosCrown}
                 alt="Phaos AI"
-                className="w-20 h-20 mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
+                className="w-36 h-36 mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
               />
               <div className="relative z-10">
                 <span
