@@ -134,7 +134,7 @@ const StyleTile = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Voice AI Meets <span className="text-gradient-purple shimmer-light">Agentic Automation</span>
+              Voice AI Meets <span className="text-gradient-purple">Agentic Automation</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Two powerful platforms. One seamless solution.
