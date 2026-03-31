@@ -43,6 +43,11 @@
 
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com; frame-src 'none';" />
+
+    <!-- Anti-flicker theme script -->
+    <script>
+      (function(){var t=localStorage.getItem('phaos-theme');if(t==='light')document.documentElement.classList.add('light');})();
+    </script>
   </head>
 
   <body>
