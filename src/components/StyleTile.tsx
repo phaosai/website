@@ -16,6 +16,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import ROICalculator from "@/components/ROICalculator";
+import WorkflowTeardownPopup from "@/components/WorkflowTeardownPopup";
 import { organizationSchema, softwareApplicationSchema, homeFaqSchema } from "@/lib/seo-schemas";
 
 const fadeUp = {
@@ -241,6 +242,7 @@ const StyleTile = () => {
       </section>
 
       <Footer />
+      <WorkflowTeardownPopup />
     </div>
   );
 };
