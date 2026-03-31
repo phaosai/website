@@ -4,12 +4,11 @@ import { MessageCircle, X, Send, Loader2, Bot, User, ArrowRight } from "lucide-r
 import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
 import phaosCrown from "@/assets/phaos-crown.png";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/phaos-chat`;
-const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
-
 const SUGGESTED_PROMPTS = [
   "How can AI handle my inbound calls 24/7?",
   "What ROI can I expect from Voice AI?",
@@ -177,18 +176,18 @@ const ChatWidget = () => {
         const transcript = newMessages
           .map((m) => `${m.role === "user" ? "Visitor" : "Phaos AI"}: ${m.content}`)
           .join("\n");
-        await fetch(LEAD_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "lead-notification",
+            recipientEmail: "daniel@phaosai.com",
+            idempotencyKey: `chat-lead-${Date.now()}`,
+            templateData: {
+              source: "Chat Widget",
+              email: emailMatch?.[0] || "",
+              phone: phoneMatch?.[0] || "",
+              message: transcript,
+            },
           },
-          body: JSON.stringify({
-            name: "Chat Visitor",
-            email: emailMatch?.[0] || "",
-            phone: phoneMatch?.[0] || "",
-            transcript,
-          }),
         });
         setLeadCaptured(true);
       } catch (e) {
