@@ -14,9 +14,11 @@ const ROICalculatorPage = () => {
         jsonLd={roiCalculatorSchema}
       />
       <Navigation />
-      <div className="pt-24">
-        <ROICalculator />
-      </div>
+      <main id="main-content">
+        <div className="pt-24">
+          <ROICalculator />
+        </div>
+      </main>
       <Footer />
     </div>
   );

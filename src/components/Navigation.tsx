@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import PhaosLogo from "@/components/PhaosLogo";
@@ -7,6 +7,49 @@ import PhaosLogo from "@/components/PhaosLogo";
 const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap for mobile menu
+  useEffect(() => {
+    if (!mobileOpen || !menuRef.current) return;
+
+    const focusableEls = menuRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled])'
+    );
+    if (focusableEls.length === 0) return;
+
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    };
+
+    firstEl.focus();
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const links = [
     { label: "Home", to: "/" },
@@ -30,17 +73,21 @@ const Navigation = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-10 text-sm text-muted-foreground">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              to={link.to}
-              className={`hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm ${
-                location.pathname === link.to ? "text-foreground" : ""
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive = location.pathname === link.to;
+            return (
+              <Link
+                key={link.label}
+                to={link.to}
+                aria-current={isActive ? "page" : undefined}
+                className={`hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm ${
+                  isActive ? "text-foreground" : ""
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-3">
@@ -56,6 +103,7 @@ const Navigation = () => {
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileOpen}
+            aria-controls="mobile-nav-menu"
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -64,20 +112,31 @@ const Navigation = () => {
 
       {mobileOpen && (
         <motion.div
+          ref={menuRef}
+          id="mobile-nav-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation menu"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="md:hidden glass-strong border-t border-border/50 px-6 py-4 space-y-4"
         >
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              to={link.to}
-              onClick={() => setMobileOpen(false)}
-              className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive = location.pathname === link.to;
+            return (
+              <Link
+                key={link.label}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                aria-current={isActive ? "page" : undefined}
+                className={`block text-sm hover:text-foreground transition-colors ${
+                  isActive ? "text-foreground font-medium" : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             to="/contact"
             onClick={() => setMobileOpen(false)}

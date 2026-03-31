@@ -411,6 +411,7 @@ const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
             value={bottleneck}
             onChange={(e) => setBottleneck(e.target.value)}
             rows={2}
+            maxLength={1000}
             placeholder="e.g., 'We spend 3 hours/day manually entering service tickets into ConnectWise...'"
             className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
