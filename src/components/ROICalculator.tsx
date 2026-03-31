@@ -395,6 +395,7 @@ const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
             value={email}
             onChange={(e) => handleEmailChange(e.target.value)}
             placeholder="you@company.com"
+            maxLength={255}
             className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             required
           />
