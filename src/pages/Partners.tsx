@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { toast } from "sonner";
 import FormLayout from "@/components/FormLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 const Partners = () => {
   const [inquiry, setInquiry] = useState("");
@@ -8,16 +9,31 @@ const Partners = () => {
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (honeypot) return;
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      const id = crypto.randomUUID();
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "lead-notification",
+          recipientEmail: "daniel@phaosai.com",
+          idempotencyKey: `partner-${id}`,
+          templateData: {
+            source: "Partnership Inquiry",
+            message: `Inquiry Type: ${inquiry}\n\nMessage: ${message}`,
+          },
+        },
+      });
       toast.success("Partnership inquiry submitted! Our team will follow up shortly.");
       setInquiry("");
       setMessage("");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
