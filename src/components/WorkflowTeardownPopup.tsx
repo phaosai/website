@@ -196,7 +196,6 @@ const WorkflowTeardownPopup = () => {
                           style={{
                             background: "rgba(255,255,255,0.06)",
                             border: emailError ? "1px solid #ef4444" : "1px solid rgba(138,43,226,0.2)",
-                            focusRingColor: "#8A2BE2",
                           }}
                           onKeyDown={(e) => e.key === "Enter" && handleStep1()}
                         />
