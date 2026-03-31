@@ -39,13 +39,6 @@ const StyleTile = () => {
       />
       <Navigation />
       <main id="main-content">
-      <SEOHead
-        title="Phaos AI — AI-Powered Voice & Workflow Automation"
-        description="Deploy intelligent AI agents to manage inbound calls and automate complex workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
-        canonical="/"
-        jsonLd={[organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema]}
-      />
-      <Navigation />
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
