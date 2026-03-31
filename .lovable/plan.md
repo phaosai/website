@@ -1,31 +1,22 @@
 
 
-## Problem
+## Changes
 
-The preview is completely blank due to a runtime crash: `Cannot read properties of null (reading 'useRef')` originating in `TooltipProvider`. This is caused by **duplicate React instances** — the newly added `recharts` package is loading a separate copy of React, which breaks hooks.
+### 1. Remove the "Annual Cost Comparison" bar chart section from ROICalculator
 
-## Fix
-
-### 1. Force Vite to deduplicate recharts' React copy
-
-The `vite.config.ts` already has `dedupe` for `react` and `react-dom`, but `recharts` may need an explicit optimization entry. Add `recharts` to the Vite `optimizeDeps.include` list to force pre-bundling with the project's single React instance.
-
-**File:** `vite.config.ts`
-- Add `optimizeDeps: { include: ['recharts'] }` to ensure Vite pre-bundles recharts with the correct React
-
-### 2. Wrap ROICalculator's Tooltip usage in its own TooltipProvider
-
-As a defensive measure, wrap the `InfoTip` component's `Tooltip` usage in a local `TooltipProvider` import, ensuring the Radix tooltip context is available even if the global provider fails to initialize due to render order.
+The chart section (lines 558-575 in `src/components/ROICalculator.tsx`) that renders `ROIChart` will be removed entirely. The `ROIChart` component definition (lines 127-178) and the `recharts` imports on line 9 will also be removed. This removes the bar chart from both the homepage (embedded) and the `/roi-calculator` page.
 
 **File:** `src/components/ROICalculator.tsx`
-- Import `TooltipProvider` from `@/components/ui/tooltip`
-- Wrap each `Tooltip` in a `TooltipProvider` inside the `InfoTip` component
+- Remove `recharts` imports (line 9)
+- Remove `ROIChart` component (lines 127-178)
+- Remove chart rendering block (lines 558-575)
 
-### 3. Clear the Vite dependency cache
+### 2. Fix InfoTip tooltips for mobile — replace Radix Tooltip with Popover
 
-The stale pre-bundled dependencies may persist. The fix in `vite.config.ts` will trigger a re-optimization on next load.
+The Radix `Tooltip` component is hover-based and doesn't work reliably on touch devices — it shows momentarily then disappears. The fix is to replace `InfoTip` with a `Popover` (click-to-toggle) which stays open until tapped again. This works correctly on both mobile (tap to open/close) and desktop (click to open/close).
 
-## Impact
-- No visual or functional changes — this purely fixes the crash
-- The site will render again with all 5 phases intact
+**File:** `src/components/ROICalculator.tsx`
+- Replace `Tooltip`/`TooltipContent`/`TooltipTrigger`/`TooltipProvider` imports with `Popover`/`PopoverContent`/`PopoverTrigger` from `@/components/ui/popover`
+- Rewrite `InfoTip` to use `Popover` instead of `Tooltip`
+- Style the popover content to match the existing dark tooltip aesthetic
 
