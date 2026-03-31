@@ -7,6 +7,7 @@ import phaosCrown from "@/assets/phaos-crown.png";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [bottleneck, setBottleneck] = useState("");
@@ -16,10 +17,9 @@ const WorkflowTeardownPopup = () => {
   const openedAt = useRef(0);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem("phaos-popup-dismissed");
-    if (dismissed) return;
     const timer = setTimeout(() => {
       setIsOpen(true);
+      setMinimized(false);
       openedAt.current = Date.now();
     }, 5000);
     return () => clearTimeout(timer);
@@ -27,7 +27,13 @@ const WorkflowTeardownPopup = () => {
 
   const dismiss = () => {
     setIsOpen(false);
-    sessionStorage.setItem("phaos-popup-dismissed", "1");
+    setMinimized(true);
+  };
+
+  const reopen = () => {
+    setIsOpen(true);
+    setMinimized(false);
+    openedAt.current = Date.now();
   };
 
   const validateEmail = (val: string) => {
@@ -271,6 +277,26 @@ const WorkflowTeardownPopup = () => {
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Minimized reopen button - right side, vertically centered */}
+      {minimized && !isOpen && (
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={reopen}
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-[99] flex items-center gap-2 px-3 py-3 rounded-l-xl shadow-lg cursor-pointer"
+          style={{
+            background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
+            boxShadow: "0 0 25px rgba(138,43,226,0.4)",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+          }}
+          aria-label="Open Workflow Teardown"
+        >
+          <Zap className="w-4 h-4 text-white rotate-90" />
+          <span className="text-[11px] font-bold text-white tracking-wider uppercase">Free AI Teardown</span>
+        </motion.button>
       )}
     </AnimatePresence>
   );
