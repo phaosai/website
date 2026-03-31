@@ -7,11 +7,6 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import MagneticButton from "@/components/MagneticButton";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
-import SEOHead from "@/components/SEOHead";
-import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const [reason, setReason] = useState("");
