@@ -10,20 +10,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-/* ── Tooltip Helper ── */
+/* ── Info Popover (click-to-toggle, works on mobile + desktop) ── */
 const InfoTip = ({ text }: { text: string }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button className="ml-1.5 inline-flex" aria-label="More information">
-          <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[320px] text-xs leading-relaxed">
-        {text}
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <Popover>
+    <PopoverTrigger asChild>
+      <button className="ml-1.5 inline-flex" aria-label="More information">
+        <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent
+      side="top"
+      className="max-w-[320px] text-xs leading-relaxed bg-popover text-popover-foreground border-border"
+      sideOffset={6}
+    >
+      {text}
+    </PopoverContent>
+  </Popover>
 );
 
 /* ── Editable Number Input ── */
