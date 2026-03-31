@@ -50,6 +50,12 @@ const Contact = () => {
         canonical="/contact"
       />
       <Navigation />
+      <main id="main-content">
+        title="Contact Us | Phaos AI"
+        description="Get in touch with Phaos AI. Schedule a call, ask about our platform, or explore a partnership. We're here to help transform your operations."
+        canonical="/contact"
+      />
+      <Navigation />
 
       <section className="relative pt-32 pb-20 px-6 overflow-hidden" aria-label="Contact Form">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/6 blur-[180px] pointer-events-none" aria-hidden="true" />
