@@ -10,6 +10,7 @@ const Contact = () => {
   const [reason, setReason] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const mountedAt = useRef(Date.now());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
