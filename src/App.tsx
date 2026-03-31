@@ -62,6 +62,8 @@ const App = () => (
             </Routes>
           </Suspense>
           <ChatWidget />
+          <WorkflowTeardownPopup />
+        </BrowserRouter>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

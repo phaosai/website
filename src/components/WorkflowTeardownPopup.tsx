@@ -278,6 +278,26 @@ const WorkflowTeardownPopup = () => {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Minimized reopen button - right side, vertically centered */}
+      {minimized && !isOpen && (
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={reopen}
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-[99] flex items-center gap-2 px-3 py-3 rounded-l-xl shadow-lg cursor-pointer"
+          style={{
+            background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
+            boxShadow: "0 0 25px rgba(138,43,226,0.4)",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+          }}
+          aria-label="Open Workflow Teardown"
+        >
+          <Zap className="w-4 h-4 text-white rotate-90" />
+          <span className="text-[11px] font-bold text-white tracking-wider uppercase">Free AI Teardown</span>
+        </motion.button>
+      )}
     </AnimatePresence>
   );
 };
