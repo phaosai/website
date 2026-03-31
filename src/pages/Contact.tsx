@@ -14,7 +14,7 @@ const Contact = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot || !reason.trim() || submitting) return;
+    if (honeypot || !reason.trim() || submitting || Date.now() - mountedAt.current < 3000) return;
 
     setSubmitting(true);
 

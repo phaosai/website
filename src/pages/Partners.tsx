@@ -12,7 +12,7 @@ const Partners = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot) return;
+    if (honeypot || Date.now() - mountedAt.current < 3000) return;
     setSubmitting(true);
     try {
       const id = crypto.randomUUID();
