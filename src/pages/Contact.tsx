@@ -4,8 +4,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-
-const LEAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const [reason, setReason] = useState("");
@@ -19,27 +18,19 @@ const Contact = () => {
     setSubmitting(true);
 
     try {
-      const response = await fetch(LEAD_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      const id = crypto.randomUUID();
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "lead-notification",
+          recipientEmail: "daniel@phaosai.com",
+          idempotencyKey: `contact-${id}`,
+          templateData: {
+            source: "Contact Form",
+            name: "Website Visitor",
+            message: reason.trim(),
+          },
         },
-        body: JSON.stringify({
-          name: "Website Contact Form",
-          title: "Contact Request",
-          company: "",
-          website: window.location.origin,
-          email: "",
-          phone: "",
-          transcript: `Contact page inquiry:\n${reason.trim()}`,
-        }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit contact request");
-      }
-
       toast.success("Message sent successfully. Our team will reach out shortly.");
       setReason("");
     } catch {

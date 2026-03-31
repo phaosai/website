@@ -25,6 +25,7 @@ const Blog = lazy(() => import("./pages/Blog.tsx"));
 const InvestorRelations = lazy(() => import("./pages/InvestorRelations.tsx"));
 const ComparePage = lazy(() => import("./pages/ComparePage.tsx"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/investor-relations" element={<InvestorRelations />} />
               <Route path="/compare/:competitor" element={<ComparePage />} />
               <Route path="/solutions/:industry" element={<SolutionsPage />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

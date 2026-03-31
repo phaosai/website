@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { toast } from "sonner";
 import FormLayout from "@/components/FormLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 const Investors = () => {
   const [investmentType, setInvestmentType] = useState("");
@@ -10,18 +11,33 @@ const Investors = () => {
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (honeypot) return;
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      const id = crypto.randomUUID();
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "lead-notification",
+          recipientEmail: "daniel@phaosai.com",
+          idempotencyKey: `investor-${id}`,
+          templateData: {
+            source: "Investor Inquiry",
+            message: `Investment Type: ${investmentType}\n\nAmount: ${amount}\n\nStructure: ${structure}\n\nMessage: ${message}`,
+          },
+        },
+      });
       toast.success("Investment inquiry submitted! Daniel will follow up personally.");
       setInvestmentType("");
       setAmount("");
       setStructure("");
       setMessage("");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
