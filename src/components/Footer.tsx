@@ -18,7 +18,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="py-16 px-6 border-t border-border/30">
+    <footer className="py-16 px-6 border-t border-border/30" aria-label="Site footer">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-1">
@@ -31,7 +31,7 @@ const Footer = () => {
             </p>
           </div>
 
-          <div>
+          <nav aria-label="Product links">
             <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Product</p>
             <ul className="space-y-3">
               {productLinks.map((link) => (
@@ -42,9 +42,9 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div>
+          <nav aria-label="Company links">
             <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Company</p>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
@@ -55,21 +55,21 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           <div>
             <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">Get in Touch</p>
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-primary" />
+                <Mail className="w-4 h-4 text-primary" aria-hidden="true" />
                 <a href="mailto:daniel@phaosai.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">daniel@phaosai.com</a>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-primary" />
+                <Phone className="w-4 h-4 text-primary" aria-hidden="true" />
                 <a href="tel:+16176782426" className="text-sm text-muted-foreground hover:text-foreground transition-colors">(617) 678-2426</a>
               </li>
               <li className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
+                <MapPin className="w-4 h-4 text-primary" aria-hidden="true" />
                 <span className="text-sm text-muted-foreground">Casselberry, FL USA</span>
               </li>
             </ul>
@@ -81,10 +81,10 @@ const Footer = () => {
             <p className="text-xs text-muted-foreground">© 2026 Phaos AI. All rights reserved.</p>
             <p className="text-xs text-muted-foreground/70 italic">Phaos — Greek for "light." Guided by faith, built with purpose.</p>
           </div>
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+          <nav aria-label="Legal links" className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>
