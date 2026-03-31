@@ -3,6 +3,7 @@ import { ArrowRight, Phone, Workflow, Plug } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import IntegrationSearch from "@/components/IntegrationSearch";
+import APIPlayground from "@/components/APIPlayground";
 import { categories, type Integration } from "@/data/integrations";
 
 const fadeUp = {
@@ -137,6 +138,23 @@ const Integrations = () => {
               </ul>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* API Playground */}
+      <section className="py-20 px-6 border-t border-border/30" aria-label="API Playground">
+        <div className="max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="text-gradient-purple">API</span> Playground
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              See how a single API call deploys an intelligent agent.
+            </p>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.1 }}>
+            <APIPlayground />
+          </motion.div>
         </div>
       </section>
 

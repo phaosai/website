@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import MagneticButton from "@/components/MagneticButton";
 import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
@@ -89,13 +90,16 @@ const Contact = () => {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={submitting || !reason}
-                    className="w-full bg-gradient-purple text-primary-foreground font-semibold py-3.5 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? "Sending..." : "Send Message"}
-                  </button>
+                  <MagneticButton className="w-full">
+                    <button
+                      type="submit"
+                      disabled={submitting || !reason}
+                      className="w-full bg-gradient-purple text-primary-foreground font-semibold py-3.5 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-interactive
+                    >
+                      {submitting ? "Sending..." : "Send Message"}
+                    </button>
+                  </MagneticButton>
                 </form>
               </motion.div>
 

@@ -54,7 +54,7 @@ const VoiceAI = () => {
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
               AI That Answers, <br />
-              <span className="text-gradient-purple">Qualifies & Resolves</span>
+              <span className="text-gradient-purple shimmer-light">Qualifies & Resolves</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Deploy intelligent voice agents that handle your inbound call volume 24/7 — qualifying leads, booking appointments, resolving inquiries, and updating your systems in real-time. No hold times. No scripts. Just natural conversations that drive results.
@@ -109,7 +109,7 @@ const VoiceAI = () => {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
               Schedule a call with our team and experience how Phaos AI handles real conversations.
             </p>
-            <Link to="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group">
+            <Link to="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group" data-interactive>
               Schedule a Call <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
