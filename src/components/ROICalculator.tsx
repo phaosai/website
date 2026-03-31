@@ -125,59 +125,6 @@ const PCEGauge = ({ pce }: { pce: number }) => {
   );
 };
 
-/* ── ROI Bar Chart ── */
-const ROIChart = ({ currentCost, withPhaos, savings }: { currentCost: number; withPhaos: number; savings: number }) => {
-  const data = [
-    { name: "Current Cost", value: currentCost },
-    { name: "With Phaos AI", value: withPhaos },
-    { name: "Net Savings", value: savings },
-  ];
-
-  const colors = ["#ef4444", "hsl(263 70% 58%)", "#00FF41"];
-
-  const formatTick = (v: number) => {
-    if (v >= 1000000) return `$${(v / 1000000).toFixed(1)}M`;
-    if (v >= 1000) return `$${(v / 1000).toFixed(0)}K`;
-    return `$${v}`;
-  };
-
-  return (
-    <div className="w-full h-[220px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(240 10% 16%)" />
-          <XAxis
-            dataKey="name"
-            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
-            axisLine={{ stroke: "hsl(240 10% 16%)" }}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
-            axisLine={{ stroke: "hsl(240 10% 16%)" }}
-            tickLine={false}
-            tickFormatter={formatTick}
-          />
-          <RechartsTooltip
-            contentStyle={{
-              background: "hsl(240 15% 8%)",
-              border: "1px solid hsl(240 10% 16%)",
-              borderRadius: "8px",
-              color: "hsl(0 0% 95%)",
-              fontSize: "13px",
-            }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
-          />
-          <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={600}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={colors[i]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
 
 /* ── Voice AI Section ── */
 const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v: number) => void }) => {
