@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import FormLayout from "@/components/FormLayout";
 import { supabase } from "@/integrations/supabase/client";
