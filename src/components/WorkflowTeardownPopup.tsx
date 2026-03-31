@@ -262,8 +262,8 @@ const WorkflowTeardownPopup = () => {
                     </motion.div>
                   )}
 
-                  <p className="text-[11px] text-center text-white/20 mt-5">
-                    No spam. No obligation. Just a clear AI solution map.
+                  <p className="text-[11px] text-center text-white/25 mt-5">
+                    Our architects manually audit every workflow. Please allow 3 business days for delivery.
                   </p>
                 </>
               )}
