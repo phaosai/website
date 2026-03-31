@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import PhaosLogo from "@/components/PhaosLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
