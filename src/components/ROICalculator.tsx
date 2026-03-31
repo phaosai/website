@@ -1,17 +1,20 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown } from "lucide-react";
+import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown, Mail } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip as RechartsTooltip } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /* ── Tooltip Helper ── */
 const InfoTip = ({ text }: { text: string }) => (
   <Tooltip>
     <TooltipTrigger asChild>
-      <button className="ml-1.5 inline-flex" aria-label="Info">
+      <button className="ml-1.5 inline-flex" aria-label="More information">
         <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
       </button>
     </TooltipTrigger>
@@ -22,8 +25,8 @@ const InfoTip = ({ text }: { text: string }) => (
 );
 
 /* ── Editable Number Input ── */
-const EditableValue = ({ value, onChange, prefix = "", suffix = "", fmt }: {
-  value: number; onChange: (v: number) => void; prefix?: string; suffix?: string; fmt: (v: number) => string;
+const EditableValue = ({ value, onChange, fmt }: {
+  value: number; onChange: (v: number) => void; fmt: (v: number) => string;
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState("");
@@ -59,6 +62,7 @@ const EditableValue = ({ value, onChange, prefix = "", suffix = "", fmt }: {
         onBlur={commitEdit}
         onKeyDown={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditing(false); }}
         className="w-24 text-right text-sm font-semibold bg-secondary border border-primary/30 rounded px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+        aria-label="Custom value input"
       />
     );
   }
@@ -87,7 +91,7 @@ const SliderRow = ({ label, tooltip, value, set, min, max, step, fmt }: {
       </span>
       <EditableValue value={value} onChange={set} fmt={fmt} />
     </div>
-    <Slider value={[Math.min(value, max)]} onValueChange={([v]) => set(v)} min={min} max={max} step={step} className="w-full" />
+    <Slider value={[Math.min(value, max)]} onValueChange={([v]) => set(v)} min={min} max={max} step={step} className="w-full" aria-label={label} />
   </div>
 );
 
@@ -99,7 +103,7 @@ const PCEGauge = ({ pce }: { pce: number }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-32 h-16 overflow-hidden">
-        <svg viewBox="0 0 120 60" className="w-full h-full">
+        <svg viewBox="0 0 120 60" className="w-full h-full" role="img" aria-label={`Process Cycle Efficiency: ${pce.toFixed(1)}%`}>
           <path d="M 10 55 A 50 50 0 0 1 110 55" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" strokeLinecap="round" />
           <path d="M 10 55 A 50 50 0 0 1 110 55" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
             strokeDasharray={`${(capped / 100) * 157} 157`} />
@@ -117,8 +121,62 @@ const PCEGauge = ({ pce }: { pce: number }) => {
   );
 };
 
+/* ── ROI Bar Chart ── */
+const ROIChart = ({ currentCost, withPhaos, savings }: { currentCost: number; withPhaos: number; savings: number }) => {
+  const data = [
+    { name: "Current Cost", value: currentCost },
+    { name: "With Phaos AI", value: withPhaos },
+    { name: "Net Savings", value: savings },
+  ];
+
+  const colors = ["#ef4444", "hsl(263 70% 58%)", "#00FF41"];
+
+  const formatTick = (v: number) => {
+    if (v >= 1000000) return `$${(v / 1000000).toFixed(1)}M`;
+    if (v >= 1000) return `$${(v / 1000).toFixed(0)}K`;
+    return `$${v}`;
+  };
+
+  return (
+    <div className="w-full h-[220px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(240 10% 16%)" />
+          <XAxis
+            dataKey="name"
+            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
+            axisLine={{ stroke: "hsl(240 10% 16%)" }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
+            axisLine={{ stroke: "hsl(240 10% 16%)" }}
+            tickLine={false}
+            tickFormatter={formatTick}
+          />
+          <RechartsTooltip
+            contentStyle={{
+              background: "hsl(240 15% 8%)",
+              border: "1px solid hsl(240 10% 16%)",
+              borderRadius: "8px",
+              color: "hsl(0 0% 95%)",
+              fontSize: "13px",
+            }}
+            formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+          />
+          <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={600}>
+            {data.map((_, i) => (
+              <Cell key={i} fill={colors[i]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 /* ── Voice AI Section ── */
-const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
+const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v: number) => void }) => {
   const [callVolume, setCallVolume] = useState(500);
   const [missedCalls, setMissedCalls] = useState(75);
   const [saleValue, setSaleValue] = useState(500);
@@ -129,22 +187,24 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
   const results = useMemo(() => {
     if (!advanced) {
       const annualRecovery = (missedCalls * saleValue * 0.15) * 12;
+      onResults(annualRecovery);
       return { annualRecovery, laborSpend: 0, showLabor: false };
     }
     const laborSpend = (callVolume * (aht / 60) * fullyLoadedRate) * 12;
     const recoveredRevenue = (missedCalls * saleValue * 0.20) * 12;
     const afterHoursRecovery = (afterHoursVolume * saleValue * 0.15) * 12;
     const annualRecovery = laborSpend + recoveredRevenue + afterHoursRecovery;
+    onResults(annualRecovery);
     return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue, afterHoursRecovery };
-  }, [callVolume, missedCalls, saleValue, aht, fullyLoadedRate, afterHoursVolume, advanced]);
+  }, [callVolume, missedCalls, saleValue, aht, fullyLoadedRate, afterHoursVolume, advanced, onResults]);
 
-  const RECOVERY_EXPLANATION = `This calculation uses a conservative 15% recovery rate (20% in Advanced mode). Industry research supports this: Harvard Business Review found that 85% of callers who can't reach a business won't call back. BIA/Kelsey research shows inbound calls convert at 25-40% — significantly higher than web leads (1-3%). The formula is: Missed Calls × Avg. Transaction Value × Recovery Rate × 12 months. Even a 15% capture rate is conservative — many AI implementations achieve 30-50% recovery by providing 24/7 instant response.`;
+  const RECOVERY_EXPLANATION = `This calculation uses a conservative 15% recovery rate (20% in Advanced mode). Industry research supports this: Harvard Business Review found that 85% of callers who can't reach a business won't call back. BIA/Kelsey research shows inbound calls convert at 25-40% — significantly higher than web leads (1-3%). The formula is: Missed Calls × Avg. Transaction Value × Recovery Rate × 12 months.`;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
-          <Phone className="w-6 h-6 text-primary" />
+          <Phone className="w-6 h-6 text-primary" aria-hidden="true" />
         </div>
         <div>
           <h3 className="text-xl font-bold text-foreground">Voice Operations Audit</h3>
@@ -211,7 +271,7 @@ const VoiceAIROI = ({ advanced }: { advanced: boolean }) => {
 };
 
 /* ── Lean Workflow Section ── */
-const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
+const WorkflowROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v: number) => void }) => {
   const [teamSize, setTeamSize] = useState(5);
   const [hoursWasted, setHoursWasted] = useState(10);
   const [hourlyPay, setHourlyPay] = useState(30);
@@ -225,6 +285,7 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
   const results = useMemo(() => {
     if (!advanced) {
       const annualCOPQ = (teamSize * hoursWasted * hourlyPay * 1.25) * 52;
+      onResults(annualCOPQ);
       return { annualCOPQ, pce: 0, wasteHours: 0, showPCE: false };
     }
     const totalCycleTime = touchTime + waitTime;
@@ -232,17 +293,17 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
     const monthlyWasteHours = ((waitTime + ((defectRate / 100) * reworkTime)) / 60) * processFrequency;
     const monthlyCOPQ = monthlyWasteHours * employeeRate;
     const annualCOPQ = monthlyCOPQ * 12;
-    const annualWasteHours = monthlyWasteHours * 12;
-    return { annualCOPQ, pce, wasteHours: annualWasteHours, showPCE: true };
-  }, [teamSize, hoursWasted, hourlyPay, processFrequency, touchTime, waitTime, defectRate, reworkTime, employeeRate, advanced]);
+    onResults(annualCOPQ);
+    return { annualCOPQ, pce, wasteHours: monthlyWasteHours * 12, showPCE: true };
+  }, [teamSize, hoursWasted, hourlyPay, processFrequency, touchTime, waitTime, defectRate, reworkTime, employeeRate, advanced, onResults]);
 
-  const LABOR_EXPLANATION = `This calculation uses the formula: Team Size × Hours Wasted/Week × Hourly Pay × 1.25 (Labor Burden) × 52 weeks. The 1.25x burden factor accounts for employer taxes, benefits, and overhead — validated by the Bureau of Labor Statistics (BLS). McKinsey confirms knowledge workers spend 28% of their workweek on email alone, with 19% on information gathering. Deloitte's operational excellence studies show automation yields measurable annual savings consistent with this formula.`;
+  const LABOR_EXPLANATION = `This calculation uses the formula: Team Size × Hours Wasted/Week × Hourly Pay × 1.25 (Labor Burden) × 52 weeks. The 1.25x burden factor accounts for employer taxes, benefits, and overhead — validated by the Bureau of Labor Statistics (BLS).`;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(138,43,226,0.15)" }}>
-          <Zap className="w-6 h-6 text-purple-light" />
+          <Zap className="w-6 h-6 text-purple-light" aria-hidden="true" />
         </div>
         <div>
           <h3 className="text-xl font-bold text-foreground">Lean Process Diagnostic</h3>
@@ -311,6 +372,111 @@ const WorkflowROI = ({ advanced }: { advanced: boolean }) => {
   );
 };
 
+/* ── Lead Capture CTA ── */
+const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
+  const [email, setEmail] = useState("");
+  const [bottleneck, setBottleneck] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [emailWarning, setEmailWarning] = useState("");
+  const mountedAt = useRef(Date.now());
+
+  const handleEmailChange = (v: string) => {
+    setEmail(v);
+    if (v.includes("@gmail.com") || v.includes("@yahoo.com") || v.includes("@hotmail.com") || v.includes("@outlook.com")) {
+      setEmailWarning("For a more accurate blueprint, consider using your business email.");
+    } else {
+      setEmailWarning("");
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!email || submitting || Date.now() - mountedAt.current < 3000) return;
+    setSubmitting(true);
+    try {
+      const id = crypto.randomUUID();
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "lead-notification",
+          recipientEmail: "daniel@phaosai.com",
+          idempotencyKey: `roi-lead-${id}`,
+          templateData: {
+            source: "ROI Calculator Lead Capture",
+            email,
+            message: `Estimated Savings: $${totalSavings.toLocaleString()}\n\nBiggest Bottleneck: ${bottleneck || "Not specified"}`,
+          },
+        },
+      });
+      setSubmitted(true);
+      toast.success("Your custom workflow blueprint request has been submitted!");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-lg font-bold text-foreground mb-2">✅ Blueprint Requested!</p>
+        <p className="text-sm text-muted-foreground">Our architects will review your data and deliver a custom workflow blueprint within 3 business days.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-foreground mb-1">Lock In These Savings</h3>
+        <p className="text-sm text-muted-foreground">Request your custom workflow blueprint — we'll map how to capture this value for your operation.</p>
+      </div>
+
+      <div className="max-w-md mx-auto space-y-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Mail className="w-4 h-4 text-primary" aria-hidden="true" />
+            <label htmlFor="roi-email" className="text-sm font-medium text-foreground">Work Email Address</label>
+          </div>
+          <input
+            id="roi-email"
+            type="email"
+            value={email}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            placeholder="you@company.com"
+            className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            required
+          />
+          {emailWarning && (
+            <p className="text-xs text-yellow-400/80 mt-1">{emailWarning}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="roi-bottleneck" className="text-sm font-medium text-foreground mb-1.5 block">What's your biggest manual bottleneck? <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="roi-bottleneck"
+            value={bottleneck}
+            onChange={(e) => setBottleneck(e.target.value)}
+            rows={2}
+            placeholder="e.g., 'We spend 3 hours/day manually entering service tickets into ConnectWise...'"
+            className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+          />
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!email || submitting}
+          className="w-full bg-gradient-purple text-primary-foreground font-semibold py-3.5 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {submitting ? "Submitting..." : "Request My Blueprint"}
+          {!submitting && <ArrowRight className="w-4 h-4" />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 /* ── Main Component ── */
 interface ROICalculatorProps {
   embedded?: boolean;
@@ -320,6 +486,12 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
   const isMobile = useIsMobile();
   const [advanced, setAdvanced] = useState(() => !isMobile);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [voiceResult, setVoiceResult] = useState(0);
+  const [workflowResult, setWorkflowResult] = useState(0);
+
+  const totalSavings = voiceResult + workflowResult;
+  // Assume ~30% of total savings as implementation cost estimate for "With Phaos AI"
+  const withPhaos = Math.round(totalSavings * 0.3);
 
   const copyLink = () => {
     navigator.clipboard.writeText("https://phaosai.com/roi-calculator");
@@ -330,7 +502,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
   const Wrapper = embedded ? "div" : "section";
 
   return (
-    <Wrapper className={embedded ? "" : "py-20 px-6"}>
+    <Wrapper className={embedded ? "" : "py-20 px-6"} aria-label="ROI Calculator">
       <div className={embedded ? "" : "max-w-5xl mx-auto"}>
         {!embedded && (
           <motion.div
@@ -340,7 +512,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             className="text-center mb-8"
           >
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
-              <Calculator className="w-4 h-4 text-primary" />
+              <Calculator className="w-4 h-4 text-primary" aria-hidden="true" />
               <span className="text-sm text-primary font-medium">Operational Diagnostic Tool</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold leading-[1.05] tracking-tight mb-4">
@@ -355,7 +527,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
         {/* Toggle */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <span className={`text-sm font-medium transition-colors ${!advanced ? "text-foreground" : "text-muted-foreground"}`}>Quick Estimate</span>
-          <Switch checked={advanced} onCheckedChange={setAdvanced} />
+          <Switch checked={advanced} onCheckedChange={setAdvanced} aria-label="Toggle between Quick Estimate and Advanced Audit" />
           <span className={`text-sm font-medium transition-colors ${advanced ? "text-foreground" : "text-muted-foreground"}`}>Advanced Audit</span>
         </div>
 
@@ -367,7 +539,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             transition={{ duration: 0.8 }}
             className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
           >
-            <VoiceAIROI advanced={advanced} />
+            <VoiceAIROI advanced={advanced} onResults={setVoiceResult} />
           </motion.div>
 
           <motion.div
@@ -377,46 +549,52 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             transition={{ duration: 0.8, delay: 0.15 }}
             className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
           >
-            <WorkflowROI advanced={advanced} />
+            <WorkflowROI advanced={advanced} onResults={setWorkflowResult} />
           </motion.div>
         </div>
 
-        {/* CTA Footer */}
+        {/* Chart Visualization */}
+        {totalSavings > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mt-8 rounded-3xl p-6 md:p-8 bg-card border border-border/50"
+          >
+            <h3 className="text-lg font-bold text-foreground mb-4 text-center">
+              Annual Cost <span className="text-gradient-purple">Comparison</span>
+            </h3>
+            <ROIChart
+              currentCost={totalSavings}
+              withPhaos={withPhaos}
+              savings={totalSavings - withPhaos}
+            />
+          </motion.div>
+        )}
+
+        {/* Lead Capture CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-10 rounded-3xl p-8 text-center"
+          className="mt-10 rounded-3xl p-8"
           style={{ background: "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(0,255,65,0.05))", border: "1px solid rgba(138,43,226,0.2)" }}
         >
-          <h3 className="text-2xl font-bold text-foreground mb-2">Total Reclaimable Capital Identified</h3>
-          <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-            These are conservative estimates using industry benchmarks. Your actual savings could be significantly higher. Let's discuss your specific operation.
-          </p>
+          <LeadCaptureCTA totalSavings={totalSavings} />
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-            <Link
-              to="/contact"
-              className="font-semibold px-8 py-3.5 rounded-full text-white hover:opacity-90 transition-all flex items-center gap-2 group"
-              style={{ background: "linear-gradient(135deg, #8A2BE2, #6B21A8)", boxShadow: "0 0 20px rgba(138,43,226,0.3)" }}
-            >
-              Schedule a Call
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-border/30">
             <button
               onClick={copyLink}
               className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+              aria-label="Copy results link"
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
               {copiedLink ? "Copied!" : "Copy Results Link"}
             </button>
-            <span className="text-border">|</span>
-            <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors">
-              <FileDown className="w-3.5 h-3.5" />
+            <span className="text-border" aria-hidden="true">|</span>
+            <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors" aria-label="Download audit PDF">
+              <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
               Download Audit PDF
             </button>
           </div>

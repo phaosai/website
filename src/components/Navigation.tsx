@@ -21,7 +21,8 @@ const Navigation = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 0.2 }}
-      className="fixed top-0 left-0 right-0 z-50 glass-strong"
+      className="fixed top-0 left-0 right-0 z-50 glass-strong shadow-lg shadow-black/20"
+      aria-label="Main navigation"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
         <Link to="/" aria-label="Phaos AI Home">
@@ -33,7 +34,7 @@ const Navigation = () => {
             <Link
               key={link.label}
               to={link.to}
-              className={`hover:text-foreground transition-colors ${
+              className={`hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm ${
                 location.pathname === link.to ? "text-foreground" : ""
               }`}
             >
@@ -45,15 +46,16 @@ const Navigation = () => {
         <div className="flex items-center gap-3">
           <Link
             to="/contact"
-            className="hidden md:inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 transition-opacity"
+            className="hidden md:inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Schedule a Call
           </Link>
 
           <button
-            className="md:hidden text-foreground"
+            className="md:hidden text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>

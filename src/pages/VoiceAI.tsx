@@ -3,6 +3,7 @@ import { ArrowRight, Phone, Mic, Headphones, BrainCircuit, Calendar, Users, Glob
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -36,14 +37,19 @@ const useCases = [
 const VoiceAI = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      <SEOHead
+        title="Voice AI Agents | Phaos AI"
+        description="Deploy intelligent AI voice agents that handle inbound calls 24/7. Qualify leads, book appointments, and resolve inquiries with natural conversations."
+        canonical="/voice-ai"
+      />
       <Navigation />
 
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/6 blur-[180px] pointer-events-none" />
+      <section className="relative pt-32 pb-20 px-6 overflow-hidden" aria-label="Voice AI Hero">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/6 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
-              <Phone className="w-4 h-4 text-primary" />
+              <Phone className="w-4 h-4 text-primary" aria-hidden="true" />
               <span className="text-sm text-primary font-medium">Voice AI Agents</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
@@ -57,7 +63,7 @@ const VoiceAI = () => {
         </div>
       </section>
 
-      <section className="py-20 px-6 border-t border-border/30">
+      <section className="py-20 px-6 border-t border-border/30" aria-label="Voice AI Capabilities">
         <div className="max-w-7xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -66,9 +72,9 @@ const VoiceAI = () => {
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
-              <motion.div key={feature.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all">
+              <motion.div key={feature.title} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
+                  <feature.icon className="w-6 h-6 text-primary" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
@@ -78,7 +84,7 @@ const VoiceAI = () => {
         </div>
       </section>
 
-      <section className="py-20 px-6 border-t border-border/30">
+      <section className="py-20 px-6 border-t border-border/30" aria-label="Use Cases">
         <div className="max-w-4xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">
@@ -86,8 +92,8 @@ const VoiceAI = () => {
             </h2>
             <div className="space-y-4">
               {useCases.map((useCase, i) => (
-                <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="flex items-start gap-4 rounded-2xl p-5 bg-card border border-border/50">
-                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="flex items-start gap-4 rounded-2xl p-5 bg-card border border-border/50 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-foreground leading-relaxed">{useCase}</p>
                 </motion.div>
               ))}
@@ -96,14 +102,14 @@ const VoiceAI = () => {
         </div>
       </section>
 
-      <section className="py-20 px-6 border-t border-border/30">
+      <section className="py-20 px-6 border-t border-border/30" aria-label="Call to Action">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to <span className="text-gradient-purple">Hear It in Action</span>?</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
               Schedule a call with our team and experience how Phaos AI handles real conversations.
             </p>
-            <Link to="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base items-center gap-2 group">
+            <Link to="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group">
               Schedule a Call <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>

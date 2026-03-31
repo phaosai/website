@@ -26,6 +26,65 @@ export const organizationSchema = {
   sameAs: [],
 };
 
+export const localBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Phaos AI",
+  url: BASE_URL,
+  logo: `${BASE_URL}/phaos-logo.png`,
+  image: `${BASE_URL}/phaos-hero.png`,
+  description: "AI-powered voice agents and workflow automation provider serving SMBs and mid-market enterprises from Casselberry, Florida.",
+  telephone: "+1-617-678-2426",
+  email: "daniel@phaosai.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "340 Georgetown Drive, Unit B",
+    addressLocality: "Casselberry",
+    addressRegion: "FL",
+    postalCode: "32707",
+    addressCountry: "US",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 28.6578,
+    longitude: -81.3278,
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "United States",
+  },
+  priceRange: "$$",
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    opens: "09:00",
+    closes: "18:00",
+  },
+};
+
+export const professionalServiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "Phaos AI",
+  url: BASE_URL,
+  description: "B2B AI automation services including voice AI agents and agentic workflow automation for copier dealerships, healthcare, real estate, and SMB operations.",
+  telephone: "+1-617-678-2426",
+  email: "daniel@phaosai.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "340 Georgetown Drive, Unit B",
+    addressLocality: "Casselberry",
+    addressRegion: "FL",
+    postalCode: "32707",
+    addressCountry: "US",
+  },
+  serviceType: ["AI Voice Agents", "Workflow Automation", "Business Process Automation"],
+  areaServed: {
+    "@type": "Country",
+    name: "United States",
+  },
+};
+
 export const softwareApplicationSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
