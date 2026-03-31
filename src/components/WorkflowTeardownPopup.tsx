@@ -86,7 +86,7 @@ const WorkflowTeardownPopup = () => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg rounded-3xl overflow-hidden border"
+            className="relative w-full max-w-md rounded-3xl overflow-hidden border"
             style={{
               background: "linear-gradient(180deg, #161225 0%, #0b0b0f 100%)",
               borderColor: "rgba(138,43,226,0.25)",
@@ -113,7 +113,7 @@ const WorkflowTeardownPopup = () => {
               <img
                 src={phaosCrown}
                 alt="Phaos AI"
-                className="w-20 h-20 mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
+                className="w-36 h-36 mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
               />
               <div className="relative z-10">
                 <span
@@ -262,8 +262,8 @@ const WorkflowTeardownPopup = () => {
                     </motion.div>
                   )}
 
-                  <p className="text-[11px] text-center text-white/20 mt-5">
-                    No spam. No obligation. Just a clear AI solution map.
+                  <p className="text-[11px] text-center text-white/25 mt-5">
+                    Our architects manually audit every workflow. Please allow 3 business days for delivery.
                   </p>
                 </>
               )}
