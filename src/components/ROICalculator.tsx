@@ -282,7 +282,7 @@ const WorkflowROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v
       </div>
 
       {/* Results */}
-      <div className="rounded-2xl p-6 space-y-4" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
+      <div className="rounded-2xl p-6 space-y-4" aria-live="polite" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
         {advanced && results.showPCE && (
           <div className="grid sm:grid-cols-2 gap-4 items-center">
             <PCEGauge pce={results.pce} />
