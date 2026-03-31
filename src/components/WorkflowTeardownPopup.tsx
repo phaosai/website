@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import phaosCrown from "@/assets/phaos-crown.png";
 
 const WorkflowTeardownPopup = () => {
@@ -15,6 +16,7 @@ const WorkflowTeardownPopup = () => {
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState("");
   const openedAt = useRef(0);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -52,7 +54,6 @@ const WorkflowTeardownPopup = () => {
   };
 
   const handleSubmit = async () => {
-    // Time-based anti-spam: reject if submitted within 3s of popup opening
     if (Date.now() - openedAt.current < 3000) return;
     setSubmitting(true);
     try {
@@ -77,6 +78,19 @@ const WorkflowTeardownPopup = () => {
     }
   };
 
+  // Responsive values
+  const scale = isMobile ? 0.95 : 1;
+  const maxW = isMobile ? "max-w-lg" : "max-w-xl";
+  const heroPx = isMobile ? "px-6 pt-8 pb-6" : "px-10 pt-12 pb-8";
+  const bodyPx = isMobile ? "px-6 pb-6 pt-2" : "px-10 pb-10 pt-2";
+  const logoSize = isMobile ? "w-24 h-24" : "w-36 h-36";
+  const headingSize = isMobile ? "text-xl" : "text-3xl sm:text-4xl";
+  const badgeSize = isMobile ? "text-[11px]" : "text-xs";
+  const bodyText = isMobile ? "text-sm" : "text-base";
+  const inputPy = isMobile ? "py-3 text-sm" : "py-4 text-base";
+  const btnPy = isMobile ? "py-3.5 text-sm" : "py-4 text-base";
+  const textareaRows = isMobile ? 3 : 4;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -89,10 +103,10 @@ const WorkflowTeardownPopup = () => {
         >
           <motion.div
             initial={{ scale: 0.6, opacity: 0, y: 20 }}
-            animate={{ scale: 0.7, opacity: 1, y: 0 }}
+            animate={{ scale, opacity: 1, y: 0 }}
             exit={{ scale: 0.6, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg rounded-3xl overflow-hidden border origin-center"
+            className={`relative w-full ${maxW} rounded-3xl overflow-hidden border origin-center`}
             style={{
               background: "linear-gradient(180deg, #161225 0%, #0b0b0f 100%)",
               borderColor: "rgba(138,43,226,0.25)",
@@ -110,8 +124,7 @@ const WorkflowTeardownPopup = () => {
             </button>
 
             {/* Hero Banner */}
-            <div className="relative px-8 pt-10 pb-8 text-center">
-              {/* Glow */}
+            <div className={`relative ${heroPx} text-center`}>
               <div
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
                 style={{ background: "rgba(138,43,226,0.18)" }}
@@ -119,11 +132,11 @@ const WorkflowTeardownPopup = () => {
               <img
                 src={phaosCrown}
                 alt="Phaos AI"
-                className="w-36 h-36 mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
+                className={`${logoSize} mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]`}
               />
               <div className="relative z-10">
                 <span
-                  className="inline-block text-[11px] font-bold uppercase tracking-[0.25em] mb-3 px-4 py-1.5 rounded-full"
+                  className={`inline-block ${badgeSize} font-bold uppercase tracking-[0.25em] mb-3 px-4 py-1.5 rounded-full`}
                   style={{
                     color: "#FFFFFF",
                     background: "rgba(138,43,226,0.25)",
@@ -132,11 +145,11 @@ const WorkflowTeardownPopup = () => {
                 >
                   Free Workflow Teardown
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-3">
+                <h2 className={`${headingSize} font-extrabold text-white leading-tight mb-3`}>
                   Send Us Your Messiest<br />
                   <span style={{ color: "#B97AFF" }}>Manual Workflow</span>
                 </h2>
-                <p className="text-base text-white/55 leading-relaxed max-w-sm mx-auto">
+                <p className={`${bodyText} text-white/55 leading-relaxed max-w-sm mx-auto`}>
                   We'll map the AI solution —{" "}
                   <span className="font-semibold text-white/90">completely free</span>.
                 </p>
@@ -144,7 +157,7 @@ const WorkflowTeardownPopup = () => {
             </div>
 
             {/* Body */}
-            <div className="px-8 pb-8 pt-2">
+            <div className={bodyPx}>
               {submitted ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -176,8 +189,8 @@ const WorkflowTeardownPopup = () => {
                   >
                     <Zap className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "#B97AFF" }} />
                     <div>
-                      <p className="text-sm font-semibold text-white mb-1">15-Minute Workflow Teardown</p>
-                      <p className="text-xs text-white/45 leading-relaxed">
+                      <p className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-white mb-1`}>15-Minute Workflow Teardown</p>
+                      <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/45 leading-relaxed`}>
                         You describe your manual process. We send back a detailed AI solution map showing exactly how automation handles it.
                       </p>
                     </div>
@@ -190,7 +203,7 @@ const WorkflowTeardownPopup = () => {
                       className="space-y-5"
                     >
                       <div>
-                        <label className="block text-sm font-medium text-white/70 mb-2">
+                        <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
                           Work Email Address <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -198,7 +211,7 @@ const WorkflowTeardownPopup = () => {
                           value={email}
                           onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
                           placeholder="you@company.com"
-                          className="w-full rounded-xl px-5 py-3.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2"
+                          className={`w-full rounded-xl px-5 ${inputPy} text-white placeholder:text-white/25 focus:outline-none focus:ring-2`}
                           style={{
                             background: "rgba(255,255,255,0.06)",
                             border: emailError ? "1px solid #ef4444" : "1px solid rgba(138,43,226,0.2)",
@@ -212,7 +225,7 @@ const WorkflowTeardownPopup = () => {
                       <button
                         onClick={handleStep1}
                         disabled={!email.trim()}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed group"
+                        className={`w-full flex items-center justify-center gap-2 rounded-xl ${btnPy} font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed group`}
                         style={{
                           background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
                           boxShadow: "0 0 25px rgba(138,43,226,0.35)",
@@ -229,7 +242,7 @@ const WorkflowTeardownPopup = () => {
                       className="space-y-5"
                     >
                       <div>
-                        <label className="block text-sm font-medium text-white/70 mb-2">
+                        <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
                           What's your biggest manual bottleneck?{" "}
                           <span className="text-white/30">(Optional)</span>
                         </label>
@@ -237,8 +250,8 @@ const WorkflowTeardownPopup = () => {
                           value={bottleneck}
                           onChange={(e) => setBottleneck(e.target.value)}
                           placeholder="e.g. 'We manually process 200+ invoices per week' or 'Our team spends 3 hours daily answering the same support calls...'"
-                          rows={4}
-                          className="w-full rounded-xl px-5 py-3.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 resize-none"
+                          rows={textareaRows}
+                          className={`w-full rounded-xl px-5 ${inputPy} text-white placeholder:text-white/25 focus:outline-none focus:ring-2 resize-none`}
                           style={{
                             background: "rgba(255,255,255,0.06)",
                             border: "1px solid rgba(138,43,226,0.2)",
@@ -251,7 +264,7 @@ const WorkflowTeardownPopup = () => {
                       <button
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`w-full flex items-center justify-center gap-2 rounded-xl ${btnPy} font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
                         style={{
                           background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
                           boxShadow: "0 0 25px rgba(138,43,226,0.35)",
@@ -279,7 +292,7 @@ const WorkflowTeardownPopup = () => {
         </motion.div>
       )}
 
-      {/* Minimized reopen button - right side, vertically centered */}
+      {/* Minimized reopen button */}
       {minimized && !isOpen && (
         <motion.button
           initial={{ opacity: 0, x: 20 }}
