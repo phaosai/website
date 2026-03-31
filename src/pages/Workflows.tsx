@@ -54,7 +54,7 @@ const Workflows = () => {
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
               Automate the <br />
-              <span className="text-gradient-purple">Manual Grind</span>
+              <span className="text-gradient-purple shimmer-light">Manual Grind</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Eliminate multi-step, paper-heavy processes and excessive touchpoints. Phaos agentic workflows connect your systems and execute complex business processes autonomously — from document processing and inventory management to billing automation and cross-platform data sync.
