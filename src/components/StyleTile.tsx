@@ -242,6 +242,7 @@ const StyleTile = () => {
       </section>
 
       <Footer />
+      <WorkflowTeardownPopup />
     </div>
   );
 };
