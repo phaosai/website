@@ -64,7 +64,6 @@ const App = () => (
           <ChatWidget />
           <WorkflowTeardownPopup />
         </BrowserRouter>
-        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
