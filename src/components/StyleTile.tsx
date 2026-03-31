@@ -250,6 +250,7 @@ const StyleTile = () => {
       </main>
       <Footer />
     </div>
+  );
 };
 
 export default StyleTile;
