@@ -3,27 +3,29 @@ import { motion } from "framer-motion";
 import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown, Mail } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip as RechartsTooltip } from "recharts";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-/* ── Tooltip Helper ── */
+/* ── Info Popover (click-to-toggle, works on mobile + desktop) ── */
 const InfoTip = ({ text }: { text: string }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button className="ml-1.5 inline-flex" aria-label="More information">
-          <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[320px] text-xs leading-relaxed">
-        {text}
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <Popover>
+    <PopoverTrigger asChild>
+      <button className="ml-1.5 inline-flex" aria-label="More information">
+        <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent
+      side="top"
+      className="max-w-[320px] text-xs leading-relaxed bg-popover text-popover-foreground border-border"
+      sideOffset={6}
+    >
+      {text}
+    </PopoverContent>
+  </Popover>
 );
 
 /* ── Editable Number Input ── */
@@ -123,59 +125,6 @@ const PCEGauge = ({ pce }: { pce: number }) => {
   );
 };
 
-/* ── ROI Bar Chart ── */
-const ROIChart = ({ currentCost, withPhaos, savings }: { currentCost: number; withPhaos: number; savings: number }) => {
-  const data = [
-    { name: "Current Cost", value: currentCost },
-    { name: "With Phaos AI", value: withPhaos },
-    { name: "Net Savings", value: savings },
-  ];
-
-  const colors = ["#ef4444", "hsl(263 70% 58%)", "#00FF41"];
-
-  const formatTick = (v: number) => {
-    if (v >= 1000000) return `$${(v / 1000000).toFixed(1)}M`;
-    if (v >= 1000) return `$${(v / 1000).toFixed(0)}K`;
-    return `$${v}`;
-  };
-
-  return (
-    <div className="w-full h-[220px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(240 10% 16%)" />
-          <XAxis
-            dataKey="name"
-            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
-            axisLine={{ stroke: "hsl(240 10% 16%)" }}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fill: "hsl(240 5% 55%)", fontSize: 11 }}
-            axisLine={{ stroke: "hsl(240 10% 16%)" }}
-            tickLine={false}
-            tickFormatter={formatTick}
-          />
-          <RechartsTooltip
-            contentStyle={{
-              background: "hsl(240 15% 8%)",
-              border: "1px solid hsl(240 10% 16%)",
-              borderRadius: "8px",
-              color: "hsl(0 0% 95%)",
-              fontSize: "13px",
-            }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
-          />
-          <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={600}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={colors[i]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
 
 /* ── Voice AI Section ── */
 const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v: number) => void }) => {
@@ -555,24 +504,6 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
           </motion.div>
         </div>
 
-        {/* Chart Visualization */}
-        {totalSavings > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mt-8 rounded-3xl p-6 md:p-8 bg-card border border-border/50"
-          >
-            <h3 className="text-lg font-bold text-foreground mb-4 text-center">
-              Annual Cost <span className="text-gradient-purple">Comparison</span>
-            </h3>
-            <ROIChart
-              currentCost={totalSavings}
-              withPhaos={withPhaos}
-              savings={totalSavings - withPhaos}
-            />
-          </motion.div>
-        )}
 
         {/* Lead Capture CTA */}
         <motion.div
