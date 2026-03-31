@@ -183,7 +183,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
       </div>
 
       {/* Results */}
-      <div className="rounded-2xl p-6 space-y-4" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
+      <div className="rounded-2xl p-6 space-y-4" aria-live="polite" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
         {advanced && results.showLabor && (
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
