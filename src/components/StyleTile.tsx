@@ -51,11 +51,6 @@ const StyleTile = () => {
         />
         <div className="absolute inset-0 bg-background/85" />
 
-        {/* 3D Light Core — lazy loaded */}
-        <Suspense fallback={null}>
-          <HeroLightCore />
-        </Suspense>
-
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-light/6 blur-[150px] pointer-events-none" aria-hidden="true" />
 
