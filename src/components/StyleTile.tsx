@@ -16,12 +16,9 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import ROICalculator from "@/components/ROICalculator";
-import KineticText from "@/components/KineticText";
 import MagneticButton from "@/components/MagneticButton";
 
 import { organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema } from "@/lib/seo-schemas";
-
-const HeroLightCore = lazy(() => import("@/components/HeroLightCore"));
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
