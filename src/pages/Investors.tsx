@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import FormLayout from "@/components/FormLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +10,11 @@ const Investors = () => {
   const [message, setMessage] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const mountedAt = useRef(Date.now());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot) return;
+    if (honeypot || Date.now() - mountedAt.current < 3000) return;
     setSubmitting(true);
     try {
       const id = crypto.randomUUID();

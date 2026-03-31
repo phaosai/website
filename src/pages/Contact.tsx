@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
@@ -10,10 +10,11 @@ const Contact = () => {
   const [reason, setReason] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const mountedAt = useRef(Date.now());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot || !reason.trim() || submitting) return;
+    if (honeypot || !reason.trim() || submitting || Date.now() - mountedAt.current < 3000) return;
 
     setSubmitting(true);
 
