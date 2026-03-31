@@ -183,7 +183,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
       </div>
 
       {/* Results */}
-      <div className="rounded-2xl p-6 space-y-4" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
+      <div className="rounded-2xl p-6 space-y-4" aria-live="polite" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
         {advanced && results.showLabor && (
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
@@ -282,7 +282,7 @@ const WorkflowROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v
       </div>
 
       {/* Results */}
-      <div className="rounded-2xl p-6 space-y-4" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
+      <div className="rounded-2xl p-6 space-y-4" aria-live="polite" style={{ background: "rgba(138,43,226,0.08)", border: "1px solid rgba(0,255,65,0.15)" }}>
         {advanced && results.showPCE && (
           <div className="grid sm:grid-cols-2 gap-4 items-center">
             <PCEGauge pce={results.pce} />
@@ -395,6 +395,7 @@ const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
             value={email}
             onChange={(e) => handleEmailChange(e.target.value)}
             placeholder="you@company.com"
+            maxLength={255}
             className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             required
           />
@@ -410,6 +411,7 @@ const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
             value={bottleneck}
             onChange={(e) => setBottleneck(e.target.value)}
             rows={2}
+            maxLength={1000}
             placeholder="e.g., 'We spend 3 hours/day manually entering service tickets into ConnectWise...'"
             className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />

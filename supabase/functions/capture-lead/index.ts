@@ -12,7 +12,21 @@ serve(async (req) => {
   }
 
   try {
-    const { name, title, company, website, email, phone, transcript } = await req.json();
+    const body = await req.json();
+
+    // Input validation
+    const sanitize = (v: unknown, maxLen = 500): string | undefined => {
+      if (typeof v !== "string") return undefined;
+      return v.trim().slice(0, maxLen) || undefined;
+    };
+
+    const name = sanitize(body.name, 255);
+    const title = sanitize(body.title, 255);
+    const company = sanitize(body.company, 255);
+    const website = sanitize(body.website, 500);
+    const email = sanitize(body.email, 255);
+    const phone = sanitize(body.phone, 50);
+    const transcript = sanitize(body.transcript, 5000);
 
     const emailBody = `
 New Lead Captured from Phaos AI Website

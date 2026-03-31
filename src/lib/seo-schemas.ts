@@ -112,6 +112,39 @@ export const roiCalculatorSchema = {
   featureList: "Voice AI ROI calculation, Workflow automation savings, Custom analysis",
 };
 
+export const voiceAIServiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Voice AI Agents",
+  provider: organizationSchema,
+  description: "AI-powered voice agents that answer inbound calls 24/7 with hyper-realistic, emotionally intelligent conversations. Qualify leads, book appointments, and handle FAQs autonomously.",
+  serviceType: "AI Voice Agent",
+  areaServed: { "@type": "Country", name: "United States" },
+  url: `${BASE_URL}/voice-ai`,
+};
+
+export const workflowServiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Agentic Workflow Automation",
+  provider: organizationSchema,
+  description: "Eliminate manual data entry, paper forms, and repetitive tasks with autonomous agentic workflows that connect your systems and execute end-to-end processes.",
+  serviceType: "Workflow Automation",
+  areaServed: { "@type": "Country", name: "United States" },
+  url: `${BASE_URL}/workflows`,
+};
+
+export const breadcrumbSchema = (items: { name: string; path: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: item.name,
+    item: `${BASE_URL}${item.path}`,
+  })),
+});
+
 export const homeFaqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",

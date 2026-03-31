@@ -38,6 +38,7 @@ const StyleTile = () => {
         jsonLd={[organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema]}
       />
       <Navigation />
+      <main id="main-content">
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
@@ -246,6 +247,7 @@ const StyleTile = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   );

@@ -36,8 +36,8 @@ const SEOHead = ({
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:locale" content="en_US" />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
-      <meta property="og:site_name" content="Phaos AI" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
