@@ -108,7 +108,7 @@ const StyleTile = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Seeking <span className="text-gradient-purple shimmer-light">Strategic Partners</span>
+              Seeking <span className="text-gradient-purple">Strategic Partners</span>
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto">
               Phaos AI is actively seeking strategic partners and investors who share our vision of transforming enterprise operations through AI. We're building the infrastructure that will power the next generation of customer engagement — and we're looking for the right partners to scale with us.
