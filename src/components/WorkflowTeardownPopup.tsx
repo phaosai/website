@@ -82,11 +82,11 @@ const WorkflowTeardownPopup = () => {
           style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ scale: 0.6, opacity: 0, y: 20 }}
+            animate={{ scale: 0.7, opacity: 1, y: 0 }}
+            exit={{ scale: 0.6, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-sm rounded-3xl overflow-hidden border"
+            className="relative w-full max-w-lg rounded-3xl overflow-hidden border origin-center"
             style={{
               background: "linear-gradient(180deg, #161225 0%, #0b0b0f 100%)",
               borderColor: "rgba(138,43,226,0.25)",
