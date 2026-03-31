@@ -504,24 +504,6 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
           </motion.div>
         </div>
 
-        {/* Chart Visualization */}
-        {totalSavings > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mt-8 rounded-3xl p-6 md:p-8 bg-card border border-border/50"
-          >
-            <h3 className="text-lg font-bold text-foreground mb-4 text-center">
-              Annual Cost <span className="text-gradient-purple">Comparison</span>
-            </h3>
-            <ROIChart
-              currentCost={totalSavings}
-              withPhaos={withPhaos}
-              savings={totalSavings - withPhaos}
-            />
-          </motion.div>
-        )}
 
         {/* Lead Capture CTA */}
         <motion.div
