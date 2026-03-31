@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown, Mail } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip as RechartsTooltip } from "recharts";
@@ -12,16 +12,18 @@ import { toast } from "sonner";
 
 /* ── Tooltip Helper ── */
 const InfoTip = ({ text }: { text: string }) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <button className="ml-1.5 inline-flex" aria-label="More information">
-        <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
-      </button>
-    </TooltipTrigger>
-    <TooltipContent side="top" className="max-w-[320px] text-xs leading-relaxed">
-      {text}
-    </TooltipContent>
-  </Tooltip>
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="ml-1.5 inline-flex" aria-label="More information">
+          <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-purple-light transition-colors" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[320px] text-xs leading-relaxed">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
 );
 
 /* ── Editable Number Input ── */
