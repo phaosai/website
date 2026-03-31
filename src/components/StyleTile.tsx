@@ -244,7 +244,7 @@ const StyleTile = () => {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Free <span className="text-gradient-purple shimmer-light">System Audit Tool</span>
+              Free <span className="text-gradient-purple">System Audit Tool</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               See how much you could save with AI-powered voice agents and workflow automation.
