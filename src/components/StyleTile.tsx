@@ -254,9 +254,9 @@ const StyleTile = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
-  );
 };
 
 export default StyleTile;

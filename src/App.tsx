@@ -32,40 +32,49 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 
 const queryClient = new QueryClient();
 
+const AppInner = () => {
+  useErrorReporter();
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/investors" element={<Investors />} />
+            <Route path="/voice-ai" element={<VoiceAI />} />
+            <Route path="/workflows" element={<Workflows />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/roi-calculator" element={<ROICalculatorPage />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/investor-relations" element={<InvestorRelations />} />
+            <Route path="/compare/:competitor" element={<ComparePage />} />
+            <Route path="/solutions/:industry" element={<SolutionsPage />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
+      </Suspense>
+      <ChatWidget />
+      <WorkflowTeardownPopup />
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<div className="min-h-screen bg-background" />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/integrations" element={<Integrations />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/partners" element={<Partners />} />
-              <Route path="/investors" element={<Investors />} />
-              <Route path="/voice-ai" element={<VoiceAI />} />
-              <Route path="/workflows" element={<Workflows />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/roi-calculator" element={<ROICalculatorPage />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/investor-relations" element={<InvestorRelations />} />
-              <Route path="/compare/:competitor" element={<ComparePage />} />
-              <Route path="/solutions/:industry" element={<SolutionsPage />} />
-              <Route path="/unsubscribe" element={<Unsubscribe />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <ChatWidget />
-          <WorkflowTeardownPopup />
-        </BrowserRouter>
+        <AppInner />
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>

@@ -160,9 +160,9 @@ const Contact = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
-  );
 };
 
 export default Contact;
