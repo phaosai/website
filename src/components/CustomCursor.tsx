@@ -11,7 +11,8 @@ const CustomCursor = () => {
     // Don't show on touch devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
-    document.body.style.cursor = "none";
+    // Keep the default cursor visible
+    document.body.style.cursor = "";
 
     const update = () => {
       if (cursorRef.current) {
