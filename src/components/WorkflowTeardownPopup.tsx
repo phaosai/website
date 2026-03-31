@@ -262,9 +262,10 @@ const WorkflowTeardownPopup = () => {
                     </motion.div>
                   )}
 
-                  <p className="text-[11px] text-center text-white/25 mt-5">
-                    Our architects manually audit every workflow. Please allow 3 business days for delivery.
-                  </p>
+                  <div className="text-[11px] text-center text-white/25 mt-5 leading-relaxed">
+                    <p>Our architects manually audit every workflow.</p>
+                    <p>Please allow up to 3 business days for delivery.</p>
+                  </div>
                 </>
               )}
             </div>
