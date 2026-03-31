@@ -81,15 +81,18 @@ const Contact = () => {
                   <input type="text" name="website" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
                 </div>
 
-                <div>
-                  <label htmlFor="contact-reason" className="block text-sm font-medium text-foreground mb-2">Reason for Contacting Phaos AI</label>
-                  <textarea
-                    id="contact-reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    required
-                    rows={8}
-                    placeholder="Tell us how we can help — whether it's a product demo, technical question, partnership opportunity, or anything else..."
+                 <div>
+79:                   <label htmlFor="contact-reason" className="block text-sm font-medium text-foreground mb-2">Reason for Contacting Phaos AI</label>
+                   <textarea
+                     id="contact-reason"
+                     value={reason}
+                     onChange={(e) => setReason(e.target.value)}
+                     required
+                     rows={8}
+                     maxLength={1000}
+                     placeholder="Tell us how we can help — whether it's a product demo, technical question, partnership opportunity, or anything else..."
+                     className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                   />
                     className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   />
                 </div>
