@@ -7,6 +7,7 @@ import phaosCrown from "@/assets/phaos-crown.png";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [bottleneck, setBottleneck] = useState("");
@@ -16,10 +17,9 @@ const WorkflowTeardownPopup = () => {
   const openedAt = useRef(0);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem("phaos-popup-dismissed");
-    if (dismissed) return;
     const timer = setTimeout(() => {
       setIsOpen(true);
+      setMinimized(false);
       openedAt.current = Date.now();
     }, 5000);
     return () => clearTimeout(timer);
@@ -27,7 +27,13 @@ const WorkflowTeardownPopup = () => {
 
   const dismiss = () => {
     setIsOpen(false);
-    sessionStorage.setItem("phaos-popup-dismissed", "1");
+    setMinimized(true);
+  };
+
+  const reopen = () => {
+    setIsOpen(true);
+    setMinimized(false);
+    openedAt.current = Date.now();
   };
 
   const validateEmail = (val: string) => {
