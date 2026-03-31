@@ -1,113 +1,191 @@
 
 
-# Deep-Tier Technical Refactor — What Already Exists vs. What This Will Change
+# "Living Platform" Immersive Upgrade — Implementation Plan
 
-## Already Done (No Action Needed)
-- Code-splitting via `React.lazy()` for all routes
-- JSON-LD schemas: Organization, LocalBusiness, ProfessionalService, SoftwareApplication, FAQPage
-- `SEOHead` component with og:image, twitter:card, canonical tags
-- `robots.txt` and `sitemap.xml` already present
-- Honeypot + timing-based spam protection on Contact form
-- Hero image preloaded with `fetchpriority` hints in prior phases
-- `aria-label` on nav, buttons, SVGs; `aria-expanded` on mobile hamburger
-- `focus-visible` ring styles on interactive elements
-- `.env` managed automatically by Lovable Cloud (no hardcoded secrets in client code)
+## Overview
+
+This adds 7 new interaction layers to the site: a 3D hero element, kinetic typography, a floating navigator, an API playground, magnetic buttons, a custom cursor, and a dark/light theme toggle. All use the existing Phaos purple palette (`#8A2BE2` primary, `#0b0b0f` background) and Inter font. No copy or layout changes.
 
 ---
 
-## What This Refactor Will Do
+## 1. 3D "Light Core" Hero Background (React Three Fiber)
 
-### Phase 1: Performance & Asset Engineering
+**New file:** `src/components/HeroLightCore.tsx`
 
-| Change | Current | After |
-|--------|---------|-------|
-| **Remove recharts** | `recharts` is installed (~200KB) but unused after chart removal. Causes potential React duplication | Remove from `package.json`, clean `vite.config.ts` `optimizeDeps`, delete `src/components/ui/chart.tsx` |
-| **Supabase preconnect** | No resource hint for Supabase API | Add `<link rel="preconnect" href="https://hjqokvoaopvtapbllico.supabase.co">` to `index.html` |
-| **Hero image dimensions** | Background image via CSS `background-image` — no explicit dimensions, no WebP | Add `width`/`height` on hero container for CLS prevention |
-| **Font loading** | External Google Fonts with `preload` — still a third-party dependency | Keep as-is (self-hosting requires font files which can't be added to `/public` via code). Already preloaded with `display=swap` |
+- Install `@react-three/fiber@^8.18`, `@react-three/drei@^9.122.0`, `three@^0.160`
+- Create a `<Canvas>` with a single glowing sphere/torus geometry using `MeshDistortMaterial` from drei
+- Color: `hsl(263, 70%, 58%)` — the exact primary purple
+- Reacts to mouse position via `useFrame` + pointer state (subtle rotation/distortion)
+- Reacts to scroll via a `useScroll` value that scales opacity down as user scrolls past hero
+- Wrapped in `React.lazy()` so the 3D canvas loads **after** first paint — zero FCP impact
+- Renders behind the existing hero text with `position: absolute; z-index: 0`
+- Falls back to the current `phaos-hero.png` background if WebGL is unavailable
 
-**Files:** `index.html`, `vite.config.ts`, `package.json`, delete `src/components/ui/chart.tsx`
+**Modified file:** `src/components/StyleTile.tsx`
+- Lazy-import `HeroLightCore` with Suspense fallback (current background image)
+- Place it inside the hero `<section>` behind the text layer
 
-### Phase 2: SEO & Semantic Infrastructure
-
-| Change | Current | After |
-|--------|---------|-------|
-| **Service schemas** | No dedicated `Service` schema for Voice AI / Workflow Automation | Add two `Service` JSON-LD entries linked to the Organization |
-| **BreadcrumbList** | Missing | Add `BreadcrumbList` schema to `seo-schemas.ts` and inject on sub-pages |
-| **AI crawler rules** | `robots.txt` has no GPTBot/CCBot rules | Add `User-agent: GPTBot` and `User-agent: CCBot` blocks |
-| **Sitemap lastmod** | No `<lastmod>` dates | Add `<lastmod>` to all entries |
-| **Semantic `<main>`** | Pages wrap content in `<div>` only | Wrap page content in `<main>` element on each page |
-
-**Files:** `src/lib/seo-schemas.ts`, `public/robots.txt`, `public/sitemap.xml`, `src/components/StyleTile.tsx`, all page components (add `<main>`)
-
-### Phase 3: Logic, State & Form Handling
-
-| Change | Current | After |
-|--------|---------|-------|
-| **ROI Calculator hook** | All calculation logic inline in component (~540 lines) | Extract `useROICalculator` hook for memoized calculations with edge-case guards (NaN, negative, Infinity) |
-| **Input validation** | No `maxLength` on textareas/inputs | Add `maxLength` attributes: 1000 for textareas, 255 for emails |
-| **Edge function validation** | `capture-lead` accepts raw JSON without schema checks | Add input validation (string length limits, type checks) to edge function |
-| **Error Boundary** | None — component crash = white screen | Add `ErrorBoundary` component wrapping `<Routes>` in `App.tsx` with graceful fallback UI |
-
-**Files:** new `src/hooks/useROICalculator.ts`, new `src/components/ErrorBoundary.tsx`, `src/App.tsx`, `src/components/ROICalculator.tsx`, `src/pages/Contact.tsx`, `supabase/functions/capture-lead/index.ts`
-
-### Phase 4: Accessibility & Security
-
-| Change | Current | After |
-|--------|---------|-------|
-| **Skip link** | Missing | Add "Skip to main content" as first focusable element in `index.html` + CSS |
-| **Mobile menu focus trap** | Tab key escapes mobile menu into background content | Trap focus within mobile menu when open |
-| **`aria-current="page"`** | Active nav link only has visual styling | Add `aria-current="page"` for screen readers |
-| **ROI results `aria-live`** | Screen readers don't announce calculation changes | Add `aria-live="polite"` to results container |
-| **Color contrast** | `muted-foreground: hsl(240, 5%, 55%)` — borderline 4.2:1 AA ratio | Bump to `hsl(240, 5%, 64%)` for comfortable 4.5:1+ ratio |
-| **CSP meta tag** | None | Add `<meta http-equiv="Content-Security-Policy">` with restrictive policy |
-| **Input maxLength** | No character limits on form inputs | Add `maxLength` to all user-facing inputs |
-
-**Files:** `index.html`, `src/index.css`, `src/components/Navigation.tsx`, `src/components/ROICalculator.tsx`, `src/pages/Contact.tsx`
-
-### Phase 5: Observability
-
-| Change | Current | After |
-|--------|---------|-------|
-| **Error tracking** | No client-side error capture | Add `useErrorReporter` hook using `window.onerror` + `unhandledrejection`, logs to `client_errors` database table |
-| **Centralize recipient email** | `daniel@phaosai.com` hardcoded in edge functions | Move to a Supabase secret `NOTIFICATION_EMAIL` |
-
-**Files:** new `src/hooks/useErrorReporter.ts`, `src/App.tsx`, new DB migration for `client_errors` table, `supabase/functions/capture-lead/index.ts`
+**Performance strategy:** The Canvas is lazy-loaded and uses `frameloop="demand"` when off-screen. The existing hero background image remains as the immediate paint, then the 3D layer fades in on top once loaded (~1-2s after FCP).
 
 ---
 
-## What Will NOT Change
-- No visual design changes (colors, layouts, spacing, typography stay identical)
-- No new pages
-- No visible text or copy modifications
-- No changes to WorkflowTeardownPopup or ChatWidget
-- No changes to the ROI calculator's visual output or user-facing behavior
+## 2. Kinetic Typography & Light Shimmer
 
-## Summary: All Files Touched
+**New file:** `src/components/KineticText.tsx`
+- A Framer Motion wrapper that splits children text into individual `<span>` elements
+- Each letter animates with a staggered `blur(8px) → blur(0)` + `opacity: 0 → 1` effect
+- Triggered by `whileInView` with `viewport={{ once: true }}`
+- Used on H1/H2 headlines across StyleTile, VoiceAI, Workflows pages
+
+**New CSS utility in `src/index.css`:**
+```css
+.shimmer-light {
+  background: linear-gradient(
+    90deg, transparent 0%, hsl(263 70% 58% / 0.4) 50%, transparent 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  animation: shimmer 4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%, 100% { background-position: -200% 0; }
+  50% { background-position: 200% 0; }
+}
+```
+
+**Modified files:** `StyleTile.tsx`, `VoiceAI.tsx`, `Workflows.tsx` — wrap primary headlines in `<KineticText>` and add `shimmer-light` class to key value propositions.
+
+---
+
+## 3. Phaos Navigator (Floating Contextual Shortcuts)
+
+**New file:** `src/components/PhaosNavigator.tsx`
+- A minimalist floating pill in the bottom-left (opposite the chat widget in bottom-right)
+- Shows a small Phaos crown icon + "Navigate" label
+- On click/hover, expands to show 3-4 contextual shortcuts based on current page:
+  - Homepage: "ROI Calculator", "Voice AI", "Workflows", "Contact"
+  - Integrations page: "Search Integrations", "How It Works", "Contact"
+  - etc.
+- Each shortcut smoothly scrolls to the target section and briefly pulses its border with `ring-2 ring-primary animate-pulse` for 1.5s
+- Uses Framer Motion `AnimatePresence` for expand/collapse
+- Collapses to just the icon on mobile to save space
+
+**Modified file:** `src/App.tsx` — add `<PhaosNavigator />` alongside `<ChatWidget />` and `<WorkflowTeardownPopup />`
+
+---
+
+## 4. Integration API Playground
+
+**New file:** `src/components/APIPlayground.tsx`
+- A dark-themed code block component styled like a terminal
+- Header bar with "Terminal" label and a green/red/yellow dot row
+- Pre-filled with a `curl` command to a simulated Phaos endpoint
+- "Run Request" button triggers a typing animation that renders a JSON response:
+  ```json
+  { "status": "AI_Agent_Deployed", "latency_ms": 42, "monthly_savings": "$3,200" }
+  ```
+- Uses `font-mono`, `bg-[hsl(240,20%,6%)]` border with `border-primary/30`
+- No real API calls — purely simulated for demonstration
+
+**Modified file:** `src/pages/Integrations.tsx` — add a new section between "How It Works" and the integration categories titled with the existing pattern (no new copy beyond the code block content itself)
+
+---
+
+## 5. Magnetic Buttons & Custom Cursor
+
+**New file:** `src/components/MagneticButton.tsx`
+- Wrapper component that tracks mouse position relative to button center
+- Applies a `transform: translate(dx, dy)` where dx/dy are clamped to ±20px
+- Springs back on mouse leave using Framer Motion `useSpring`
+- Applied to all primary CTA buttons ("Schedule a Call", etc.)
+
+**New file:** `src/components/CustomCursor.tsx`
+- Renders a 24px translucent purple circle (`bg-primary/30 blur-sm`) that follows the cursor via `pointermove`
+- Scales up to 48px and increases opacity when hovering over `[data-interactive]` elements (buttons, links)
+- Hidden on touch devices (`@media (pointer: coarse)`)
+- Sets `cursor: none` on `<body>` for desktop only
+
+**Modified file:** `src/App.tsx` — mount `<CustomCursor />` at root level
+
+**Modified files:** `StyleTile.tsx`, `Contact.tsx`, `VoiceAI.tsx`, `Workflows.tsx` — wrap primary CTAs in `<MagneticButton>`
+
+---
+
+## 6. Dark/Light Theme Toggle
+
+**Implementation approach:** CSS custom properties already drive all colors via `index.css`. Add a second set of `:root` values under a `.light` class.
+
+**New light-mode variables in `src/index.css`:**
+```css
+:root.light {
+  --background: 0 0% 99%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 97%;
+  --card-foreground: 240 10% 10%;
+  --muted-foreground: 240 5% 40%;
+  --border: 240 5% 88%;
+  --primary: 263 70% 58%;  /* stays the same */
+  /* ... all other tokens mapped to light equivalents */
+}
+```
+
+**New file:** `src/components/ThemeToggle.tsx`
+- Sun/Moon icon toggle button
+- Reads/writes theme preference to `localStorage` key `phaos-theme`
+- On mount: checks `localStorage`, defaults to `dark`
+- Toggles `.light` class on `document.documentElement`
+- No flicker: add an inline `<script>` in `index.html` that reads `localStorage` and sets the class before React hydrates
+
+**Modified file:** `src/components/Navigation.tsx` — add `<ThemeToggle />` in the top-right of the nav bar (desktop: before mobile hamburger, mobile: inside the menu)
+
+**Modified file:** `index.html` — add anti-flicker script in `<head>`
+
+---
+
+## 7. Design Consistency Guardrails
+
+- All new components use existing CSS variables (no hardcoded hex values)
+- All animations use `will-change: transform` and `transform: translateZ(0)` for GPU acceleration
+- 3D canvas uses `dpr={[1, 1.5]}` to cap pixel ratio and maintain 60fps
+- Custom cursor uses `requestAnimationFrame` for smooth tracking
+- All new interactive elements get `data-interactive` attribute for cursor detection
+
+---
+
+## New Dependencies
+- `@react-three/fiber@^8.18`
+- `@react-three/drei@^9.122.0`
+- `three@^0.160`
+
+## Files Summary
 
 ```text
-Modified:
-  index.html                             — skip link, CSP meta, Supabase preconnect
-  vite.config.ts                         — remove recharts from optimizeDeps
-  package.json                           — remove recharts
-  src/index.css                          — muted-foreground contrast bump, skip-link styles
-  src/App.tsx                            — ErrorBoundary wrapper, error reporter hook
-  src/components/Navigation.tsx          — focus trap, aria-current
-  src/components/ROICalculator.tsx       — use extracted hook, aria-live on results
-  src/components/StyleTile.tsx           — <main> wrapper
-  src/pages/Contact.tsx                  — maxLength on inputs
-  src/lib/seo-schemas.ts                — Service schemas, BreadcrumbList helper
-  public/robots.txt                      — AI crawler rules
-  public/sitemap.xml                     — lastmod dates
-  supabase/functions/capture-lead/index.ts — input validation
-
 New:
-  src/hooks/useROICalculator.ts          — extracted calculator logic
-  src/hooks/useErrorReporter.ts          — client error tracking
-  src/components/ErrorBoundary.tsx        — graceful crash fallback
-  DB migration: client_errors table
+  src/components/HeroLightCore.tsx     — 3D hero background
+  src/components/KineticText.tsx       — staggered blur-to-focus text
+  src/components/PhaosNavigator.tsx    — floating contextual shortcuts
+  src/components/APIPlayground.tsx     — simulated terminal/code block
+  src/components/MagneticButton.tsx    — magnetic hover effect wrapper
+  src/components/CustomCursor.tsx      — light halo cursor
+  src/components/ThemeToggle.tsx       — dark/light toggle
 
-Deleted:
-  src/components/ui/chart.tsx            — unused recharts wrapper
+Modified:
+  index.html                          — anti-flicker theme script
+  src/index.css                       — shimmer keyframes, light-mode vars
+  src/App.tsx                         — mount CustomCursor, PhaosNavigator
+  src/components/Navigation.tsx       — add ThemeToggle
+  src/components/StyleTile.tsx        — HeroLightCore, KineticText, MagneticButton
+  src/pages/Integrations.tsx          — APIPlayground section
+  src/pages/VoiceAI.tsx               — KineticText on headlines
+  src/pages/Workflows.tsx             — KineticText on headlines
+  src/pages/Contact.tsx               — MagneticButton on CTA
+  tailwind.config.ts                  — shimmer animation keyframe
+  package.json                        — three.js dependencies
 ```
+
+## FCP Protection Strategy
+The 3D canvas is the only heavy addition. It loads via `React.lazy()` inside a `<Suspense>` boundary — the hero background image renders immediately as FCP, then the 3D layer fades in over it. The canvas uses `frameloop="demand"` and pauses rendering when scrolled out of the viewport. All other additions are pure CSS or lightweight Framer Motion — negligible bundle impact.
+
+## Theme Persistence
+An inline `<script>` in `index.html` reads `localStorage.getItem('phaos-theme')` and sets `document.documentElement.className` before any React code executes. This prevents a flash of wrong theme on page load.
 
