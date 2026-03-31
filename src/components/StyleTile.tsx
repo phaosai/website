@@ -64,12 +64,11 @@ const StyleTile = () => {
               style={{ willChange: "transform, opacity" }}
             >
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
-                <KineticText className="text-gradient-purple shimmer-light">AI-Powered</KineticText>{" "}
-                <KineticText delay={0.3}>Voice &</KineticText>
+                <span className="text-gradient-purple">AI-Powered</span> Voice &
                 <br />
-                <KineticText delay={0.5}>Agentic Workflow</KineticText>
+                Agentic Workflow
                 <br />
-                <KineticText delay={0.8}>Automation</KineticText>
+                Automation
               </h1>
             </motion.div>
 
