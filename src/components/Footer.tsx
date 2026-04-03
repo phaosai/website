@@ -24,7 +24,7 @@ const Footer = () => {
           <div className="md:col-span-1">
             <p className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">
               <span className="font-bold">Phaos</span>{" "}
-              <span className="italic font-medium text-primary">AI</span>
+              <span className="italic font-medium text-purple-light">AI</span>
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               AI-Powered Voice & Agentic Workflow Automation for the modern enterprise.
