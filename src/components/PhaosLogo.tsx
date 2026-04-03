@@ -14,7 +14,7 @@ const PhaosLogo = ({ showImage = true, className = "" }: PhaosLogoProps) => (
     <span className="text-lg tracking-tight text-foreground">
       <span className="font-bold">Phaos</span>
       {" "}
-      <span className="italic font-medium text-primary">AI</span>
+      <span className="italic font-medium text-purple-light">AI</span>
     </span>
   </Link>
 );

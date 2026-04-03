@@ -90,7 +90,7 @@ const StyleTile = () => {
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </MagneticButton>
-              <Link to="/about" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base" data-interactive>
+              <Link to="/about" aria-label="Learn more about Phaos AI" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base" data-interactive>
                 Learn More
               </Link>
             </motion.div>
