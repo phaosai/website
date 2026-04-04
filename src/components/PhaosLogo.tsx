@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import phaosCrown from "@/assets/phaos-crown.jpg";
 
 interface PhaosLogoProps {
@@ -7,16 +6,25 @@ interface PhaosLogoProps {
 }
 
 const PhaosLogo = ({ showImage = true, className = "" }: PhaosLogoProps) => (
-  <Link to="/" className={`flex items-center gap-3 ${className}`}>
+  <div className={`flex items-center gap-3 ${className}`}>
     {showImage && (
-      <img src={phaosCrown} alt="Phaos AI" className="h-8 w-auto object-contain" />
+      <img
+        src={phaosCrown}
+        alt=""
+        aria-hidden="true"
+        role="presentation"
+        width={200}
+        height={96}
+        decoding="async"
+        className="h-8 w-auto object-contain"
+      />
     )}
     <span className="text-lg tracking-tight text-foreground">
       <span className="font-bold">Phaos</span>
       {" "}
       <span className="italic font-medium text-purple-light">AI</span>
     </span>
-  </Link>
+  </div>
 );
 
 export default PhaosLogo;

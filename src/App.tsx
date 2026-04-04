@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -35,6 +35,44 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 
 const queryClient = new QueryClient();
 
+const DeferredGlobalUI = () => {
+  const [showGlobalUI, setShowGlobalUI] = useState(false);
+
+  useEffect(() => {
+    let timer: number | null = null;
+
+    const schedule = () => {
+      timer = window.setTimeout(() => setShowGlobalUI(true), 1500);
+    };
+
+    if (document.readyState === "complete") {
+      schedule();
+    } else {
+      window.addEventListener("load", schedule, { once: true });
+    }
+
+    return () => {
+      window.removeEventListener("load", schedule);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, []);
+
+  if (!showGlobalUI) {
+    return null;
+  }
+
+  return (
+    <Suspense fallback={null}>
+      <ChatWidget />
+      <WorkflowTeardownPopup />
+      <PhaosNavigator />
+      <CustomCursor />
+    </Suspense>
+  );
+};
+
 const AppInner = () => {
   useErrorReporter();
   return (
@@ -65,12 +103,7 @@ const AppInner = () => {
           </Routes>
         </ErrorBoundary>
       </Suspense>
-      <Suspense fallback={null}>
-        <ChatWidget />
-        <WorkflowTeardownPopup />
-        <PhaosNavigator />
-        <CustomCursor />
-      </Suspense>
+      <DeferredGlobalUI />
     </BrowserRouter>
   );
 };
