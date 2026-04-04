@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown, Mail } from "lucide-react";
+import FadeIn from "@/components/FadeIn";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -201,11 +201,9 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
           </div>
         )}
 
-        <motion.div
+        <div
           key={results.annualRecovery}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="rounded-xl p-5 text-center"
+          className="rounded-xl p-5 text-center animate-scale-in"
           style={{ background: "rgba(0,255,65,0.06)", border: "1px solid rgba(0,255,65,0.2)" }}
         >
           <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center">
@@ -215,7 +213,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
           <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
             ${results.annualRecovery.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -299,11 +297,9 @@ const WorkflowROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v
           </div>
         )}
 
-        <motion.div
+        <div
           key={results.annualCOPQ}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="rounded-xl p-5 text-center"
+          className="rounded-xl p-5 text-center animate-scale-in"
           style={{ background: "rgba(0,255,65,0.06)", border: "1px solid rgba(0,255,65,0.2)" }}
         >
           <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center">
@@ -317,7 +313,7 @@ const WorkflowROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v
           <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
             ${results.annualCOPQ.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -458,12 +454,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
     <Wrapper className={embedded ? "" : "py-20 px-6"} aria-label="ROI Calculator">
       <div className={embedded ? "" : "max-w-5xl mx-auto"}>
         {!embedded && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8"
-          >
+          <FadeIn className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
               <Calculator className="w-4 h-4 text-primary" aria-hidden="true" />
               <span className="text-sm text-primary font-medium">Operational Diagnostic Tool</span>
@@ -474,7 +465,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Quantify your Cost of Poor Quality and Revenue Leakage. Adjust the sliders or click any value to type your own — get your diagnostic instantly.
             </p>
-          </motion.div>
+          </FadeIn>
         )}
 
         {/* Toggle */}
@@ -485,34 +476,18 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
-          >
+          <FadeIn direction="left" className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow">
             <VoiceAIROI advanced={advanced} onResults={setVoiceResult} />
-          </motion.div>
+          </FadeIn>
 
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
-          >
+          <FadeIn direction="right" delay={0.15} className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow">
             <WorkflowROI advanced={advanced} onResults={setWorkflowResult} />
-          </motion.div>
+          </FadeIn>
         </div>
 
 
         {/* Lead Capture CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+        <FadeIn delay={0.3}
           className="mt-10 rounded-3xl p-8"
           style={{ background: "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(0,255,65,0.05))", border: "1px solid rgba(138,43,226,0.2)" }}
         >
@@ -533,7 +508,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
               Download Audit PDF
             </button>
           </div>
-        </motion.div>
+        </FadeIn>
       </div>
     </Wrapper>
   );
