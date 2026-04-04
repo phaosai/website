@@ -153,7 +153,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
     return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue: recoveredRevenueAnnual, afterHoursRecovery };
   }, [callVolume, missedRate, saleValue, revenueCallRatio, aht, blendedRate, afterHoursVolume, advanced, onResults]);
 
-  const RECOVERY_EXPLANATION = `Missed Calls = Monthly Volume × Missed Rate. Recovered Revenue = Missed Calls × Revenue-Generating Call Ratio × Avg. Transaction Value × 12. Annual Labor Spend = Volume × (AHT/60) × Blended Rate × 12. Industry data: Harvard Business Review found 85% of callers who can't reach a business won't call back; BIA/Kelsey shows inbound calls convert at 25-40%.`;
+  const RECOVERY_EXPLANATION = `Missed Calls = Monthly Volume × Missed Rate. Recovered Revenue = Missed Calls × Revenue-Generating Call Ratio × Avg. Transaction Value × 12. Annual Labor Spend = Volume × (AHT/60) × Blended Rate × 12. Industry data: Harvard Business Review found 85% of callers who can't reach a business won't call back; inbound calls convert at 25-40%.`;
 
   return (
     <div className="space-y-6">
@@ -171,18 +171,18 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
         {!advanced ? (
           <>
             <SliderRow label="Monthly Inbound / Dispatch Volume" value={callVolume} set={setCallVolume} min={0} max={25000} step={50} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry average for dealerships is 15-22%." value={missedRate} set={setMissedRate} min={0} max={25} step={0.5} fmt={(v) => `${v}%`} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={5000} step={10} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry averages range from 15-22%." value={missedRate} set={setMissedRate} min={0} max={50} step={0.5} fmt={(v) => `${v}%`} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={100000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
             <SliderRow label="Revenue-Generating Call Ratio (%)" tooltip="Percentage of calls that are sales or high-value inquiries rather than service/dispatch." value={revenueCallRatio} set={setRevenueCallRatio} min={0} max={100} step={1} fmt={(v) => `${v}%`} />
           </>
         ) : (
           <>
             <SliderRow label="Monthly Inbound / Dispatch Volume" value={callVolume} set={setCallVolume} min={0} max={25000} step={50} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry average for dealerships is 15-22%." value={missedRate} set={setMissedRate} min={0} max={25} step={0.5} fmt={(v) => `${v}%`} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={5000} step={10} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry averages range from 15-22%." value={missedRate} set={setMissedRate} min={0} max={50} step={0.5} fmt={(v) => `${v}%`} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={100000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
             <SliderRow label="Revenue-Generating Call Ratio (%)" tooltip="Percentage of calls that are sales or high-value inquiries rather than service/dispatch." value={revenueCallRatio} set={setRevenueCallRatio} min={0} max={100} step={1} fmt={(v) => `${v}%`} />
-            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={0} max={30} step={0.5} fmt={(v) => `${v} min`} />
-            <SliderRow label="Blended Dispatch/Helpdesk Rate" tooltip="Blended hourly rate including salary, benefits, taxes, and overhead for dispatch and helpdesk staff." value={blendedRate} set={setBlendedRate} min={0} max={100} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI typically reduces this by 29-40%." value={aht} set={setAht} min={0} max={30} step={0.5} fmt={(v) => `${v} min`} />
+            <SliderRow label="Blended Dispatch/Helpdesk Rate" tooltip="Blended hourly rate including salary, benefits, taxes, and overhead for operations staff." value={blendedRate} set={setBlendedRate} min={0} max={100} step={1} fmt={(v) => `$${v}/hr`} />
             <SliderRow label="After-Hours / SLA Emergency Calls" tooltip="Monthly calls received outside business hours or requiring SLA-level emergency response." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={2500} step={10} fmt={(v) => v.toLocaleString()} />
           </>
         )}
@@ -193,16 +193,16 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
         {advanced && results.showLabor && (
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Annual Labor Spend</p>
-              <p className="text-lg font-bold text-foreground">${results.laborSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Annual Labor Spend</p>
+              <p className="text-base sm:text-lg font-bold text-foreground truncate">${results.laborSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Recovered Revenue</p>
-              <p className="text-lg font-bold" style={{ color: "#00FF41" }}>${(results.recoveredRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Recovered Revenue</p>
+              <p className="text-base sm:text-lg font-bold truncate" style={{ color: "#00FF41" }}>${(results.recoveredRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">After-Hours Recovery</p>
-              <p className="text-lg font-bold" style={{ color: "#00FF41" }}>${(results.afterHoursRecovery || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">After-Hours Recovery</p>
+              <p className="text-base sm:text-lg font-bold truncate" style={{ color: "#00FF41" }}>${(results.afterHoursRecovery || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
           </div>
         )}
@@ -216,7 +216,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
             Total Annual {advanced ? "Value Captured" : "Revenue Recovery"}
             <InfoTip text={RECOVERY_EXPLANATION} />
           </p>
-          <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
+          <p className="text-3xl sm:text-4xl font-extrabold truncate" style={{ color: "#00FF41" }}>
             ${results.annualRecovery.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
         </div>
