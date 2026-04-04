@@ -18,7 +18,7 @@ import SEOHead from "@/components/SEOHead";
 import ROICalculator from "@/components/ROICalculator";
 import MagneticButton from "@/components/MagneticButton";
 
-import { organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema } from "@/lib/seo-schemas";
+import { homeGraphSchema } from "@/lib/seo-schemas";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
