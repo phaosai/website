@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { workflowPageSchema } from "@/lib/seo-schemas";
 import WorkflowDiagram from "@/components/WorkflowDiagram";
 
 const fadeUp = {
