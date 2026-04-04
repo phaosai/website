@@ -6,7 +6,9 @@ import Footer from "@/components/Footer";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
 import shreePhoto from "@/assets/shree-dandekar.jpg";
 import diegoPhoto from "@/assets/diego-barrientos.png";
-import willPhoto from "@/assets/will-donahue.jpg";
+import toriPhoto from "@/assets/tori-mccrea.png";
+import kaitlynPhoto from "@/assets/kaitlyn-hathaway.jpeg";
+import willPhoto from "@/assets/will-donahue.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -210,13 +212,13 @@ const About = () => {
                 <p className="text-primary font-medium mb-4">Founder & CEO</p>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    Daniel Lindros is a seasoned operations and sales executive with over 17 years of experience driving growth across SaaS, technology, and service-driven businesses. A relentless KPI optimizer and data-driven strategist, Daniel has spent his career building and scaling high-performance teams, refining go-to-market strategies, and turning operational inefficiencies into competitive advantages.
+                    From washing dishes at age 14 to leading Phaos AI, Daniel's career has been defined by a simple principle: doing the hard work required to build things that last. Long before he was engineering AI-driven workflows, Daniel cut his teeth in high-stakes enterprise technology, driving growth for industry titans like Xerox and Canon. Over a decade of B2B leadership, he didn't just sell software; he partnered with some of the world's most complex organizations—including the Department of Defense, Harvard Business School, and Disney—to solve their most deeply rooted inefficiencies.
                   </p>
                   <p>
-                    His deep understanding of B2B sales cycles, customer engagement, and operational workflows — combined with a passion for emerging technology — led him to found Phaos AI. Daniel saw firsthand how businesses in the printing and document solutions industry were buried under manual processes, excessive call volumes, and disconnected systems. He set out to build an AI platform that doesn't just automate — it transforms.
+                    At Phaos AI, Daniel merges extensive hard-won startup experience with a rigorous, Lean Six Sigma mindset. To him, artificial intelligence isn't just about bleeding-edge novelty; it's about operational utility. He excels at simplifying the complex, translating autonomous systems into practical, high-growth foundations that drive measurable, bottom-line success for customers.
                   </p>
                   <p>
-                    Based in Central Florida, Daniel brings a faith-driven, servant-leadership philosophy to every aspect of Phaos AI — building technology that empowers businesses and the people behind them.
+                    Daniel's leadership is profoundly shaped by his faith and studies in divinity. He approaches business with a servant's heart, viewing leadership as a daily responsibility to elevate his team and fiercely protect his clients' interests. Outside the office, Daniel is a devoted father to his son, Davis. He stays grounded through prayer, playing the piano, and pushing his physical limits at the gym. At his core, Daniel remains committed to proving that relentless technical innovation and a genuine love for people are not mutually exclusive, ensuring Phaos AI stands as a company built on purpose, integrity, excellence and love.
                   </p>
                 </div>
               </div>
@@ -283,12 +285,69 @@ const About = () => {
             </div>
           </motion.div>
 
-          {/* Will Donahue */}
+          {/* Tori McCrea */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.3 }}
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
+                <img src={toriPhoto} alt="Tori McCrea — Operations Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-1">Tori McCrea</h3>
+                <p className="text-primary font-medium mb-4">Operations Specialist</p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    Tori brings over a decade of experience in financial stewardship and organizational management to Phaos. Her career is marked by a proven ability to bring order to complex environments, most notably during her tenure at Emerge Church and Cross-Country Greenhouses. At Emerge, she oversaw the financial integrity of a multi-million dollar budget, managing everything from payroll to intricate tax compliance and year-end audits. Her expertise in QuickBooks Online and Bill.com allowed her to modernize outdated systems, ensuring 100% accuracy across diverse accounts and high-volume transactions.
+                  </p>
+                  <p>
+                    At Phaos AI, Tori translates this background into a high-growth tech environment, serving as the "engine" behind the firm's back-office infrastructure. She is responsible for designing and maintaining the Standard Operating Procedures (SOPs) that allow the technical team to scale without friction. By bridging her rigorous bookkeeping background with advanced operational tools, Tori ensures that Phaos AI operates with the fiscal discipline and systematic efficiency required for enterprise-level success. Outside of the office, Tori is a devoted wife and mother of three bringing discipline and excellence to everything she manages.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Kaitlyn Hathaway */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
+                <img src={kaitlynPhoto} alt="Kaitlyn Hathaway — Marketing Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-1">Kaitlyn Hathaway</h3>
+                <p className="text-primary font-medium mb-4">Marketing Specialist</p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    Kaitlyn brings a uniquely human-centered and data-driven approach to her role as Marketing Specialist at Phaos AI. Her career is defined by a proven ability to build community trust, drive engagement, and translate complex concepts into compelling narratives.
+                  </p>
+                  <p>
+                    At Mh3 Solar, Kaitlyn operated as a Marketing Manager, where she executed strategic, multi-platform campaigns that increased social media following by 600% and consistently generated targeted leads. Her expertise spans digital marketing, public relations, and hands-on content production using tools like Adobe and Canva Pro. Drawing on her Bachelor of Arts in Psychology, she previously served in critical community and healthcare roles at North Star Memorial Group and Kettering Health Network. In these positions, she specialized in building rapport, educating clients on their options, and managing community events and public relations.
+                  </p>
+                  <p>
+                    At Phaos AI, Kaitlyn leverages this rare blend of psychological insight and digital marketing prowess to ensure the firm's brand is both highly visible and deeply authentic. She is responsible for driving lead generation, expanding the company's digital footprint, and crafting the messaging that connects Phaos AI's technical solutions to real-world needs. Based in Edgewater, Florida, Kaitlyn is a highly organized and community-driven professional who brings a collaborative, results-oriented spirit to the team, ensuring the company's outward presence perfectly reflects its core values of faith, fun, family and excellence.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Will Donahue */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.5 }}
             className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20"
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
@@ -300,13 +359,13 @@ const About = () => {
                 <p className="text-primary font-medium mb-4">Sales Specialist</p>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    Will Donahue is a driven sales professional with a passion for building meaningful client relationships and connecting businesses with solutions that create real impact. His experience spans consultative selling, client development, and relationship management — skills honed through a career dedicated to understanding customer needs and delivering measurable value.
+                    With an impressive professional background rooted in the competitive world of commercial real estate and business development—including his time at CBRE, the world's largest commercial real estate services firm—Will has mastered the art of navigating complex, high-stakes transactions. During his tenure in the Mid-Atlantic Brokerage Group, he was instrumental in financial analysis and lead generation for top-tier agency leasing teams.
                   </p>
                   <p>
-                    Will's approach to sales is rooted in service and authenticity — he listens first, understands the pain points, and positions Phaos AI as a genuine solution rather than a pitch. His ability to communicate complex technology in clear, relatable terms makes him an invaluable bridge between our platform and the businesses we serve.
+                    Recognized as a DCA Live Rising Star and an honoree of the Washington Business Journal's Deal of the Year, Will brings a decorated track record of excellence to the Phaos AI team. He excels at identifying high-growth opportunities and simplifying the path from initial engagement to long-term commercial partnership. At Phaos AI, Will leverages his consultative acumen and "people-first" mindset to bridge the gap between technical innovation and real-world business utility, ensuring that every client finds a tailored, high-impact solution for their operational needs.
                   </p>
                   <p>
-                    Based in North Carolina, Will brings a faith-driven work ethic and a genuine commitment to helping businesses unlock the full potential of AI-powered automation.
+                    A graduate of Denison University with an M.S. in Real Estate from Georgetown University, Will combines academic rigor with a grounded, humble approach to leadership. He is a "grit-first" professional who views sales as a form of stewardship—protecting the interests of his clients while driving the sustainable growth that allows Phaos AI to scale. When he isn't architecting new partnerships, Will stays active in the community and remains dedicated to the pursuit of excellence in both his professional and personal life, ensuring that Phaos AI is represented through faith, integrity and drive.
                   </p>
                 </div>
               </div>
