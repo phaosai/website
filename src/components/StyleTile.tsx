@@ -1,4 +1,3 @@
-import { lazy, Suspense } from "react";
 import {
   Zap,
   ArrowRight,
@@ -16,9 +15,8 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import FadeIn from "@/components/FadeIn";
 
+import LazyViewport from "@/components/LazyViewport";
 import { homeGraphSchema } from "@/lib/seo-schemas";
-
-const ROICalculator = lazy(() => import("@/components/ROICalculator"));
 
 const StyleTile = () => {
   return (
@@ -192,9 +190,12 @@ const StyleTile = () => {
               See how much you could save with AI-powered voice agents and workflow automation.
             </p>
           </FadeIn>
-          <Suspense fallback={<div className="min-h-[400px]" />}>
-            <ROICalculator embedded />
-          </Suspense>
+          <LazyViewport
+            factory={() => import("@/components/ROICalculator")}
+            componentProps={{ embedded: true }}
+            fallback={<div className="min-h-[400px]" />}
+            rootMargin="400px"
+          />
         </div>
       </section>
 
