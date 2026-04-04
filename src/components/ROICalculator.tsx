@@ -487,11 +487,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
 
 
         {/* Lead Capture CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+        <FadeIn delay={0.3}
           className="mt-10 rounded-3xl p-8"
           style={{ background: "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(0,255,65,0.05))", border: "1px solid rgba(138,43,226,0.2)" }}
         >
@@ -512,7 +508,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
               Download Audit PDF
             </button>
           </div>
-        </motion.div>
+        </FadeIn>
       </div>
     </Wrapper>
   );
