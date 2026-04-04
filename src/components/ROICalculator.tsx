@@ -201,11 +201,9 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
           </div>
         )}
 
-        <motion.div
+        <div
           key={results.annualRecovery}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="rounded-xl p-5 text-center"
+          className="rounded-xl p-5 text-center animate-scale-in"
           style={{ background: "rgba(0,255,65,0.06)", border: "1px solid rgba(0,255,65,0.2)" }}
         >
           <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center">
@@ -215,7 +213,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
           <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
             ${results.annualRecovery.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
