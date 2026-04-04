@@ -454,12 +454,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
     <Wrapper className={embedded ? "" : "py-20 px-6"} aria-label="ROI Calculator">
       <div className={embedded ? "" : "max-w-5xl mx-auto"}>
         {!embedded && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8"
-          >
+          <FadeIn className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
               <Calculator className="w-4 h-4 text-primary" aria-hidden="true" />
               <span className="text-sm text-primary font-medium">Operational Diagnostic Tool</span>
@@ -470,7 +465,7 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Quantify your Cost of Poor Quality and Revenue Leakage. Adjust the sliders or click any value to type your own — get your diagnostic instantly.
             </p>
-          </motion.div>
+          </FadeIn>
         )}
 
         {/* Toggle */}
