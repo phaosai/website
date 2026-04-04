@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { blogPostSchema } from "@/lib/seo-schemas";
 
 interface BlogPost {
   slug: string;
