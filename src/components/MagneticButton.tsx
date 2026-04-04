@@ -1,5 +1,4 @@
 import { useRef, ReactNode, useCallback } from "react";
-import { motion, useSpring } from "framer-motion";
 
 interface MagneticButtonProps {
   children: ReactNode;
@@ -7,38 +6,33 @@ interface MagneticButtonProps {
   as?: "div" | "span";
 }
 
-const MagneticButton = ({ children, className = "", as = "div" }: MagneticButtonProps) => {
+/**
+ * Magnetic hover effect using pure CSS transforms — no framer-motion dependency.
+ */
+const MagneticButton = ({ children, className = "", as: Tag = "div" }: MagneticButtonProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  const x = useSpring(0, { stiffness: 300, damping: 20 });
-  const y = useSpring(0, { stiffness: 300, damping: 20 });
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = Math.max(-20, Math.min(20, (e.clientX - cx) * 0.25));
-      const dy = Math.max(-20, Math.min(20, (e.clientY - cy) * 0.25));
-      x.set(dx);
-      y.set(dy);
-    },
-    [x, y]
-  );
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = Math.max(-20, Math.min(20, (e.clientX - cx) * 0.25));
+    const dy = Math.max(-20, Math.min(20, (e.clientY - cy) * 0.25));
+    ref.current.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+  }, []);
 
   const handleMouseLeave = useCallback(() => {
-    x.set(0);
-    y.set(0);
-  }, [x, y]);
-
-  const Tag = motion[as] as typeof motion.div;
+    if (ref.current) {
+      ref.current.style.transform = "translate3d(0, 0, 0)";
+    }
+  }, []);
 
   return (
     <Tag
-      ref={ref}
+      ref={ref as any}
       className={className}
-      style={{ x, y, willChange: "transform", display: "inline-block" }}
+      style={{ display: "inline-block", willChange: "transform", transition: "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       data-interactive

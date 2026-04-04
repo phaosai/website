@@ -1,5 +1,4 @@
-import { motion } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import PhaosLogo from "@/components/PhaosLogo";
@@ -61,11 +60,8 @@ const Navigation = () => {
   ];
 
   return (
-    <motion.nav
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.2 }}
-      className="fixed top-0 left-0 right-0 z-50 glass-strong shadow-lg shadow-black/20"
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 glass-strong shadow-lg shadow-black/20 animate-fade-in"
       aria-label="Main navigation"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
@@ -113,15 +109,13 @@ const Navigation = () => {
       </div>
 
       {mobileOpen && (
-        <motion.div
+        <div
           ref={menuRef}
           id="mobile-nav-menu"
           role="dialog"
           aria-modal="true"
           aria-label="Mobile navigation menu"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:hidden glass-strong border-t border-border/50 px-6 py-4 space-y-4"
+          className="md:hidden glass-strong border-t border-border/50 px-6 py-4 space-y-4 animate-fade-in"
         >
           {links.map((link) => {
             const isActive = location.pathname === link.to;
@@ -146,9 +140,9 @@ const Navigation = () => {
           >
             Schedule a Call
           </Link>
-        </motion.div>
+        </div>
       )}
-    </motion.nav>
+    </nav>
   );
 };
 
