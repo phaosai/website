@@ -476,25 +476,13 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
-          >
+          <FadeIn direction="left" className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow">
             <VoiceAIROI advanced={advanced} onResults={setVoiceResult} />
-          </motion.div>
+          </FadeIn>
 
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow"
-          >
+          <FadeIn direction="right" delay={0.15} className="rounded-3xl p-6 md:p-8 bg-card border border-border/50 hover:shadow-[0_0_30px_rgba(138,43,226,0.1)] transition-shadow">
             <WorkflowROI advanced={advanced} onResults={setWorkflowResult} />
-          </motion.div>
+          </FadeIn>
         </div>
 
 
