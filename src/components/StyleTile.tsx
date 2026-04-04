@@ -11,7 +11,6 @@ import {
   Phone,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import phaosHero from "@/assets/phaos-hero.jpg";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
@@ -43,12 +42,19 @@ const StyleTile = () => {
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden" aria-label="Hero">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${phaosHero})` }}
-          role="img"
-          aria-label="Phaos AI hero background"
-        />
+        <picture className="absolute inset-0" aria-hidden="true">
+          <source srcSet="/phaos-hero.avif" type="image/avif" />
+          <img
+            src="/phaos-hero.jpg"
+            alt=""
+            width={1449}
+            height={710}
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </picture>
         <div className="absolute inset-0 bg-background/85" />
 
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[180px] pointer-events-none" aria-hidden="true" />
@@ -99,7 +105,7 @@ const StyleTile = () => {
       </section>
 
       {/* ── Investment / Partnership ── */}
-      <section className="py-28 px-6 border-t border-border/30" aria-label="Strategic Partners">
+      <section className="py-28 px-6 border-t border-border/30 [content-visibility:auto] [contain-intrinsic-size:1px_900px]" aria-label="Strategic Partners">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -124,7 +130,7 @@ const StyleTile = () => {
       </section>
 
       {/* ── Two-Column Feature Cards ── */}
-      <section className="py-28 px-6" aria-label="Platform Overview">
+      <section className="py-28 px-6 [content-visibility:auto] [contain-intrinsic-size:1px_1200px]" aria-label="Platform Overview">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -192,7 +198,7 @@ const StyleTile = () => {
       </section>
 
       {/* ── FAQ Section for SEO ── */}
-      <section className="py-28 px-6 border-t border-border/30" aria-label="Frequently Asked Questions">
+      <section className="py-28 px-6 border-t border-border/30 [content-visibility:auto] [contain-intrinsic-size:1px_1000px]" aria-label="Frequently Asked Questions">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -234,7 +240,7 @@ const StyleTile = () => {
       </section>
 
       {/* ── ROI Calculator Embed ── */}
-      <section className="py-28 px-6 border-t border-border/30" aria-label="ROI Calculator">
+      <section className="py-28 px-6 border-t border-border/30 [content-visibility:auto] [contain-intrinsic-size:1px_1600px]" aria-label="ROI Calculator">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

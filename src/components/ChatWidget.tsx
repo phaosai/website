@@ -268,7 +268,16 @@ const ChatWidget = () => {
             {/* Header */}
             <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: "rgba(138,43,226,0.2)", background: "rgba(138,43,226,0.05)" }}>
               <div className="relative">
-                <img src={phaosCrown} alt="Phaos AI" className="w-8 h-8 object-contain" />
+                <img
+                  src={phaosCrown}
+                  alt=""
+                  aria-hidden="true"
+                  role="presentation"
+                  width={200}
+                  height={96}
+                  decoding="async"
+                  className="w-8 h-8 object-contain"
+                />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2" style={{ background: "#00FF41", borderColor: "#0b0b0f" }} />
               </div>
               <div className="flex-1">

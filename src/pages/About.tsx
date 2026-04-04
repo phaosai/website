@@ -213,7 +213,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={danielPhoto} alt="Daniel Lindros — Founder & CEO of Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={danielPhoto} alt="Daniel Lindros — Founder & CEO of Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Daniel Lindros</h3>
@@ -243,7 +243,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={shreePhoto} alt="Shree Dandekar — CTO of Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={shreePhoto} alt="Shree Dandekar — CTO of Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Shree Dandekar</h3>
@@ -273,7 +273,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={diegoPhoto} alt="Juan Diego Barrientos — Director of Product Technology at Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={diegoPhoto} alt="Juan Diego Barrientos — Director of Product Technology at Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Juan "Diego" Barrientos</h3>
@@ -303,7 +303,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={toriPhoto} alt="Tori McCrea — Operations Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={toriPhoto} alt="Tori McCrea — Operations Specialist at Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Tori McCrea</h3>
@@ -330,7 +330,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={kaitlynPhoto} alt="Kaitlyn Hathaway — Marketing Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={kaitlynPhoto} alt="Kaitlyn Hathaway — Marketing Specialist at Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Kaitlyn Hathaway</h3>
@@ -360,7 +360,7 @@ const About = () => {
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={willPhoto} alt="Will Donahue — Sales Specialist at Phaos AI" className="w-full h-full object-cover object-top" />
+                <img src={willPhoto} alt="Will Donahue — Sales Specialist at Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Will Donahue</h3>
