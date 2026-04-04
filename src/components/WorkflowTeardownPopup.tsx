@@ -41,8 +41,6 @@ const WorkflowTeardownPopup = () => {
   const validateEmail = (val: string) => {
     if (!val.trim()) return "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Enter a valid email";
-    if (/@(gmail|yahoo|hotmail|outlook|aol|icloud)\./i.test(val))
-      return "Please use your work email for a professional assessment";
     return "";
   };
 
