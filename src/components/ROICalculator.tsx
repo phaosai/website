@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Calculator, Phone, Zap, ArrowRight, Info, Copy, FileDown, Mail } from "lucide-react";
+import FadeIn from "@/components/FadeIn";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
