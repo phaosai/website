@@ -24,6 +24,12 @@ const fadeUp = {
 const About = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      <SEOHead
+        title="About Phaos AI — Our Team & Mission"
+        description="Meet the team behind Phaos AI. Learn about our mission to transform enterprise operations through AI-powered voice agents and workflow automation."
+        canonical="/about"
+        jsonLd={aboutPageSchema}
+      />
       <Navigation />
 
       {/* Hero */}

@@ -56,6 +56,7 @@ const Blog = () => {
         title="Blog — AI Voice & Workflow Automation Insights"
         description="Expert insights on AI voice agents, workflow automation, and digital transformation from the Phaos AI team."
         canonical="/blog"
+        jsonLd={posts.map((p) => blogPostSchema({ title: p.title, description: p.excerpt, datePublished: p.date, author: p.author, slug: p.slug }))}
       />
       <Navigation />
 
