@@ -128,28 +128,32 @@ const PCEGauge = ({ pce }: { pce: number }) => {
 
 /* ── Voice AI Section ── */
 const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v: number) => void }) => {
-  const [callVolume, setCallVolume] = useState(500);
-  const [missedCalls, setMissedCalls] = useState(75);
-  const [saleValue, setSaleValue] = useState(500);
-  const [aht, setAht] = useState(5);
-  const [fullyLoadedRate, setFullyLoadedRate] = useState(35);
+  const [callVolume, setCallVolume] = useState(2500);
+  const [missedRate, setMissedRate] = useState(5);
+  const [saleValue, setSaleValue] = useState(850);
+  const [revenueCallRatio, setRevenueCallRatio] = useState(15);
+  const [aht, setAht] = useState(6.5);
+  const [blendedRate, setBlendedRate] = useState(35);
   const [afterHoursVolume, setAfterHoursVolume] = useState(100);
 
   const results = useMemo(() => {
-    if (!advanced) {
-      const annualRecovery = (missedCalls * saleValue * 0.15) * 12;
-      onResults(annualRecovery);
-      return { annualRecovery, laborSpend: 0, showLabor: false };
-    }
-    const laborSpend = (callVolume * (aht / 60) * fullyLoadedRate) * 12;
-    const recoveredRevenue = (missedCalls * saleValue * 0.20) * 12;
-    const afterHoursRecovery = (afterHoursVolume * saleValue * 0.15) * 12;
-    const annualRecovery = laborSpend + recoveredRevenue + afterHoursRecovery;
-    onResults(annualRecovery);
-    return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue, afterHoursRecovery };
-  }, [callVolume, missedCalls, saleValue, aht, fullyLoadedRate, afterHoursVolume, advanced, onResults]);
+    const missedCalls = callVolume * (missedRate / 100);
+    const recoveredRevenueMonthly = missedCalls * (revenueCallRatio / 100) * saleValue;
+    const recoveredRevenueAnnual = recoveredRevenueMonthly * 12;
 
-  const RECOVERY_EXPLANATION = `This calculation uses a conservative 15% recovery rate (20% in Advanced mode). Industry research supports this: Harvard Business Review found that 85% of callers who can't reach a business won't call back. BIA/Kelsey research shows inbound calls convert at 25-40% — significantly higher than web leads (1-3%). The formula is: Missed Calls × Avg. Transaction Value × Recovery Rate × 12 months.`;
+    if (!advanced) {
+      onResults(recoveredRevenueAnnual);
+      return { annualRecovery: recoveredRevenueAnnual, laborSpend: 0, showLabor: false, recoveredRevenue: recoveredRevenueAnnual, afterHoursRecovery: 0 };
+    }
+
+    const laborSpend = callVolume * (aht / 60) * blendedRate * 12;
+    const afterHoursRecovery = afterHoursVolume * (revenueCallRatio / 100) * saleValue * 12;
+    const annualRecovery = laborSpend + recoveredRevenueAnnual + afterHoursRecovery;
+    onResults(annualRecovery);
+    return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue: recoveredRevenueAnnual, afterHoursRecovery };
+  }, [callVolume, missedRate, saleValue, revenueCallRatio, aht, blendedRate, afterHoursVolume, advanced, onResults]);
+
+  const RECOVERY_EXPLANATION = `Missed Calls = Monthly Volume × Missed Rate. Recovered Revenue = Missed Calls × Revenue-Generating Call Ratio × Avg. Transaction Value × 12. Annual Labor Spend = Volume × (AHT/60) × Blended Rate × 12. Industry data: Harvard Business Review found 85% of callers who can't reach a business won't call back; BIA/Kelsey shows inbound calls convert at 25-40%.`;
 
   return (
     <div className="space-y-6">
@@ -166,18 +170,20 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
       <div className="grid gap-5">
         {!advanced ? (
           <>
-            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={1} max={50000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month. Industry average is 10-20% of total volume." value={missedCalls} set={setMissedCalls} min={1} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={1} max={50000} step={1} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Monthly Inbound / Dispatch Volume" value={callVolume} set={setCallVolume} min={0} max={25000} step={50} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry average for dealerships is 15-22%." value={missedRate} set={setMissedRate} min={0} max={25} step={0.5} fmt={(v) => `${v}%`} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={5000} step={10} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Revenue-Generating Call Ratio (%)" tooltip="Percentage of calls that are sales or high-value inquiries rather than service/dispatch." value={revenueCallRatio} set={setRevenueCallRatio} min={0} max={100} step={1} fmt={(v) => `${v}%`} />
           </>
         ) : (
           <>
-            <SliderRow label="Monthly Call Volume" value={callVolume} set={setCallVolume} min={1} max={50000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Monthly Missed Calls" tooltip="The number of inbound calls that go unanswered each month." value={missedCalls} set={setMissedCalls} min={1} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={1} max={50000} step={1} fmt={(v) => `$${v.toLocaleString()}`} />
-            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={1} max={60} step={1} fmt={(v) => `${v} min`} />
-            <SliderRow label="Fully Loaded Labor Rate" tooltip="Includes base salary + 25-40% for taxes, benefits, and overhead." value={fullyLoadedRate} set={setFullyLoadedRate} min={10} max={250} step={1} fmt={(v) => `$${v}/hr`} />
-            <SliderRow label="After-Hours Call Volume" tooltip="Monthly calls received outside business hours." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={10000} step={1} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Monthly Inbound / Dispatch Volume" value={callVolume} set={setCallVolume} min={0} max={25000} step={50} fmt={(v) => v.toLocaleString()} />
+            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry average for dealerships is 15-22%." value={missedRate} set={setMissedRate} min={0} max={25} step={0.5} fmt={(v) => `${v}%`} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={5000} step={10} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Revenue-Generating Call Ratio (%)" tooltip="Percentage of calls that are sales or high-value inquiries rather than service/dispatch." value={revenueCallRatio} set={setRevenueCallRatio} min={0} max={100} step={1} fmt={(v) => `${v}%`} />
+            <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI reduces this by 29-40%." value={aht} set={setAht} min={0} max={30} step={0.5} fmt={(v) => `${v} min`} />
+            <SliderRow label="Blended Dispatch/Helpdesk Rate" tooltip="Blended hourly rate including salary, benefits, taxes, and overhead for dispatch and helpdesk staff." value={blendedRate} set={setBlendedRate} min={0} max={100} step={1} fmt={(v) => `$${v}/hr`} />
+            <SliderRow label="After-Hours / SLA Emergency Calls" tooltip="Monthly calls received outside business hours or requiring SLA-level emergency response." value={afterHoursVolume} set={setAfterHoursVolume} min={0} max={2500} step={10} fmt={(v) => v.toLocaleString()} />
           </>
         )}
       </div>
