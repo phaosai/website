@@ -153,7 +153,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
     return { annualRecovery, laborSpend, showLabor: true, recoveredRevenue: recoveredRevenueAnnual, afterHoursRecovery };
   }, [callVolume, missedRate, saleValue, revenueCallRatio, aht, blendedRate, afterHoursVolume, advanced, onResults]);
 
-  const RECOVERY_EXPLANATION = `Missed Calls = Monthly Volume × Missed Rate. Recovered Revenue = Missed Calls × Revenue-Generating Call Ratio × Avg. Transaction Value × 12. Annual Labor Spend = Volume × (AHT/60) × Blended Rate × 12. Industry data: Harvard Business Review found 85% of callers who can't reach a business won't call back; BIA/Kelsey shows inbound calls convert at 25-40%.`;
+  const RECOVERY_EXPLANATION = `Missed Calls = Monthly Volume × Missed Rate. Recovered Revenue = Missed Calls × Revenue-Generating Call Ratio × Avg. Transaction Value × 12. Annual Labor Spend = Volume × (AHT/60) × Blended Rate × 12. Industry data: Harvard Business Review found 85% of callers who can't reach a business won't call back; inbound calls convert at 25-40%.`;
 
   return (
     <div className="space-y-6">
