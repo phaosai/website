@@ -193,16 +193,16 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
         {advanced && results.showLabor && (
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Annual Labor Spend</p>
-              <p className="text-lg font-bold text-foreground">${results.laborSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Annual Labor Spend</p>
+              <p className="text-base sm:text-lg font-bold text-foreground truncate">${results.laborSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Recovered Revenue</p>
-              <p className="text-lg font-bold" style={{ color: "#00FF41" }}>${(results.recoveredRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Recovered Revenue</p>
+              <p className="text-base sm:text-lg font-bold truncate" style={{ color: "#00FF41" }}>${(results.recoveredRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">After-Hours Recovery</p>
-              <p className="text-lg font-bold" style={{ color: "#00FF41" }}>${(results.afterHoursRecovery || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">After-Hours Recovery</p>
+              <p className="text-base sm:text-lg font-bold truncate" style={{ color: "#00FF41" }}>${(results.afterHoursRecovery || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
             </div>
           </div>
         )}
