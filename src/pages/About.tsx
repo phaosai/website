@@ -6,7 +6,9 @@ import Footer from "@/components/Footer";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
 import shreePhoto from "@/assets/shree-dandekar.jpg";
 import diegoPhoto from "@/assets/diego-barrientos.png";
-import willPhoto from "@/assets/will-donahue.jpg";
+import toriPhoto from "@/assets/tori-mccrea.png";
+import kaitlynPhoto from "@/assets/kaitlyn-hathaway.jpeg";
+import willPhoto from "@/assets/will-donahue.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
