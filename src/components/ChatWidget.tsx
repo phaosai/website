@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Loader2, Bot, User, ArrowRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
-import phaosCrown from "@/assets/phaos-crown.png";
+import phaosCrown from "@/assets/phaos-crown.jpg";
 import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };

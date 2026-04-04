@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import phaosCrown from "@/assets/phaos-crown.png";
+import phaosCrown from "@/assets/phaos-crown.jpg";
 
 interface PhaosLogoProps {
   showImage?: boolean;
