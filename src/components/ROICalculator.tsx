@@ -216,7 +216,7 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
             Total Annual {advanced ? "Value Captured" : "Revenue Recovery"}
             <InfoTip text={RECOVERY_EXPLANATION} />
           </p>
-          <p className="text-4xl font-extrabold" style={{ color: "#00FF41" }}>
+          <p className="text-3xl sm:text-4xl font-extrabold truncate" style={{ color: "#00FF41" }}>
             ${results.annualRecovery.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
         </div>
