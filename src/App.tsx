@@ -9,10 +9,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useErrorReporter } from "@/hooks/useErrorReporter";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import ChatWidget from "./components/ChatWidget";
-import WorkflowTeardownPopup from "./components/WorkflowTeardownPopup";
-import PhaosNavigator from "./components/PhaosNavigator";
-import CustomCursor from "./components/CustomCursor";
+
+const ChatWidget = lazy(() => import("./components/ChatWidget"));
+const WorkflowTeardownPopup = lazy(() => import("./components/WorkflowTeardownPopup"));
+const PhaosNavigator = lazy(() => import("./components/PhaosNavigator"));
+const CustomCursor = lazy(() => import("./components/CustomCursor"));
 
 const Integrations = lazy(() => import("./pages/Integrations.tsx"));
 const About = lazy(() => import("./pages/About.tsx"));
@@ -64,10 +65,12 @@ const AppInner = () => {
           </Routes>
         </ErrorBoundary>
       </Suspense>
-      <ChatWidget />
-      <WorkflowTeardownPopup />
-      <PhaosNavigator />
-      <CustomCursor />
+      <Suspense fallback={null}>
+        <ChatWidget />
+        <WorkflowTeardownPopup />
+        <PhaosNavigator />
+        <CustomCursor />
+      </Suspense>
     </BrowserRouter>
   );
 };

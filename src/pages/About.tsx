@@ -7,10 +7,10 @@ import SEOHead from "@/components/SEOHead";
 import { aboutPageSchema } from "@/lib/seo-schemas";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
 import shreePhoto from "@/assets/shree-dandekar.jpg";
-import diegoPhoto from "@/assets/diego-barrientos.png";
-import toriPhoto from "@/assets/tori-mccrea.png";
+import diegoPhoto from "@/assets/diego-barrientos.jpg";
+import toriPhoto from "@/assets/tori-mccrea.jpg";
 import kaitlynPhoto from "@/assets/kaitlyn-hathaway.jpeg";
-import willPhoto from "@/assets/will-donahue.png";
+import willPhoto from "@/assets/will-donahue.jpg";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },

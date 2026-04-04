@@ -24,7 +24,7 @@ const organizationNode = {
   "@id": ORG_ID,
   name: "Phaos AI",
   url: BASE_URL,
-  logo: `${BASE_URL}/phaos-logo.png`,
+  logo: `${BASE_URL}/phaos-logo.jpg`,
   description:
     "AI-Powered Voice & Agentic Workflow Automation for the modern enterprise.",
   foundingDate: "2025-07-26",
@@ -116,8 +116,8 @@ export const homeGraphSchema = {
       "@type": "LocalBusiness",
       name: "Phaos AI",
       url: BASE_URL,
-      logo: `${BASE_URL}/phaos-logo.png`,
-      image: `${BASE_URL}/phaos-hero.png`,
+      logo: `${BASE_URL}/phaos-logo.jpg`,
+      image: `${BASE_URL}/phaos-hero.jpg`,
       description:
         "AI-powered voice agents and workflow automation provider serving SMBs and mid-market enterprises from Casselberry, Florida.",
       telephone: "+1-617-678-2426",
@@ -276,7 +276,7 @@ export const blogPostSchema = (post: {
     name: post.author,
     url: `${BASE_URL}/about`,
   },
-  publisher: { "@id": ORG_ID, name: "Phaos AI", logo: `${BASE_URL}/phaos-logo.png` },
+  publisher: { "@id": ORG_ID, name: "Phaos AI", logo: `${BASE_URL}/phaos-logo.jpg` },
   url: `${BASE_URL}/blog/${post.slug}`,
   image: post.image || `${BASE_URL}/og-default.png`,
   speakable: speakable(["h2", "p"]),

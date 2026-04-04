@@ -11,7 +11,7 @@ import {
   Phone,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import phaosHero from "@/assets/phaos-hero.png";
+import phaosHero from "@/assets/phaos-hero.jpg";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";

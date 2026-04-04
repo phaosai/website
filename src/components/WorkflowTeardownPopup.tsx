@@ -4,7 +4,7 @@ import { X, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import phaosCrown from "@/assets/phaos-crown.png";
+import phaosCrown from "@/assets/phaos-crown.jpg";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,8 +41,6 @@ const WorkflowTeardownPopup = () => {
   const validateEmail = (val: string) => {
     if (!val.trim()) return "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Enter a valid email";
-    if (/@(gmail|yahoo|hotmail|outlook|aol|icloud)\./i.test(val))
-      return "Please use your work email for a professional assessment";
     return "";
   };
 
@@ -131,8 +129,9 @@ const WorkflowTeardownPopup = () => {
               />
               <img
                 src={phaosCrown}
-                alt="Phaos AI"
+                alt=""
                 className={`${logoSize} mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]`}
+                role="presentation"
               />
               <div className="relative z-10">
                 <span
@@ -204,7 +203,7 @@ const WorkflowTeardownPopup = () => {
                     >
                       <div>
                         <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
-                          Work Email Address <span className="text-red-400">*</span>
+                          Email Address <span className="text-red-400">*</span>
                         </label>
                         <input
                           type="email"
