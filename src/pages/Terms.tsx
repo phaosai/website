@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 
 const Terms = () => {
   return (

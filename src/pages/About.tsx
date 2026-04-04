@@ -3,6 +3,8 @@ import { ArrowRight, Target, Eye, Heart, Lightbulb, Shield } from "lucide-react"
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
+import { aboutPageSchema } from "@/lib/seo-schemas";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
 import shreePhoto from "@/assets/shree-dandekar.jpg";
 import diegoPhoto from "@/assets/diego-barrientos.png";
