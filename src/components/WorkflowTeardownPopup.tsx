@@ -203,7 +203,7 @@ const WorkflowTeardownPopup = () => {
                     >
                       <div>
                         <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
-                          Work Email Address <span className="text-red-400">*</span>
+                          Email Address <span className="text-red-400">*</span>
                         </label>
                         <input
                           type="email"
