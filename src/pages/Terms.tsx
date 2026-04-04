@@ -1,10 +1,17 @@
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 
 const Terms = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      <SEOHead
+        title="Terms of Service"
+        description="Terms of Service for Phaos AI's voice agent and workflow automation platform."
+        canonical="/terms"
+        noIndex
+      />
       <Navigation />
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-3xl mx-auto">

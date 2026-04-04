@@ -26,6 +26,15 @@ Allow: /
 User-agent: GPTBot
 Disallow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
 User-agent: CCBot
 Disallow: /
 

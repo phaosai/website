@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { voiceAIPageSchema } from "@/lib/seo-schemas";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -41,6 +42,7 @@ const VoiceAI = () => {
         title="Voice AI Agents | Phaos AI"
         description="Deploy intelligent AI voice agents that handle inbound calls 24/7. Qualify leads, book appointments, and resolve inquiries with natural conversations."
         canonical="/voice-ai"
+        jsonLd={voiceAIPageSchema}
       />
       <Navigation />
 

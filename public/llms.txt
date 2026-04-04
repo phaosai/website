@@ -1,0 +1,34 @@
+# Phaos AI — llms.txt
+
+## About
+Phaos AI is an AI-powered platform that deploys intelligent voice agents and agentic workflow automation for businesses. Founded by Daniel Lindros, the company is headquartered in Casselberry, Florida and serves SMBs and mid-market enterprises across the United States.
+
+## Core Services
+- **Voice AI Agents**: AI-powered voice agents that answer inbound calls 24/7 with hyper-realistic, emotionally intelligent conversations. They qualify leads, book appointments, handle FAQs, and seamlessly hand off to human agents.
+- **Agentic Workflow Automation**: Autonomous workflows that eliminate manual data entry, paper forms, and repetitive tasks by connecting existing business systems and executing end-to-end processes.
+
+## Industries Served
+- Printing, copier, and document solutions
+- Healthcare
+- Financial services
+- Real estate
+- Logistics
+- General SMB operations
+
+## Key Integrations
+Native Zapier integrations with 6,000+ apps, webhook connectivity, and direct integrations with Salesforce, HubSpot, ConnectWise, e-automate, Google Calendar, Outlook, Shopify, and more.
+
+## Key URLs
+- Homepage: https://phaosai.com/
+- Voice AI: https://phaosai.com/voice-ai
+- Workflows: https://phaosai.com/workflows
+- ROI Calculator: https://phaosai.com/roi-calculator
+- About: https://phaosai.com/about
+- Integrations: https://phaosai.com/integrations
+- Blog: https://phaosai.com/blog
+- Contact: https://phaosai.com/contact
+
+## Contact
+- Email: daniel@phaosai.com
+- Phone: +1-617-678-2426
+- Address: 340 Georgetown Drive, Unit B, Casselberry, FL 32707

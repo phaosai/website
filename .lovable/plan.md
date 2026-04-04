@@ -1,53 +1,82 @@
 
+# Technical & SEO Overhaul — Audit & Plan
 
-# Fix Lighthouse & Accessibility Issues — Implementation Plan
+## ✅ Already Implemented (No Action Needed)
 
-## Issues Identified from Screenshots
+| Item | Status |
+|------|--------|
+| JSON-LD schemas (Organization, LocalBusiness, ProfessionalService, SoftwareApplication, FAQPage, Service, BreadcrumbList, BlogPosting) | ✅ Done |
+| `SEOHead` with og:image, twitter:card, canonical, react-helmet-async | ✅ Done |
+| Code-splitting via `React.lazy()` for all routes | ✅ Done |
+| `ErrorBoundary` + `useErrorReporter` hook (client error tracking) | ✅ Done |
+| `robots.txt` with AI crawler rules (GPTBot blocked, Google-Extended allowed) | ✅ Done |
+| CSP meta tag (with cdn.gpteng.co) | ✅ Done |
+| Non-render-blocking Google Fonts (`media="print" onload`) | ✅ Done |
+| Semantic HTML5 (`<main>`, `<section>`, `aria-label`, skip-to-content link) | ✅ Done |
+| FAQ using native `<details>`/`<summary>` elements | ✅ Done |
+| `sitemap.xml` present | ✅ Done |
+| ARIA labels on sliders and descriptive link text | ✅ Done |
+| `font-display: swap` pattern | ✅ Done |
 
-### 1. ARIA Input Fields Missing Accessible Names (12 elements) — Accessibility 93
-The Radix `Slider` component's internal `<span role="slider">` thumb doesn't receive the `aria-label` passed to the root. The `aria-label` is on the outer `<div>`, not the thumb itself.
+## ⚠️ Not Feasible in Lovable Architecture
 
-**Fix:** Modify `src/components/ui/slider.tsx` to forward `aria-label` directly to the `<SliderPrimitive.Thumb>` element.
+| Item | Reason |
+|------|--------|
+| SSG / Pre-rendering | Lovable is a client-side SPA; no build-time HTML generation available |
+| `netlify.toml` / `vercel.json` | Lovable hosting doesn't use these; headers are infrastructure-level |
+| HSTS, Brotli, Early Hints (103) | Server-level; not configurable in Lovable |
+| SRI hashes on scripts | Vite bundles are self-hosted first-party assets; SRI is for third-party CDN scripts |
+| Green Hosting verification headers | Server-level configuration |
+| IndexNow API pinging | No server-side content publishing pipeline exists to trigger pings |
 
-### 2. Color Contrast Failures — Accessibility
-Two failing elements:
-- `<span class="italic font-medium text-primary">` — purple text on dark bg. `hsl(263,70%,58%)` = ~#8A5CF5 on `#0b0b0f` is 4.3:1 (below 4.5:1 AA for normal text)
-- `<p class="text-xs text-muted-foreground/70 italic">` — the `/70` opacity modifier drops contrast well below threshold
+## 🔧 What This Plan WILL Implement
 
-**Fix in `src/components/StyleTile.tsx`:** 
-- Change `text-muted-foreground/70` to `text-muted-foreground` (removes opacity penalty)
-- For `text-primary` on small italic text: bump `--primary` lightness from 58% to 62% in dark mode only — OR change those specific spans to `text-purple-light` which is brighter. I'll use `text-purple-light` on the specific elements to avoid changing the global primary.
+### Phase 1: AI Readiness & Discoverability
 
-### 3. CSP Blocking Font from cdn.gpteng.co — Best Practices 92
-The CSP `font-src` only allows `'self' https://fonts.gstatic.com`. A third-party widget loads a font from `cdn.gpteng.co` which gets blocked.
+**1. Create `public/llms.txt`** — An AI-model-friendly summary of the site, its services, and key URLs. This emerging standard helps LLMs understand and reference your site.
 
-**Fix in `index.html`:** Add `https://cdn.gpteng.co` to `font-src` in the CSP meta tag.
+**2. Update `robots.txt`** — Add `OAI-SearchBot` with `Allow: /` (OpenAI's search crawler, distinct from GPTBot which scrapes training data). Keep GPTBot blocked.
 
-### 4. Non-Descriptive Link Text ("Learn More") — SEO 92
-The `/about` link in the hero says "Learn More" which is generic.
+**3. Add Speakable schema** — Add `speakable` properties to the homepage and key service pages' JSON-LD, marking primary summary paragraphs as voice-assistant-ready content.
 
-**Fix in `src/components/StyleTile.tsx`:** Change link text to "Learn More About Phaos AI" (or add `aria-label`). Since user said don't change copy unless critical — I'll add `aria-label="Learn more about Phaos AI"` to preserve the visible text.
+### Phase 2: Unified Knowledge Graph
 
-### 5. Image Elements Without Explicit Width/Height — Performance 92
-The hero background image is applied via CSS `background-image` with no intrinsic dimensions. Other images on the page may also lack explicit `width`/`height`.
+**4. Refactor JSON-LD into a single `@graph` block** — Instead of multiple separate JSON-LD objects, create one unified `@graph` that links Organization → Services → Founder (Person) with proper `@id` cross-references. This gives Google a single, connected entity graph.
 
-**Fix:** Add explicit `width` and `height` attributes to any `<img>` elements found on the homepage. The hero uses CSS background-image so it doesn't apply there, but I'll check for `<img>` tags across the homepage components.
+**5. Add `sameAs` and founder `Person` schema** — Add Daniel Lindros as a linked `Person` entity with `jobTitle`, `worksFor`, and relevant `sameAs` links (LinkedIn, etc.).
 
-### 6. Render-Blocking Google Fonts Request
-The `<link rel="stylesheet" href="...fonts.googleapis.com...">` is render-blocking.
+### Phase 3: E-E-A-T Signals
 
-**Fix in `index.html`:** Use the `media="print" onload="this.media='all'"` pattern to make it non-render-blocking while keeping the preload.
+**6. Add SEOHead to About page** — Currently missing `SEOHead`, meaning no dynamic meta tags, canonical, or JSON-LD on the About page.
+
+**7. Add SEOHead to Terms page** — Also missing `SEOHead`.
+
+**8. Add `article` schema to Blog posts** — Enhance blog listing with proper `datePublished`, `dateModified`, `author` Person entities.
+
+### Phase 4: Technical Polish
+
+**9. Centralize data fetching into `src/lib/api.ts`** — Extract hardcoded blog posts and integration data into a centralized data layer, making the site "headless-ready" for a future CMS.
+
+**10. Optimize `<noscript>` fallback in `index.html`** — Enhance the existing noscript block with richer content for crawlers that don't execute JS.
+
+---
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/ui/slider.tsx` | Forward `aria-label` to `Thumb` element |
-| `index.html` | Add `cdn.gpteng.co` to CSP font-src; make Google Fonts non-render-blocking |
-| `src/components/StyleTile.tsx` | Add `aria-label` to "Learn More" link; fix `text-muted-foreground/70` contrast |
+| `public/llms.txt` | **NEW** — AI model discovery file |
+| `public/robots.txt` | Add OAI-SearchBot rule |
+| `src/lib/seo-schemas.ts` | Refactor into unified `@graph`, add Speakable, add Person (founder) |
+| `src/components/StyleTile.tsx` | Use new unified graph schema |
+| `src/pages/About.tsx` | Add SEOHead with About-specific meta + schema |
+| `src/pages/Terms.tsx` | Add SEOHead with noindex meta |
+| `src/pages/Blog.tsx` | Enhance with BlogPosting schema per post |
+| `src/lib/api.ts` | **NEW** — Centralized data layer |
+| `index.html` | Enrich noscript fallback |
 
 ## What Will NOT Change
-- Color palette, branding, structure, aesthetics
-- No new pages or visible copy changes
-- The "Learn More" button text stays the same (only gets an aria-label)
-
+- Zero visual/CSS changes
+- No branding or copy changes
+- No new pages or routes
+- All existing functionality preserved

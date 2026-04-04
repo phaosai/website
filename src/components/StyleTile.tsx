@@ -18,7 +18,7 @@ import SEOHead from "@/components/SEOHead";
 import ROICalculator from "@/components/ROICalculator";
 import MagneticButton from "@/components/MagneticButton";
 
-import { organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema } from "@/lib/seo-schemas";
+import { homeGraphSchema } from "@/lib/seo-schemas";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -36,7 +36,7 @@ const StyleTile = () => {
         title="Phaos AI — AI-Powered Voice & Workflow Automation"
         description="Deploy intelligent AI agents to manage inbound calls and automate complex workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
         canonical="/"
-        jsonLd={[organizationSchema, softwareApplicationSchema, homeFaqSchema, localBusinessSchema, professionalServiceSchema]}
+        jsonLd={homeGraphSchema}
       />
       <Navigation />
       <main id="main-content">
