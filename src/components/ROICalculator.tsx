@@ -178,8 +178,8 @@ const VoiceAIROI = ({ advanced, onResults }: { advanced: boolean; onResults: (v:
         ) : (
           <>
             <SliderRow label="Monthly Inbound / Dispatch Volume" value={callVolume} set={setCallVolume} min={0} max={25000} step={50} fmt={(v) => v.toLocaleString()} />
-            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry average for dealerships is 15-22%." value={missedRate} set={setMissedRate} min={0} max={25} step={0.5} fmt={(v) => `${v}%`} />
-            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={5000} step={10} fmt={(v) => `$${v.toLocaleString()}`} />
+            <SliderRow label="Missed / Abandoned Call Rate (%)" tooltip="Percentage of inbound calls that go unanswered. Industry averages range from 15-22%." value={missedRate} set={setMissedRate} min={0} max={50} step={0.5} fmt={(v) => `${v}%`} />
+            <SliderRow label="Avg. Transaction Value" tooltip="The average revenue from a successfully handled call." value={saleValue} set={setSaleValue} min={0} max={100000} step={50} fmt={(v) => `$${v.toLocaleString()}`} />
             <SliderRow label="Revenue-Generating Call Ratio (%)" tooltip="Percentage of calls that are sales or high-value inquiries rather than service/dispatch." value={revenueCallRatio} set={setRevenueCallRatio} min={0} max={100} step={1} fmt={(v) => `${v}%`} />
             <SliderRow label="Average Handle Time (AHT)" tooltip="Average duration per call in minutes. AI typically reduces this by 29-40%." value={aht} set={setAht} min={0} max={30} step={0.5} fmt={(v) => `${v} min`} />
             <SliderRow label="Blended Dispatch/Helpdesk Rate" tooltip="Blended hourly rate including salary, benefits, taxes, and overhead for operations staff." value={blendedRate} set={setBlendedRate} min={0} max={100} step={1} fmt={(v) => `$${v}/hr`} />
