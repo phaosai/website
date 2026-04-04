@@ -42,6 +42,7 @@ const VoiceAI = () => {
         title="Voice AI Agents | Phaos AI"
         description="Deploy intelligent AI voice agents that handle inbound calls 24/7. Qualify leads, book appointments, and resolve inquiries with natural conversations."
         canonical="/voice-ai"
+        jsonLd={voiceAIPageSchema}
       />
       <Navigation />
 

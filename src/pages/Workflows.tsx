@@ -42,6 +42,7 @@ const Workflows = () => {
         title="Agentic Workflows | Phaos AI"
         description="Eliminate manual data entry, paper forms, and repetitive tasks with AI-powered agentic workflows that connect your systems and execute processes autonomously."
         canonical="/workflows"
+        jsonLd={workflowPageSchema}
       />
       <Navigation />
 
