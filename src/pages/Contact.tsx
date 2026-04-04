@@ -25,7 +25,7 @@ const Contact = () => {
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "lead-notification",
-          recipientEmail: "daniel@phaosai.com",
+          recipientEmail: "info@phaosai.com",
           idempotencyKey: `contact-${id}`,
           templateData: {
             source: "Contact Form",
@@ -116,7 +116,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">Email</p>
-                      <a href="mailto:daniel@phaosai.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">daniel@phaosai.com</a>
+                      <a href="mailto:info@phaosai.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">info@phaosai.com</a>
                     </div>
                   </div>
                 </div>

@@ -21,7 +21,7 @@ const Investors = () => {
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "lead-notification",
-          recipientEmail: "daniel@phaosai.com",
+          recipientEmail: "info@phaosai.com",
           idempotencyKey: `investor-${id}`,
           templateData: {
             source: "Investor Inquiry",
