@@ -24,7 +24,7 @@ const organizationNode = {
   "@id": ORG_ID,
   name: "Phaos AI",
   url: BASE_URL,
-  logo: `${BASE_URL}/phaos-logo.png`,
+  logo: `${BASE_URL}/phaos-logo.jpg`,
   description:
     "AI-Powered Voice & Agentic Workflow Automation for the modern enterprise.",
   foundingDate: "2025-07-26",
