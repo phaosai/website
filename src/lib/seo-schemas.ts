@@ -276,7 +276,7 @@ export const blogPostSchema = (post: {
     name: post.author,
     url: `${BASE_URL}/about`,
   },
-  publisher: { "@id": ORG_ID, name: "Phaos AI", logo: `${BASE_URL}/phaos-logo.png` },
+  publisher: { "@id": ORG_ID, name: "Phaos AI", logo: `${BASE_URL}/phaos-logo.jpg` },
   url: `${BASE_URL}/blog/${post.slug}`,
   image: post.image || `${BASE_URL}/og-default.png`,
   speakable: speakable(["h2", "p"]),
