@@ -116,8 +116,8 @@ export const homeGraphSchema = {
       "@type": "LocalBusiness",
       name: "Phaos AI",
       url: BASE_URL,
-      logo: `${BASE_URL}/phaos-logo.png`,
-      image: `${BASE_URL}/phaos-hero.png`,
+      logo: `${BASE_URL}/phaos-logo.jpg`,
+      image: `${BASE_URL}/phaos-hero.jpg`,
       description:
         "AI-powered voice agents and workflow automation provider serving SMBs and mid-market enterprises from Casselberry, Florida.",
       telephone: "+1-617-678-2426",
