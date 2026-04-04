@@ -65,10 +65,12 @@ const AppInner = () => {
           </Routes>
         </ErrorBoundary>
       </Suspense>
-      <ChatWidget />
-      <WorkflowTeardownPopup />
-      <PhaosNavigator />
-      <CustomCursor />
+      <Suspense fallback={null}>
+        <ChatWidget />
+        <WorkflowTeardownPopup />
+        <PhaosNavigator />
+        <CustomCursor />
+      </Suspense>
     </BrowserRouter>
   );
 };
