@@ -22,11 +22,20 @@ export default defineConfig(({ mode }) => ({
     include: ["react", "react-dom"],
   },
   build: {
+    target: "es2020",
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom"],
           motion: ["framer-motion"],
+          radix: [
+            "@radix-ui/react-popover",
+            "@radix-ui/react-slider",
+            "@radix-ui/react-switch",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-dialog",
+          ],
         },
       },
     },
