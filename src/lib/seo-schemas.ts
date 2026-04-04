@@ -41,7 +41,7 @@ const organizationNode = {
     "@type": "ContactPoint",
     telephone: "+1-617-678-2426",
     contactType: "sales",
-    email: "daniel@phaosai.com",
+    email: "info@phaosai.com",
   },
   sameAs: [] as string[],
 };
@@ -121,7 +121,7 @@ export const homeGraphSchema = {
       description:
         "AI-powered voice agents and workflow automation provider serving SMBs and mid-market enterprises from Casselberry, Florida.",
       telephone: "+1-617-678-2426",
-      email: "daniel@phaosai.com",
+      email: "info@phaosai.com",
       address: organizationNode.address,
       geo: { "@type": "GeoCoordinates", latitude: 28.6578, longitude: -81.3278 },
       areaServed: { "@type": "Country", name: "United States" },
@@ -140,7 +140,7 @@ export const homeGraphSchema = {
       description:
         "B2B AI automation services including voice AI agents and agentic workflow automation for copier dealerships, healthcare, real estate, and SMB operations.",
       telephone: "+1-617-678-2426",
-      email: "daniel@phaosai.com",
+      email: "info@phaosai.com",
       address: organizationNode.address,
       serviceType: ["AI Voice Agents", "Workflow Automation", "Business Process Automation"],
       areaServed: { "@type": "Country", name: "United States" },

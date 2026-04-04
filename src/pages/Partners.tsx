@@ -19,7 +19,7 @@ const Partners = () => {
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "lead-notification",
-          recipientEmail: "daniel@phaosai.com",
+          recipientEmail: "info@phaosai.com",
           idempotencyKey: `partner-${id}`,
           templateData: {
             source: "Partnership Inquiry",

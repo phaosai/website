@@ -53,10 +53,10 @@ async function streamChat({
         return;
       }
       if (resp.status === 402) {
-        onError("Our service is temporarily unavailable. Please email us at daniel@phaosai.com");
+        onError("Our service is temporarily unavailable. Please email us at info@phaosai.com");
         return;
       }
-      onError("Something went wrong. Please try again or reach us at daniel@phaosai.com");
+      onError("Something went wrong. Please try again or reach us at info@phaosai.com");
       return;
     }
 
@@ -114,7 +114,7 @@ async function streamChat({
 
     onDone();
   } catch {
-    onError("Connection error. Please try again or contact daniel@phaosai.com");
+    onError("Connection error. Please try again or contact info@phaosai.com");
   }
 }
 
@@ -179,7 +179,7 @@ const ChatWidget = () => {
         await supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "lead-notification",
-            recipientEmail: "daniel@phaosai.com",
+            recipientEmail: "info@phaosai.com",
             idempotencyKey: `chat-lead-${Date.now()}`,
             templateData: {
               source: "Chat Widget",

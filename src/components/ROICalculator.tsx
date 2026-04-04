@@ -351,7 +351,7 @@ const LeadCaptureCTA = ({ totalSavings }: { totalSavings: number }) => {
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "lead-notification",
-          recipientEmail: "daniel@phaosai.com",
+          recipientEmail: "info@phaosai.com",
           idempotencyKey: `roi-lead-${id}`,
           templateData: {
             source: "ROI Calculator Lead Capture",
