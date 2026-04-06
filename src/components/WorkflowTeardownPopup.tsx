@@ -127,10 +127,14 @@ const WorkflowTeardownPopup = () => {
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
                 style={{ background: "rgba(138,43,226,0.18)" }}
               />
-              <div
-                className={`${logoSize} mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)] bg-center bg-no-repeat bg-contain`}
-                style={{ backgroundImage: `url(${phaosCrown})` }}
+              <img
+                src={phaosCrown}
+                alt=""
+                width={isMobile ? 96 : 144}
+                height={isMobile ? 48 : 72}
+                className="mx-auto mb-5 relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
                 aria-hidden="true"
+                loading="eager"
               />
               <div className="relative z-10">
                 <span
