@@ -81,7 +81,7 @@ const WorkflowTeardownPopup = () => {
   const maxW = isMobile ? "max-w-lg" : "max-w-xl";
   const heroPx = isMobile ? "px-6 pt-8 pb-6" : "px-10 pt-12 pb-8";
   const bodyPx = isMobile ? "px-6 pb-6 pt-2" : "px-10 pb-10 pt-2";
-  const logoSize = isMobile ? "w-24 h-24" : "w-36 h-36";
+  
   const headingSize = isMobile ? "text-xl" : "text-3xl sm:text-4xl";
   const badgeSize = isMobile ? "text-[11px]" : "text-xs";
   const bodyText = isMobile ? "text-sm" : "text-base";
