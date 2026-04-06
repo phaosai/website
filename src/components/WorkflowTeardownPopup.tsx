@@ -4,7 +4,7 @@ import { X, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import phaosCrown from "@/assets/phaos-crown.jpg";
+import phaosCrown from "@/assets/phaos-crown-transparent.png";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,7 +81,7 @@ const WorkflowTeardownPopup = () => {
   const maxW = isMobile ? "max-w-lg" : "max-w-xl";
   const heroPx = isMobile ? "px-6 pt-8 pb-6" : "px-10 pt-12 pb-8";
   const bodyPx = isMobile ? "px-6 pb-6 pt-2" : "px-10 pb-10 pt-2";
-  const logoSize = isMobile ? "w-24 h-24" : "w-36 h-36";
+  
   const headingSize = isMobile ? "text-xl" : "text-3xl sm:text-4xl";
   const badgeSize = isMobile ? "text-[11px]" : "text-xs";
   const bodyText = isMobile ? "text-sm" : "text-base";
@@ -127,10 +127,14 @@ const WorkflowTeardownPopup = () => {
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
                 style={{ background: "rgba(138,43,226,0.18)" }}
               />
-              <div
-                className={`${logoSize} mx-auto mb-5 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)] bg-center bg-no-repeat bg-contain`}
-                style={{ backgroundImage: `url(${phaosCrown})` }}
+              <img
+                src={phaosCrown}
+                alt=""
+                width={isMobile ? 96 : 144}
+                height={isMobile ? 48 : 72}
+                className="mx-auto mb-5 relative z-10 drop-shadow-[0_0_20px_rgba(138,43,226,0.4)]"
                 aria-hidden="true"
+                loading="eager"
               />
               <div className="relative z-10">
                 <span
