@@ -6,6 +6,56 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// SSRF protection: block private/link-local/loopback ranges and metadata endpoints.
+function isBlockedIp(host: string): boolean {
+  // IPv6 loopback / unspecified / link-local / unique-local
+  if (host === "::1" || host === "::" || host.startsWith("[")) {
+    const stripped = host.replace(/^\[|\]$/g, "").toLowerCase();
+    if (stripped === "::1" || stripped === "::") return true;
+    if (stripped.startsWith("fe80:") || stripped.startsWith("fc") || stripped.startsWith("fd")) return true;
+  }
+  // IPv4 dotted
+  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
+    if (a === 10) return true;                              // 10.0.0.0/8
+    if (a === 127) return true;                             // loopback
+    if (a === 0) return true;                               // 0.0.0.0/8
+    if (a === 169 && b === 254) return true;                // link-local (incl. metadata 169.254.169.254)
+    if (a === 172 && b >= 16 && b <= 31) return true;       // 172.16.0.0/12
+    if (a === 192 && b === 168) return true;                // 192.168.0.0/16
+    if (a >= 224) return true;                              // multicast / reserved
+  }
+  return false;
+}
+
+function isSafeHostname(host: string): boolean {
+  const lower = host.toLowerCase();
+  // Block common internal/metadata hostnames
+  const blockedHosts = ["localhost", "metadata.google.internal", "metadata", "instance-data"];
+  if (blockedHosts.includes(lower)) return false;
+  if (lower.endsWith(".internal") || lower.endsWith(".local")) return false;
+  if (isBlockedIp(lower)) return false;
+  return true;
+}
+
+function validateAndNormalizeUrl(input: string): string | null {
+  let raw = input.trim();
+  if (!raw) return null;
+  if (raw.length > 2048) return null;
+  if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+  // Only allow https (and http for non-blocked public hosts? Keep https-only for safety)
+  if (parsed.protocol !== "https:") return null;
+  if (!isSafeHostname(parsed.hostname)) return null;
+  return parsed.toString();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,41 +66,51 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Step 1: Fetch the company website content (if provided)
+    // Step 1: Fetch the company website content (if provided and safe)
     let websiteContent = "";
-    if (website) {
-      try {
-        let url = website.trim();
-        if (!url.startsWith("http")) url = `https://${url}`;
-        const siteResp = await fetch(url, {
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; PhaosAI/1.0)" },
-          signal: AbortSignal.timeout(8000),
-        });
-        if (siteResp.ok) {
-          const html = await siteResp.text();
-          // Extract text content from HTML (strip tags, scripts, styles)
-          const textContent = html
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 6000); // Limit to ~6000 chars
-          websiteContent = textContent;
+    let safeWebsite: string | null = null;
+    if (website && typeof website === "string") {
+      safeWebsite = validateAndNormalizeUrl(website);
+      if (safeWebsite) {
+        try {
+          const siteResp = await fetch(safeWebsite, {
+            headers: { "User-Agent": "Mozilla/5.0 (compatible; PhaosAI/1.0)" },
+            signal: AbortSignal.timeout(8000),
+            redirect: "manual", // prevent redirect-based SSRF bypass
+          });
+          if (siteResp.ok) {
+            const html = await siteResp.text();
+            const textContent = html
+              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+              .replace(/<[^>]+>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 6000);
+            websiteContent = textContent;
+          }
+        } catch (e) {
+          console.log("Website fetch failed (non-fatal):", e);
         }
-      } catch (e) {
-        console.log("Website fetch failed (non-fatal):", e);
+      } else {
+        console.log("Website URL rejected by SSRF guard");
       }
     }
 
-    // Step 2: Use AI to research the visitor and company
+    // Sanitize visitor inputs for prompt
+    const safe = (v: unknown, n = 200) =>
+      typeof v === "string" ? v.trim().slice(0, n) : "";
+    const sName = safe(name);
+    const sTitle = safe(title);
+    const sCompany = safe(company);
+
     const researchPrompt = `You are a business intelligence research assistant. Given the following information about a website visitor, produce a concise research brief that a sales AI agent can use to craft a highly personalized, impressive greeting.
 
 VISITOR INFO:
-- Name: ${name || "Unknown"}
-- Title: ${title || "Unknown"}
-- Company: ${company || "Unknown"}
-- Company Website: ${website || "Not provided"}
+- Name: ${sName || "Unknown"}
+- Title: ${sTitle || "Unknown"}
+- Company: ${sCompany || "Unknown"}
+- Company Website: ${safeWebsite || "Not provided"}
 
 ${websiteContent ? `COMPANY WEBSITE CONTENT (scraped):\n${websiteContent}\n` : ""}
 
@@ -90,9 +150,8 @@ Output format: Plain text brief, organized by the sections above.`;
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
       console.error("AI research failed:", aiResponse.status, errText);
-      // Return empty research rather than failing entirely
       return new Response(
-        JSON.stringify({ success: true, research: `Visitor: ${name}, ${title} at ${company}. No additional research available at this time.` }),
+        JSON.stringify({ success: true, research: `Visitor: ${sName}, ${sTitle} at ${sCompany}. No additional research available at this time.` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -100,7 +159,7 @@ Output format: Plain text brief, organized by the sections above.`;
     const aiData = await aiResponse.json();
     const research = aiData.choices?.[0]?.message?.content || "";
 
-    console.log("Research completed for:", name, "at", company);
+    console.log("Research completed for:", sName, "at", sCompany);
 
     return new Response(
       JSON.stringify({ success: true, research }),
@@ -109,9 +168,9 @@ Output format: Plain text brief, organized by the sections above.`;
   } catch (e) {
     console.error("research-visitor error:", e);
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        research: "Research unavailable. Proceed with basic visitor information." 
+      JSON.stringify({
+        success: true,
+        research: "Research unavailable. Proceed with basic visitor information."
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
