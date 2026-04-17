@@ -137,6 +137,45 @@ export type Database = {
         }
         Relationships: []
       }
+      purge_audit_log: {
+        Row: {
+          actions: Json
+          admin_token_hash: string
+          counts: Json
+          created_at: string
+          dry_run: boolean
+          email_hash: string
+          id: string
+          include_suppressions: boolean
+          ip_hash: string | null
+          status: string
+        }
+        Insert: {
+          actions?: Json
+          admin_token_hash: string
+          counts?: Json
+          created_at?: string
+          dry_run: boolean
+          email_hash: string
+          id?: string
+          include_suppressions?: boolean
+          ip_hash?: string | null
+          status?: string
+        }
+        Update: {
+          actions?: Json
+          admin_token_hash?: string
+          counts?: Json
+          created_at?: string
+          dry_run?: boolean
+          email_hash?: string
+          id?: string
+          include_suppressions?: boolean
+          ip_hash?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
