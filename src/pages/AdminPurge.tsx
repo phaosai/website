@@ -23,6 +23,18 @@ type PurgeResponse = {
   error?: string;
 };
 
+type AuditEntry = {
+  id: string;
+  created_at: string;
+  email_hash: string;
+  ip_hash: string | null;
+  dry_run: boolean;
+  include_suppressions: boolean;
+  counts: Record<string, number>;
+  actions: Record<string, string>;
+  status: string;
+};
+
 const FUNCTIONS_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purge-contact`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +46,8 @@ const AdminPurge = () => {
   const [loading, setLoading] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<PurgeResponse | null>(null);
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  const [recent, setRecent] = useState<AuditEntry[] | null>(null);
+  const [recentLoading, setRecentLoading] = useState(false);
 
   // Wipe sensitive state when the tab is hidden or the user navigates away
   useEffect(() => {
@@ -41,6 +55,7 @@ const AdminPurge = () => {
       setToken("");
       setDryRunResult(null);
       setConfirmedEmail(null);
+      setRecent(null);
     };
     window.addEventListener("beforeunload", wipe);
     return () => window.removeEventListener("beforeunload", wipe);
@@ -106,6 +121,35 @@ const AdminPurge = () => {
       toast.success("Purge complete.");
       setDryRunResult(data);
       setConfirmedEmail(null); // require fresh dry-run before another purge
+      loadRecent();
+    }
+  }
+
+  async function loadRecent() {
+    if (!token) {
+      toast.error("Enter admin token first.");
+      return;
+    }
+    setRecentLoading(true);
+    try {
+      const res = await fetch(FUNCTIONS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "recent" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || `Request failed (${res.status})`);
+        return;
+      }
+      setRecent(Array.isArray(data.entries) ? data.entries : []);
+    } catch {
+      toast.error("Network error loading audit log.");
+    } finally {
+      setRecentLoading(false);
     }
   }
 
@@ -255,6 +299,75 @@ const AdminPurge = () => {
               )}
             </Card>
           )}
+
+          <Card className="mt-6 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold text-foreground">Recent purge activity</h2>
+              <Button
+                onClick={loadRecent}
+                disabled={recentLoading || !token}
+                variant="outline"
+                size="sm"
+              >
+                {recentLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                {recent === null ? "Load last 20" : "Refresh"}
+              </Button>
+            </div>
+
+            {recent === null ? (
+              <p className="text-sm text-muted-foreground">
+                Enter token and click <strong>Load last 20</strong> to view audit history.
+                Only hashed identifiers are shown — no raw email or IP.
+              </p>
+            ) : recent.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No audit entries yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-muted-foreground">
+                    <tr>
+                      <th className="pb-2 font-normal">When</th>
+                      <th className="pb-2 font-normal">Email hash</th>
+                      <th className="pb-2 font-normal">Mode</th>
+                      <th className="pb-2 font-normal">Total rows</th>
+                      <th className="pb-2 font-normal">Suppr.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((e) => {
+                      const total = Object.values(e.counts || {}).reduce(
+                        (a, b) => a + (typeof b === "number" ? b : 0),
+                        0
+                      );
+                      return (
+                        <tr key={e.id} className="border-t border-border">
+                          <td className="py-2 whitespace-nowrap text-muted-foreground">
+                            {new Date(e.created_at).toLocaleString()}
+                          </td>
+                          <td className="py-2 font-mono">{e.email_hash}</td>
+                          <td className="py-2">
+                            <span
+                              className={
+                                e.dry_run
+                                  ? "text-muted-foreground"
+                                  : "text-destructive font-medium"
+                              }
+                            >
+                              {e.dry_run ? "dry-run" : "PURGE"}
+                            </span>
+                          </td>
+                          <td className="py-2">{total}</td>
+                          <td className="py-2 text-muted-foreground">
+                            {e.include_suppressions ? "yes" : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
       </main>
     </>
