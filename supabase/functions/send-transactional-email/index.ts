@@ -21,6 +21,67 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type',
 }
 
+// In-memory rate limiter (per cold-start instance). Best-effort defense against
+// abuse via the public anon key. Not a substitute for stricter controls but
+// limits flood potential from a single IP/instance.
+const RATE_LIMIT_MAX = 5            // max requests
+const RATE_LIMIT_WINDOW_MS = 60_000 // per 60s
+const rateBuckets = new Map<string, number[]>()
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now()
+  const arr = rateBuckets.get(key) ?? []
+  const recent = arr.filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateBuckets.set(key, recent)
+    return false
+  }
+  recent.push(now)
+  rateBuckets.set(key, recent)
+  // Periodic cleanup
+  if (rateBuckets.size > 1000) {
+    for (const [k, v] of rateBuckets) {
+      const fresh = v.filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+      if (fresh.length === 0) rateBuckets.delete(k)
+      else rateBuckets.set(k, fresh)
+    }
+  }
+  return true
+}
+
+// Sanitize a string field: trim + length cap. Returns undefined for non-strings.
+function sanitizeField(v: unknown, maxLen: number): string | undefined {
+  if (typeof v !== 'string') return undefined
+  const trimmed = v.trim()
+  if (!trimmed) return undefined
+  return trimmed.slice(0, maxLen)
+}
+
+// Whitelist of allowed templateData keys + max lengths. Any other keys are dropped.
+const TEMPLATE_DATA_LIMITS: Record<string, number> = {
+  source: 100,
+  name: 200,
+  title: 200,
+  company: 200,
+  website: 500,
+  email: 320,
+  phone: 50,
+  message: 5000,
+  date: 100,
+  status: 100,
+}
+
+function sanitizeTemplateData(input: unknown): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (!input || typeof input !== 'object') return out
+  for (const [k, max] of Object.entries(TEMPLATE_DATA_LIMITS)) {
+    const v = (input as Record<string, unknown>)[k]
+    const safe = sanitizeField(v, max)
+    if (safe !== undefined) out[k] = safe
+  }
+  return out
+}
+
 // Generate a cryptographically random 32-byte hex token
 function generateToken(): string {
   const bytes = new Uint8Array(32)
