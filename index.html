@@ -42,8 +42,21 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" /></noscript>
 
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.gpteng.co; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com; frame-src 'none';" />
+    <!-- Content Security Policy — scoped to what phaosai.com actually loads:
+         - Scripts: self + Lovable's gpteng CDN (script tagger). 'unsafe-inline'/'unsafe-eval' required by Vite/React in dev + some inline anti-flicker scripts.
+         - Styles: self + Google Fonts CSS. 'unsafe-inline' required by Tailwind/Radix runtime style injection.
+         - Fonts: Google Fonts CDN.
+         - Images: self + data:/blob: (icons, OG previews) + https: (OG image on storage.googleapis.com, user avatars).
+         - Connect: Supabase REST + Realtime WSS + Google Fonts.
+         - Frames: none. Frame-ancestors 'none' = clickjacking protection (replaces X-Frame-Options for modern browsers).
+         - Form-action: self only (lead capture posts to Supabase via fetch, not <form action>).
+         - Base-uri: self (prevents <base> tag injection attacks). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.gpteng.co; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests;" />
+
+    <!-- Additional security meta headers (those that work via <meta>; HSTS/X-Frame-Options/COOP must be set as HTTP headers at the hosting layer) -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()" />
 
     <!-- Anti-flicker theme script -->
     <script>
