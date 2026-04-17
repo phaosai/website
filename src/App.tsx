@@ -33,6 +33,7 @@ const ComparePage = lazy(() => import("./pages/ComparePage.tsx"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const AppInner = () => {
             <Route path="/compare/:competitor" element={<ComparePage />} />
             <Route path="/solutions/:industry" element={<SolutionsPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Loader2, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// SECURITY CRITICAL — Internal-only page. Not linked from anywhere.
-// Token is held only in React state (never localStorage / never persisted).
-// Real auth boundary lives in the purge-contact edge function (constant-time compare).
+// SECURITY CRITICAL — Internal-only page.
+// Tier 4a: requires Supabase Auth + admin role AND PURGE_ADMIN_TOKEN (defense in depth).
+// PURGE_ADMIN_TOKEN is held only in React state (never localStorage / never persisted).
 
 type PurgeResponse = {
   ok?: boolean;
@@ -33,13 +36,32 @@ type AuditEntry = {
   counts: Record<string, number>;
   actions: Record<string, string>;
   status: string;
+  actor_user_id: string | null;
+};
+
+type SecurityEvent = {
+  id: string;
+  created_at: string;
+  event_type: string;
+  severity: string;
+  source: string | null;
+  ip_hash: string | null;
+};
+
+type SystemState = {
+  chat_enabled: boolean;
+  lead_capture_enabled: boolean;
+  research_enabled: boolean;
 };
 
 const FUNCTIONS_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purge-contact`;
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AdminPurge = () => {
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   const [token, setToken] = useState("");
   const [email, setEmail] = useState("");
   const [includeSuppressions, setIncludeSuppressions] = useState(false);
@@ -48,6 +70,41 @@ const AdminPurge = () => {
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
   const [recent, setRecent] = useState<AuditEntry[] | null>(null);
   const [recentLoading, setRecentLoading] = useState(false);
+
+  const [systemState, setSystemState] = useState<SystemState | null>(null);
+  const [stateBusy, setStateBusy] = useState(false);
+  const [events, setEvents] = useState<SecurityEvent[] | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
+  // Tier 4a: enforce auth + admin role on mount, redirect otherwise
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
+      if (!session) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+      if (!active) return;
+      if (!roles?.some((r) => r.role === "admin")) {
+        await supabase.auth.signOut();
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+      setUserEmail(session.user.email ?? null);
+      setAuthChecked(true);
+      // Load system_state & events in background (admin-only RLS)
+      void loadSystemState();
+      void loadEvents();
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Wipe sensitive state when the tab is hidden or the user navigates away
   useEffect(() => {
@@ -63,18 +120,22 @@ const AdminPurge = () => {
 
   const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
   const canDryRun = token.length > 0 && EMAIL_RE.test(normalizedEmail) && !loading;
-  const canConfirm =
-    canDryRun &&
-    dryRunResult?.ok === true &&
-    confirmedEmail === normalizedEmail;
+  const canConfirm = canDryRun && dryRunResult?.ok === true && confirmedEmail === normalizedEmail;
 
   async function callPurge(dryRun: boolean): Promise<PurgeResponse | null> {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expired. Please sign in again.");
+        navigate("/admin/login", { replace: true });
+        return null;
+      }
       const res = await fetch(FUNCTIONS_ENDPOINT, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
+          "X-Admin-Token": token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -120,7 +181,7 @@ const AdminPurge = () => {
     if (data?.ok) {
       toast.success("Purge complete.");
       setDryRunResult(data);
-      setConfirmedEmail(null); // require fresh dry-run before another purge
+      setConfirmedEmail(null);
       loadRecent();
     }
   }
@@ -132,10 +193,16 @@ const AdminPurge = () => {
     }
     setRecentLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
       const res = await fetch(FUNCTIONS_ENDPOINT, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
+          "X-Admin-Token": token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ action: "recent" }),
@@ -153,6 +220,56 @@ const AdminPurge = () => {
     }
   }
 
+  async function loadSystemState() {
+    const { data, error } = await supabase
+      .from("system_state")
+      .select("chat_enabled, lead_capture_enabled, research_enabled")
+      .eq("id", 1)
+      .maybeSingle();
+    if (!error && data) setSystemState(data as SystemState);
+  }
+
+  async function toggleSystemState(field: keyof SystemState, value: boolean) {
+    if (stateBusy) return;
+    setStateBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase
+      .from("system_state")
+      .update({ [field]: value, updated_by: session?.user.id, updated_at: new Date().toISOString() })
+      .eq("id", 1);
+    if (error) {
+      toast.error("Failed to update kill switch.");
+    } else {
+      setSystemState((s) => (s ? { ...s, [field]: value } : s));
+      toast.success(`${field} → ${value ? "enabled" : "DISABLED"}`);
+    }
+    setStateBusy(false);
+  }
+
+  async function loadEvents() {
+    setEventsLoading(true);
+    const { data, error } = await supabase
+      .from("security_events")
+      .select("id, created_at, event_type, severity, source, ip_hash")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!error) setEvents((data as SecurityEvent[]) ?? []);
+    setEventsLoading(false);
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate("/admin/login", { replace: true });
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
+
   const totalAffected = dryRunResult?.counts
     ? Object.values(dryRunResult.counts).reduce((a, b) => a + b, 0)
     : 0;
@@ -166,25 +283,54 @@ const AdminPurge = () => {
 
       <main className="min-h-screen bg-background py-12 px-4">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-6 flex items-center gap-2 text-muted-foreground">
-            <ShieldCheck className="h-5 w-5" />
-            <h1 className="text-2xl font-semibold text-foreground">
-              Right-to-be-Forgotten — Contact Purge
-            </h1>
+          <div className="mb-6 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <ShieldCheck className="h-5 w-5" />
+              <h1 className="text-2xl font-semibold text-foreground">
+                Right-to-be-Forgotten — Contact Purge
+              </h1>
+            </div>
+            <div className="flex items-center gap-3">
+              {userEmail && <span className="text-xs text-muted-foreground">{userEmail}</span>}
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="mr-2 h-3 w-3" /> Sign out
+              </Button>
+            </div>
           </div>
 
           <Alert className="mb-6 border-destructive/40 bg-destructive/5">
             <AlertTriangle className="h-4 w-4 text-destructive" />
             <AlertDescription className="text-sm">
-              <strong>Internal use only.</strong> Token is held in memory only and is
-              never stored. Always run a dry-run first. Hard-deletes are irreversible.
-              Audited server-side via hashed email + hashed IP.
+              <strong>Internal use only.</strong> Two-factor: signed-in admin role +
+              admin token (in memory only). Dry-run first. Hard-deletes are irreversible.
             </AlertDescription>
           </Alert>
 
+          {/* Kill switch panel */}
+          <Card className="p-6 mb-6">
+            <h2 className="font-semibold text-foreground mb-4">System kill switch</h2>
+            {systemState ? (
+              <div className="space-y-3">
+                {(["chat_enabled", "lead_capture_enabled", "research_enabled"] as const).map((k) => (
+                  <div key={k} className="flex items-center justify-between">
+                    <Label htmlFor={k} className="text-sm font-normal cursor-pointer">{k}</Label>
+                    <Switch
+                      id={k}
+                      checked={systemState[k]}
+                      disabled={stateBusy}
+                      onCheckedChange={(v) => toggleSystemState(k, v)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            )}
+          </Card>
+
           <Card className="p-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="token">Admin token</Label>
+              <Label htmlFor="token">Admin token (PURGE_ADMIN_TOKEN)</Label>
               <Input
                 id="token"
                 type="password"
@@ -233,21 +379,11 @@ const AdminPurge = () => {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button
-                onClick={onDryRun}
-                disabled={!canDryRun}
-                variant="outline"
-                className="flex-1"
-              >
+              <Button onClick={onDryRun} disabled={!canDryRun} variant="outline" className="flex-1">
                 {loading && !dryRunResult && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Dry-run
               </Button>
-              <Button
-                onClick={onConfirm}
-                disabled={!canConfirm}
-                variant="destructive"
-                className="flex-1"
-              >
+              <Button onClick={onConfirm} disabled={!canConfirm} variant="destructive" className="flex-1">
                 {loading && dryRunResult && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Confirm purge
               </Button>
@@ -264,34 +400,24 @@ const AdminPurge = () => {
                   hash: {dryRunResult.email_hash}
                 </span>
               </div>
-
               {totalAffected === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No data found for this email across any table.
-                </p>
+                <p className="text-sm text-muted-foreground">No data found for this email across any table.</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="text-left text-muted-foreground">
-                    <tr>
-                      <th className="pb-2 font-normal">Table</th>
-                      <th className="pb-2 font-normal">Rows</th>
-                      <th className="pb-2 font-normal">Action</th>
-                    </tr>
+                    <tr><th className="pb-2 font-normal">Table</th><th className="pb-2 font-normal">Rows</th><th className="pb-2 font-normal">Action</th></tr>
                   </thead>
                   <tbody>
                     {Object.entries(dryRunResult.counts || {}).map(([table, count]) => (
                       <tr key={table} className="border-t border-border">
                         <td className="py-2 font-mono text-xs">{table}</td>
                         <td className="py-2">{count}</td>
-                        <td className="py-2 text-xs text-muted-foreground">
-                          {dryRunResult.actions?.[table] || "—"}
-                        </td>
+                        <td className="py-2 text-xs text-muted-foreground">{dryRunResult.actions?.[table] || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
-
               {dryRunResult.dry_run && totalAffected > 0 && (
                 <p className="mt-4 text-xs text-muted-foreground">
                   Click <strong>Confirm purge</strong> to execute. This is irreversible.
@@ -303,21 +429,14 @@ const AdminPurge = () => {
           <Card className="mt-6 p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-semibold text-foreground">Recent purge activity</h2>
-              <Button
-                onClick={loadRecent}
-                disabled={recentLoading || !token}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={loadRecent} disabled={recentLoading || !token} variant="outline" size="sm">
                 {recentLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                 {recent === null ? "Load last 20" : "Refresh"}
               </Button>
             </div>
-
             {recent === null ? (
               <p className="text-sm text-muted-foreground">
-                Enter token and click <strong>Load last 20</strong> to view audit history.
-                Only hashed identifiers are shown — no raw email or IP.
+                Enter token and click <strong>Load last 20</strong>. Only hashed identifiers are shown.
               </p>
             ) : recent.length === 0 ? (
               <p className="text-sm text-muted-foreground">No audit entries yet.</p>
@@ -336,33 +455,68 @@ const AdminPurge = () => {
                   <tbody>
                     {recent.map((e) => {
                       const total = Object.values(e.counts || {}).reduce(
-                        (a, b) => a + (typeof b === "number" ? b : 0),
-                        0
+                        (a, b) => a + (typeof b === "number" ? b : 0), 0
                       );
                       return (
                         <tr key={e.id} className="border-t border-border">
-                          <td className="py-2 whitespace-nowrap text-muted-foreground">
-                            {new Date(e.created_at).toLocaleString()}
-                          </td>
+                          <td className="py-2 whitespace-nowrap text-muted-foreground">{new Date(e.created_at).toLocaleString()}</td>
                           <td className="py-2 font-mono">{e.email_hash}</td>
                           <td className="py-2">
-                            <span
-                              className={
-                                e.dry_run
-                                  ? "text-muted-foreground"
-                                  : "text-destructive font-medium"
-                              }
-                            >
+                            <span className={e.dry_run ? "text-muted-foreground" : "text-destructive font-medium"}>
                               {e.dry_run ? "dry-run" : "PURGE"}
                             </span>
                           </td>
                           <td className="py-2">{total}</td>
-                          <td className="py-2 text-muted-foreground">
-                            {e.include_suppressions ? "yes" : "—"}
-                          </td>
+                          <td className="py-2 text-muted-foreground">{e.include_suppressions ? "yes" : "—"}</td>
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
+          <Card className="mt-6 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold text-foreground">Recent security events</h2>
+              <Button onClick={loadEvents} disabled={eventsLoading} variant="outline" size="sm">
+                {eventsLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                Refresh
+              </Button>
+            </div>
+            {events === null ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : events.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No events in the last window.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-muted-foreground">
+                    <tr>
+                      <th className="pb-2 font-normal">When</th>
+                      <th className="pb-2 font-normal">Type</th>
+                      <th className="pb-2 font-normal">Severity</th>
+                      <th className="pb-2 font-normal">Source</th>
+                      <th className="pb-2 font-normal">IP hash</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((e) => (
+                      <tr key={e.id} className="border-t border-border">
+                        <td className="py-2 whitespace-nowrap text-muted-foreground">{new Date(e.created_at).toLocaleString()}</td>
+                        <td className="py-2 font-mono">{e.event_type}</td>
+                        <td className="py-2">
+                          <span className={
+                            e.severity === "critical" ? "text-destructive font-bold" :
+                            e.severity === "error" ? "text-destructive" :
+                            e.severity === "warn" ? "text-yellow-500" : "text-muted-foreground"
+                          }>{e.severity}</span>
+                        </td>
+                        <td className="py-2 text-muted-foreground">{e.source ?? "—"}</td>
+                        <td className="py-2 font-mono text-muted-foreground">{e.ip_hash ?? "—"}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
