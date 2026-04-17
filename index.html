@@ -55,16 +55,16 @@
       }
     </style>
 
-    <!-- Content Security Policy — scoped to what phaosai.com actually loads:
+    <!-- Content Security Policy — tightened in Tier 5 (fonts now self-hosted, no Google Fonts allowance):
          - Scripts: self + Lovable's gpteng CDN (script tagger). 'unsafe-inline'/'unsafe-eval' required by Vite/React in dev + some inline anti-flicker scripts.
-         - Styles: self + Google Fonts CSS. 'unsafe-inline' required by Tailwind/Radix runtime style injection.
-         - Fonts: Google Fonts CDN.
+         - Styles: self only. 'unsafe-inline' required by Tailwind/Radix runtime style injection.
+         - Fonts: self only (Inter is bundled in /fonts/).
          - Images: self + data:/blob: (icons, OG previews) + https: (OG image on storage.googleapis.com, user avatars).
-         - Connect: Supabase REST + Realtime WSS + Google Fonts.
+         - Connect: Supabase REST + Realtime WSS only.
          - Frames: none. Frame-ancestors 'none' = clickjacking protection (replaces X-Frame-Options for modern browsers).
          - Form-action: self only (lead capture posts to Supabase via fetch, not <form action>).
          - Base-uri: self (prevents <base> tag injection attacks). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.gpteng.co; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
     <meta http-equiv="Reporting-Endpoints" content='csp-endpoint="https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report"' />
 
     <!-- Additional security meta headers (those that work via <meta>; HSTS/X-Frame-Options/COOP must be set as HTTP headers at the hosting layer) -->
