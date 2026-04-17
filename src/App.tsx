@@ -60,6 +60,11 @@ const DeferredGlobalUI = () => {
     };
   }, []);
 
+  // Hide all global UI on internal /admin/* routes
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+    return null;
+  }
+
   if (!showGlobalUI) {
     return null;
   }
