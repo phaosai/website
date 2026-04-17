@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isFeatureEnabled, killSwitchResponse, logSecurityEvent, getClientIp, hashIp } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,49 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Tier 4c: bot defenses
+const HONEYPOT_FIELD = "hp_field";       // hidden form field — bots fill anything visible
+const MIN_SUBMIT_MS = 1500;              // bots submit instantly; humans take >1.5s
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Kill-switch (Tier 4b)
+  if (!(await isFeatureEnabled("lead_capture_enabled"))) {
+    return killSwitchResponse(corsHeaders, "lead_capture_enabled");
+  }
+
+  const ip = getClientIp(req);
+  const ipHash = await hashIp(ip, "capture-lead");
+
   try {
     const body = await req.json();
+
+    // Bot trap: any value in honeypot OR submit faster than threshold = silent 200
+    const hp = typeof body[HONEYPOT_FIELD] === "string" ? body[HONEYPOT_FIELD].trim() : "";
+    const renderedAtRaw = body.rendered_at;
+    const renderedAt = typeof renderedAtRaw === "number" ? renderedAtRaw : Number(renderedAtRaw);
+    const elapsed = Number.isFinite(renderedAt) ? Date.now() - renderedAt : Infinity;
+
+    if (hp || elapsed < MIN_SUBMIT_MS) {
+      await logSecurityEvent({
+        event_type: "bot_detected",
+        severity: "warn",
+        source: "capture-lead",
+        metadata: {
+          honeypot_filled: Boolean(hp),
+          elapsed_ms: Number.isFinite(elapsed) ? elapsed : null,
+        },
+        ip_hash: ipHash,
+      });
+      // Silent success — never tell bots they were detected
+      return new Response(
+        JSON.stringify({ success: true, message: "Lead captured successfully" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Input validation
     const sanitize = (v: unknown, maxLen = 500): string | undefined => {
@@ -58,7 +95,7 @@ Captured: ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
       try {
         const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        
+
         await supabase.from("chat_leads").insert({
           name,
           title,
@@ -74,20 +111,13 @@ Captured: ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
       }
     }
 
-    // Send email notification via Lovable AI gateway (using it as a relay to format and send)
-    // Since we don't have a dedicated email service, we'll use a direct SMTP-like approach
-    // For now, use the research-visitor pattern to send via a simple POST
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
     if (LOVABLE_API_KEY) {
-      // Use AI to compose a notification - this ensures the lead data reaches the logs
-      // and we can set up a webhook or email forwarding
       console.log("=== LEAD NOTIFICATION FOR daniel@phaosai.com ===");
       console.log(emailBody);
       console.log("=== END LEAD NOTIFICATION ===");
     }
 
-    // Also attempt to send via Resend if available
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (RESEND_API_KEY) {
       try {

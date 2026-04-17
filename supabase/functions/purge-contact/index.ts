@@ -1,17 +1,20 @@
 // SECURITY CRITICAL — Right-to-be-Forgotten purge endpoint
-// Gated by PURGE_ADMIN_TOKEN (constant-time compare). Never expose this token client-side.
-// Usage:
-//   curl -X POST https://<project>.functions.supabase.co/purge-contact \
-//     -H "Authorization: Bearer $PURGE_ADMIN_TOKEN" \
-//     -H "Content-Type: application/json" \
-//     -d '{"email":"person@example.com","dry_run":true}'
+// Two-factor admin gate (Tier 4a):
+//   1) Caller MUST present a valid Supabase user JWT belonging to a user
+//      that has the 'admin' role in user_roles.
+//   2) Caller MUST also present the PURGE_ADMIN_TOKEN as a Bearer header.
+// Both are required. Either alone is rejected.
+//
+// Audit log (purge_audit_log) records hashed admin token, hashed email,
+// hashed IP, AND the actor user id, so every purge is traceable to a person.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isFeatureEnabled, killSwitchResponse, logSecurityEvent, sha256Hex, getClientIp, hashIp } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-admin-token, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -46,36 +49,99 @@ function rateLimit(ip: string): boolean {
   return true;
 }
 
-function getIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("cf-connecting-ip") || "unknown";
-}
-
-async function sha256Hex(s: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-const EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const ip = getIp(req);
-  if (!rateLimit(ip)) return json({ error: "Too many requests" }, 429);
+  const ip = getClientIp(req);
+  const ipHash = await hashIp(ip, "purge-contact");
 
-  // SECURITY CRITICAL — admin token gate
+  if (!rateLimit(ip)) {
+    await logSecurityEvent({
+      event_type: "rate_limit_hit",
+      severity: "warn",
+      source: "purge-contact",
+      ip_hash: ipHash,
+    });
+    return json({ error: "Too many requests" }, 429);
+  }
+
+  // ---- Tier 4a: Supabase Auth + admin role check (factor #1) ----
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !anonKey || !serviceKey) {
+    return json({ error: "Server configuration error" }, 500);
+  }
+
+  // The X-Admin-Token header carries factor #2 (the bearer-style admin token).
+  // The Authorization header carries factor #1 (the user's Supabase JWT).
+  const userJwt = req.headers.get("authorization") || "";
+  const userJwtToken = userJwt.startsWith("Bearer ") ? userJwt.slice(7) : "";
+  if (!userJwtToken) {
+    await logSecurityEvent({
+      event_type: "purge_unauthorized",
+      severity: "warn",
+      source: "purge-contact",
+      metadata: { reason: "missing_jwt" },
+      ip_hash: ipHash,
+    });
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  const supaAuth = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: `Bearer ${userJwtToken}` } },
+    auth: { persistSession: false },
+  });
+
+  const { data: claimsData, error: claimsErr } = await supaAuth.auth.getClaims(userJwtToken);
+  if (claimsErr || !claimsData?.claims?.sub) {
+    await logSecurityEvent({
+      event_type: "purge_unauthorized",
+      severity: "warn",
+      source: "purge-contact",
+      metadata: { reason: "invalid_jwt" },
+      ip_hash: ipHash,
+    });
+    return json({ error: "Unauthorized" }, 401);
+  }
+  const actorUserId = claimsData.claims.sub as string;
+
+  const supa = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+  // Verify admin role server-side
+  const { data: isAdminData, error: isAdminErr } = await supa.rpc("has_role", {
+    _user_id: actorUserId,
+    _role: "admin",
+  });
+  if (isAdminErr || isAdminData !== true) {
+    await logSecurityEvent({
+      event_type: "purge_unauthorized",
+      severity: "error",
+      source: "purge-contact",
+      metadata: { reason: "not_admin", actor: actorUserId },
+      ip_hash: ipHash,
+    });
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  // ---- Tier 4a: PURGE_ADMIN_TOKEN gate (factor #2) ----
   const adminToken = Deno.env.get("PURGE_ADMIN_TOKEN");
   if (!adminToken) {
     console.error("PURGE_ADMIN_TOKEN not configured");
     return json({ error: "Server configuration error" }, 500);
   }
-  const authHeader = req.headers.get("authorization") || "";
-  const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const provided = req.headers.get("x-admin-token") || "";
   if (!provided || !timingSafeEqual(provided, adminToken)) {
-    // Generic message — do not reveal whether the token format was valid
+    await logSecurityEvent({
+      event_type: "purge_unauthorized",
+      severity: "error",
+      source: "purge-contact",
+      metadata: { reason: "bad_admin_token", actor: actorUserId },
+      ip_hash: ipHash,
+    });
     return json({ error: "Unauthorized" }, 401);
   }
 
@@ -83,18 +149,14 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return json({ error: "Invalid request" }, 400);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
-
-  const supa = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-
   // ---- Read-only action: list last 20 audit entries (no PII returned) ----
-  const action = typeof (body as any).action === "string" ? (body as any).action : "";
+  const action = typeof (body as Record<string, unknown>).action === "string"
+    ? ((body as Record<string, unknown>).action as string)
+    : "";
   if (action === "recent") {
     const { data, error } = await supa
       .from("purge_audit_log")
-      .select("id, created_at, email_hash, ip_hash, dry_run, include_suppressions, counts, actions, status")
+      .select("id, created_at, email_hash, ip_hash, dry_run, include_suppressions, counts, actions, status, actor_user_id")
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) {
@@ -104,10 +166,12 @@ Deno.serve(async (req) => {
     return json({ ok: true, entries: data ?? [] });
   }
 
-  const rawEmail = typeof (body as any).email === "string" ? (body as any).email : "";
+  const rawEmail = typeof (body as Record<string, unknown>).email === "string"
+    ? ((body as Record<string, unknown>).email as string)
+    : "";
   const email = rawEmail.trim().toLowerCase();
-  const dryRun = Boolean((body as any).dry_run);
-  const includeSuppressions = Boolean((body as any).include_suppressions);
+  const dryRun = Boolean((body as Record<string, unknown>).dry_run);
+  const includeSuppressions = Boolean((body as Record<string, unknown>).include_suppressions);
 
   if (!email || email.length > 320 || !EMAIL_RE.test(email)) {
     return json({ error: "Invalid email" }, 400);
@@ -174,8 +238,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. suppressed_emails — RETAINED by default for CAN-SPAM/GDPR opt-out proof.
-    //    Only deleted if caller explicitly opts in via include_suppressions=true.
+    // 4. suppressed_emails — RETAINED unless explicit opt-in
     {
       const { count: c } = await supa
         .from("suppressed_emails")
@@ -192,12 +255,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Append-only audit log entry (no raw email — only hash)
-    const ipHash = (await sha256Hex(ip)).slice(0, 16);
     const tokenHash = (await sha256Hex(provided)).slice(0, 16);
 
     console.log(JSON.stringify({
       evt: "purge-contact",
+      actor_user_id: actorUserId,
       email_hash: result.email_hash,
       ip_hash: ipHash,
       dry_run: dryRun,
@@ -206,12 +268,11 @@ Deno.serve(async (req) => {
       ts: new Date().toISOString(),
     }));
 
-    // Persist to purge_audit_log (append-only by RLS — no UPDATE/DELETE policies).
-    // Failure here must not block the purge response, but we log it.
     const { error: auditErr } = await supa.from("purge_audit_log").insert({
       admin_token_hash: tokenHash,
       email_hash: result.email_hash as string,
       ip_hash: ipHash,
+      actor_user_id: actorUserId,
       dry_run: dryRun,
       include_suppressions: includeSuppressions,
       counts,
@@ -219,6 +280,22 @@ Deno.serve(async (req) => {
       status: "ok",
     });
     if (auditErr) console.error("purge_audit_log insert failed:", auditErr.message);
+
+    if (!dryRun) {
+      // Hard purge — log as info; spike detection happens via digest
+      await logSecurityEvent({
+        event_type: "purge_executed",
+        severity: includeSuppressions ? "warn" : "info",
+        source: "purge-contact",
+        metadata: { actor: actorUserId, include_suppressions: includeSuppressions, total_rows: Object.values(counts).reduce((a, b) => a + b, 0) },
+        ip_hash: ipHash,
+      });
+    }
+
+    // Suppress unused-import warning by referencing the kill switch (purge is always allowed
+    // even if other features are paused — admins must always be able to honor DSARs).
+    void isFeatureEnabled;
+    void killSwitchResponse;
 
     return json({ ok: true, ...result });
   } catch (e) {
