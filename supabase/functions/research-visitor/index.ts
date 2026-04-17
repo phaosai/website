@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isFeatureEnabled, killSwitchResponse, logSecurityEvent, getClientIp, hashIp } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,32 +7,45 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Per-IP rate limit (Tier 4c addition)
+const RL_WINDOW_MS = 5 * 60 * 1000;
+const RL_MAX = 10; // 10 research requests / 5 min / IP
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const b = rateBuckets.get(ip);
+  if (!b || b.resetAt < now) {
+    rateBuckets.set(ip, { count: 1, resetAt: now + RL_WINDOW_MS });
+    return { allowed: true };
+  }
+  if (b.count >= RL_MAX) return { allowed: false, retryAfter: Math.ceil((b.resetAt - now) / 1000) };
+  b.count++;
+  return { allowed: true };
+}
+
 // SSRF protection: block private/link-local/loopback ranges and metadata endpoints.
 function isBlockedIp(host: string): boolean {
-  // IPv6 loopback / unspecified / link-local / unique-local
   if (host === "::1" || host === "::" || host.startsWith("[")) {
     const stripped = host.replace(/^\[|\]$/g, "").toLowerCase();
     if (stripped === "::1" || stripped === "::") return true;
     if (stripped.startsWith("fe80:") || stripped.startsWith("fc") || stripped.startsWith("fd")) return true;
   }
-  // IPv4 dotted
   const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (m) {
     const [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
-    if (a === 10) return true;                              // 10.0.0.0/8
-    if (a === 127) return true;                             // loopback
-    if (a === 0) return true;                               // 0.0.0.0/8
-    if (a === 169 && b === 254) return true;                // link-local (incl. metadata 169.254.169.254)
-    if (a === 172 && b >= 16 && b <= 31) return true;       // 172.16.0.0/12
-    if (a === 192 && b === 168) return true;                // 192.168.0.0/16
-    if (a >= 224) return true;                              // multicast / reserved
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a >= 224) return true;
   }
   return false;
 }
 
 function isSafeHostname(host: string): boolean {
   const lower = host.toLowerCase();
-  // Block common internal/metadata hostnames
   const blockedHosts = ["localhost", "metadata.google.internal", "metadata", "instance-data"];
   if (blockedHosts.includes(lower)) return false;
   if (lower.endsWith(".internal") || lower.endsWith(".local")) return false;
@@ -50,7 +64,6 @@ function validateAndNormalizeUrl(input: string): string | null {
   } catch {
     return null;
   }
-  // Only allow https (and http for non-blocked public hosts? Keep https-only for safety)
   if (parsed.protocol !== "https:") return null;
   if (!isSafeHostname(parsed.hostname)) return null;
   return parsed.toString();
@@ -61,12 +74,41 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Kill-switch (Tier 4b)
+  if (!(await isFeatureEnabled("research_enabled"))) {
+    return killSwitchResponse(corsHeaders, "research_enabled");
+  }
+
+  const ip = getClientIp(req);
+  const ipHash = await hashIp(ip, "research-visitor");
+
+  // Rate limit (Tier 4c)
+  const rl = rateLimit(ip);
+  if (!rl.allowed) {
+    await logSecurityEvent({
+      event_type: "rate_limit_hit",
+      severity: "warn",
+      source: "research-visitor",
+      ip_hash: ipHash,
+    });
+    return new Response(
+      JSON.stringify({ success: true, research: "Research unavailable. Proceed with basic visitor information." }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Retry-After": String(rl.retryAfter ?? 60),
+        },
+      },
+    );
+  }
+
   try {
     const { name, title, company, website } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Step 1: Fetch the company website content (if provided and safe)
     let websiteContent = "";
     let safeWebsite: string | null = null;
     if (website && typeof website === "string") {
@@ -76,7 +118,7 @@ serve(async (req) => {
           const siteResp = await fetch(safeWebsite, {
             headers: { "User-Agent": "Mozilla/5.0 (compatible; PhaosAI/1.0)" },
             signal: AbortSignal.timeout(8000),
-            redirect: "manual", // prevent redirect-based SSRF bypass
+            redirect: "manual",
           });
           if (siteResp.ok) {
             const html = await siteResp.text();
@@ -97,7 +139,6 @@ serve(async (req) => {
       }
     }
 
-    // Sanitize visitor inputs for prompt
     const safe = (v: unknown, n = 200) =>
       typeof v === "string" ? v.trim().slice(0, n) : "";
     const sName = safe(name);

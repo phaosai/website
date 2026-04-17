@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isFeatureEnabled, killSwitchResponse } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -266,6 +267,11 @@ function scrubPII(text: string): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Kill-switch (Tier 4b)
+  if (!(await isFeatureEnabled("chat_enabled"))) {
+    return killSwitchResponse(corsHeaders, "chat_enabled");
   }
 
   const ip = getClientIp(req);
