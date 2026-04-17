@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Compass, X } from "lucide-react";
 
 interface Shortcut {
@@ -43,6 +43,7 @@ const PhaosNavigator = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
 
   const shortcuts = pageShortcuts[location.pathname] || defaultShortcuts;
 
@@ -59,7 +60,10 @@ const PhaosNavigator = () => {
       setTimeout(() => {
         const el = document.querySelector(shortcut.target);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.scrollIntoView({
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+            block: "center",
+          });
           // Pulse highlight
           el.classList.add("ring-2", "ring-primary", "rounded-2xl");
           setTimeout(() => {
@@ -68,18 +72,25 @@ const PhaosNavigator = () => {
         }
       }, 100);
     },
-    [location.pathname, navigate]
+    [location.pathname, navigate, prefersReducedMotion]
   );
+
+  // Tier 5a: minimal motion variants when prefers-reduced-motion
+  const popVariants = prefersReducedMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : {
+        initial: { opacity: 0, y: 10, scale: 0.95 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 10, scale: 0.95 },
+      };
 
   return (
     <div className="fixed bottom-6 left-6 z-40" style={{ willChange: "transform" }}>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            {...popVariants}
+            transition={{ duration: prefersReducedMotion ? 0.1 : 0.2 }}
             className="absolute bottom-14 left-0 bg-card/95 backdrop-blur-xl border border-border/60 rounded-2xl p-3 min-w-[180px] shadow-2xl shadow-black/40"
           >
             <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider px-3 py-1.5">
@@ -89,7 +100,7 @@ const PhaosNavigator = () => {
               <button
                 key={s.label}
                 onClick={() => handleShortcut(s)}
-                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {s.label}
               </button>
@@ -100,16 +111,17 @@ const PhaosNavigator = () => {
 
       <motion.button
         onClick={() => setOpen(!open)}
-        className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center shadow-lg shadow-black/30 hover:border-primary/40 transition-colors"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        className="w-11 h-11 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 flex items-center justify-center shadow-lg shadow-black/30 hover:border-primary/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+        whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
         aria-label={open ? "Close navigator" : "Open navigator"}
+        aria-expanded={open}
         data-interactive
       >
         {open ? (
-          <X className="w-4 h-4 text-muted-foreground" />
+          <X className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
         ) : (
-          <Compass className="w-4 h-4 text-primary" />
+          <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
         )}
       </motion.button>
     </div>

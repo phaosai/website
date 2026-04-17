@@ -10,6 +10,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      // Tier 5a: sonner sets role="status" + aria-live="polite" on toasts internally;
+      // closeButton makes dismiss reachable by keyboard.
+      closeButton
       toastOptions={{
         classNames: {
           toast:

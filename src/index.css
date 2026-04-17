@@ -20,7 +20,8 @@
     --secondary-foreground: 0 0% 90%;
 
     --muted: 240 10% 14%;
-    --muted-foreground: 240 5% 64%;
+    /* Tier 5a: bumped from 64% → 72% to clear WCAG AA 4.5:1 against --background */
+    --muted-foreground: 240 5% 72%;
 
     --accent: 270 60% 50%;
     --accent-foreground: 0 0% 100%;
