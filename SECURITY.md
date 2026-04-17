@@ -87,6 +87,23 @@ All models are accessed exclusively via the **Lovable AI Gateway** (server-side,
 
 **Fallback behavior:** if the gateway returns 429 or 402, the chat widget shows a generic "service temporarily unavailable" message and suggests `daniel@phaosai.com`.
 
+### 4.1 AI feature risk tiering
+
+Each AI surface on this app is classified along three axes (data sensitivity / autonomy / external exposure) and assigned a risk tier. Controls scale with the tier.
+
+| Surface | Data sensitivity | Autonomy | External exposure | **Tier** | Controls applied |
+|---|---|---|---|---|---|
+| `phaos-chat` (consultative chatbot, customer-facing) | Medium — accepts free-text from anonymous visitors; may receive PII; never sees credentials, payment data, health/legal records | Read-only — generates conversational text only; cannot make DB writes other than appending to `chat_leads` after explicit user form submission; cannot call other tools, send emails, or trigger workflows | High — public, unauthenticated, anonymous internet | **Medium** | System prompt isolation; client-supplied `role: "system"` downgraded to `user`; turn cap (40), per-message cap (4k chars), conversation cap (60k chars), `max_tokens: 1024`; per-IP rate limit (20/5min); inbound PII/credential/OTP/SSN/card scrubbing; hard-coded refusal of credential, payment-card, OTP, SSN, and prompt-extraction requests; "not legal/financial/medical advice" disclaimer enforced in prompt; explicit lead-capture consent before any DB write; sanitized error responses; gateway 429/402 → generic fallback message |
+| `research-visitor` (visitor enrichment from public web) | Low — fetches only public web pages; no inbound user PII in prompts | Read-only — produces a structured summary; no DB writes, no outbound comms | Low — internal-only invocation, not exposed in the public UI | **Low** | SSRF allowlist (blocks RFC1918, link-local, loopback, cloud metadata IPs); response size cap; timeout cap; sanitized errors; no PII fields in prompts |
+
+**Tier definitions used here:**
+
+- **Low** — Read-only, internal trigger only, no PII in prompts, no autonomous actions. Standard input validation + rate limiting + sanitized errors are sufficient.
+- **Medium** — Customer-facing or accepts arbitrary user input, but read-only with respect to the rest of the system (cannot make state-changing calls beyond a single, narrowly-scoped, user-consented write). Requires prompt-injection hardening, refusal rules, PII scrubbing, per-IP rate limiting, token/turn caps, disclaimers, and sanitized fallback.
+- **High** — Autonomous outbound actions (places calls, sends SMS/email without per-event human approval), handles payment/health/credential data, or operates against multi-tenant customer data. **Not present on this app.** Would additionally require: per-action human-in-the-loop approval for irreversible actions, kill switch, consent verification per channel, full append-only action audit log, anomaly/spend monitoring, and circuit breakers on the downstream API.
+
+**Re-tiering trigger:** any change that gives an AI surface the ability to (a) write to a table other than `chat_leads`, (b) call another edge function or external API beyond the LLM gateway, or (c) operate on authenticated user data, requires re-classifying the surface and updating this table **before** the change is published.
+
 ---
 
 ## 5. Data inventory & retention
