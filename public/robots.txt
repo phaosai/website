@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /functions/
+Disallow: /admin/
 
 Sitemap: https://phaosai.com/sitemap.xml
 
