@@ -299,6 +299,75 @@ const AdminPurge = () => {
               )}
             </Card>
           )}
+
+          <Card className="mt-6 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold text-foreground">Recent purge activity</h2>
+              <Button
+                onClick={loadRecent}
+                disabled={recentLoading || !token}
+                variant="outline"
+                size="sm"
+              >
+                {recentLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                {recent === null ? "Load last 20" : "Refresh"}
+              </Button>
+            </div>
+
+            {recent === null ? (
+              <p className="text-sm text-muted-foreground">
+                Enter token and click <strong>Load last 20</strong> to view audit history.
+                Only hashed identifiers are shown — no raw email or IP.
+              </p>
+            ) : recent.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No audit entries yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-muted-foreground">
+                    <tr>
+                      <th className="pb-2 font-normal">When</th>
+                      <th className="pb-2 font-normal">Email hash</th>
+                      <th className="pb-2 font-normal">Mode</th>
+                      <th className="pb-2 font-normal">Total rows</th>
+                      <th className="pb-2 font-normal">Suppr.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((e) => {
+                      const total = Object.values(e.counts || {}).reduce(
+                        (a, b) => a + (typeof b === "number" ? b : 0),
+                        0
+                      );
+                      return (
+                        <tr key={e.id} className="border-t border-border">
+                          <td className="py-2 whitespace-nowrap text-muted-foreground">
+                            {new Date(e.created_at).toLocaleString()}
+                          </td>
+                          <td className="py-2 font-mono">{e.email_hash}</td>
+                          <td className="py-2">
+                            <span
+                              className={
+                                e.dry_run
+                                  ? "text-muted-foreground"
+                                  : "text-destructive font-medium"
+                              }
+                            >
+                              {e.dry_run ? "dry-run" : "PURGE"}
+                            </span>
+                          </td>
+                          <td className="py-2">{total}</td>
+                          <td className="py-2 text-muted-foreground">
+                            {e.include_suppressions ? "yes" : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
       </main>
     </>
