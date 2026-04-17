@@ -101,6 +101,27 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Rate limit by source IP (best-effort; defense against anon-key abuse)
+  const clientIp =
+    req.headers.get('cf-connecting-ip') ||
+    req.headers.get('x-real-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown'
+  if (!checkRateLimit(clientIp)) {
+    console.warn('Rate limit exceeded', { clientIp })
+    return new Response(
+      JSON.stringify({ error: 'Too many requests. Please try again shortly.' }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': '60',
+        },
+      }
+    )
+  }
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
@@ -127,8 +148,22 @@ Deno.serve(async (req) => {
     recipientEmail = body.recipientEmail || body.recipient_email
     messageId = crypto.randomUUID()
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
-    if (body.templateData && typeof body.templateData === 'object') {
-      templateData = body.templateData
+    // Strict whitelist + length caps to prevent template-injected abuse
+    templateData = sanitizeTemplateData(body.templateData)
+    if (typeof idempotencyKey === 'string') {
+      idempotencyKey = idempotencyKey.slice(0, 200)
+    }
+    if (recipientEmail && typeof recipientEmail === 'string') {
+      recipientEmail = recipientEmail.trim().slice(0, 320)
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid recipientEmail' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
     }
   } catch {
     return new Response(
