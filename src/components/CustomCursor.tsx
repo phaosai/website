@@ -8,8 +8,9 @@ const CustomCursor = () => {
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    // Don't show on touch devices
+    // Tier 5a: skip on touch devices AND for users who prefer reduced motion
     if (window.matchMedia("(pointer: coarse)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     // Keep the default cursor visible
     document.body.style.cursor = "";

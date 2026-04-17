@@ -1,5 +1,4 @@
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface KineticTextProps {
   children: string;
@@ -9,7 +8,13 @@ interface KineticTextProps {
 }
 
 const KineticText = ({ children, className = "", as: Tag = "span", delay = 0 }: KineticTextProps) => {
+  const prefersReducedMotion = useReducedMotion();
   const words = children.split(" ");
+
+  // Tier 5a: respect prefers-reduced-motion — render plain text, no per-char animation
+  if (prefersReducedMotion) {
+    return <Tag className={className}>{children}</Tag>;
+  }
 
   return (
     <Tag className={className}>
