@@ -32,6 +32,7 @@ const InvestorRelations = lazy(() => import("./pages/InvestorRelations.tsx"));
 const ComparePage = lazy(() => import("./pages/ComparePage.tsx"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
+const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,11 @@ const DeferredGlobalUI = () => {
       }
     };
   }, []);
+
+  // Hide all global UI on internal /admin/* routes
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+    return null;
+  }
 
   if (!showGlobalUI) {
     return null;
@@ -98,6 +104,7 @@ const AppInner = () => {
             <Route path="/compare/:competitor" element={<ComparePage />} />
             <Route path="/solutions/:industry" element={<SolutionsPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/admin/purge" element={<AdminPurge />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
