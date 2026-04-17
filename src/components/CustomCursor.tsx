@@ -53,8 +53,10 @@ const CustomCursor = () => {
     };
   }, [visible]);
 
-  // Don't render on touch devices
-  if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) {
+  // Don't render on touch devices or when reduced motion is preferred
+  if (typeof window !== "undefined" &&
+      (window.matchMedia("(pointer: coarse)").matches ||
+       window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
     return null;
   }
 
