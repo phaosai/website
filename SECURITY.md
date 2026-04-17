@@ -178,10 +178,12 @@ This document and Lovable's tooling **cannot**:
 
 - Force human review of audit logs — that is an operational responsibility of the Security & Compliance Owner
 - Guarantee that future law/regulation changes are tracked automatically
-- Control the underlying Lovable / Supabase platform (HSTS headers, CSP, edge node placement) beyond what the platform exposes
+- Set true HTTP security headers from a static SPA. The CSP, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` we ship in `index.html` are delivered via `<meta http-equiv>` tags, which browsers honor for those four. **HSTS (`Strict-Transport-Security`), the real `X-Frame-Options` header, `Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`, and `Cross-Origin-Resource-Policy` are ignored when set via `<meta>` and must come from the hosting layer.** Lovable's hosting provides HTTPS/TLS by default; the remaining headers are accepted as a residual risk on this low-risk marketing surface. Clickjacking is mitigated in modern browsers by the CSP `frame-ancestors 'none'` directive we do ship
+- Control the underlying Lovable / Supabase platform (edge node placement, WAF tuning, DDoS shaping) beyond what the platform exposes
 - Prevent zero-day vulnerabilities in upstream dependencies between scans
 - Stop a holder of `PURGE_ADMIN_TOKEN` or `SUPABASE_SERVICE_ROLE_KEY` from misusing it — both are highly privileged
 - Recover anonymized rows in `email_send_log` once a purge has run (irreversible by design)
+- Recover or modify `purge_audit_log` rows once written — the table has no UPDATE/DELETE policies even for the service role via PostgREST
 
 When in doubt, the safest interpretation wins: refuse, redirect to `daniel@phaosai.com`, and escalate to the Security & Compliance Owner.
 
