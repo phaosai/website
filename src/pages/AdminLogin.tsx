@@ -122,6 +122,22 @@ const AdminLogin = () => {
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign in
               </Button>
+              <button
+                type="button"
+                disabled={loading || !email}
+                onClick={async () => {
+                  if (!email) return;
+                  const { error } = await supabase.auth.resetPasswordForEmail(
+                    email.trim().toLowerCase(),
+                    { redirectTo: `${window.location.origin}/admin/login` },
+                  );
+                  if (error) toast.error("Could not send reset email.");
+                  else toast.success("If that account exists, a reset email is on its way.");
+                }}
+                className="w-full text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline disabled:opacity-50"
+              >
+                Forgot / set password — send reset email
+              </button>
             </form>
           </Card>
         </div>

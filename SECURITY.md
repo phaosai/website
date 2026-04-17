@@ -44,9 +44,16 @@
 | Email opt-out (CAN-SPAM) | ✅ | `handle-email-unsubscribe` (RFC 8058 one-click + GET) + `suppressed_emails` |
 | Idempotent email queue | ✅ | pgmq with DLQ; retries safe |
 | Right-to-be-Forgotten path | ✅ | `purge-contact` edge function (see §6) |
-| Append-only purge audit log | ✅ | `purge_audit_log` table — service-role-only, no UPDATE/DELETE policies; stores hashed token, hashed email, hashed IP, dry_run flag, per-table counts |
+| Append-only purge audit log | ✅ | `purge_audit_log` table — service-role-only, no UPDATE/DELETE policies; stores hashed token, hashed email, hashed IP, hashed `actor_user_id`, dry_run flag, per-table counts |
+| Two-factor admin gate on `/admin/purge` | ✅ | Requires (a) Supabase Auth session with `admin` role in `public.user_roles` AND (b) the `PURGE_ADMIN_TOKEN` shared secret. Both verified server-side in `purge-contact`. Self-signup disabled in auth config; admins seeded manually. HIBP password check enabled |
+| Append-only security event log | ✅ | `public.security_events` — service-role-write, admin-read only. Records `bot_detected`, `csp_violation`, `kill_switch_hit`, `rate_limit_hit`, and other security-relevant events with hashed IP, severity, and metadata. No UPDATE/DELETE policies |
+| Global feature kill switch | ✅ | `public.system_state` row with `chat_enabled`, `lead_capture_enabled`, `research_enabled` booleans. Checked at the top of every relevant edge function (15s in-memory cache); paused features return `503` with a friendly message. Toggle UI on `/admin/purge` (admin-only). Fail-open on infra error so a DB blip never blocks traffic |
+| CSP violation reporting | ✅ | `csp-report` edge function (`verify_jwt = false`, per-IP rate-limited, 16 KB body cap) accepts both classic `report-uri` and Reporting-API `report-to` payloads, slims them to safe fields, and writes them to `security_events` with a hashed IP. CSP in `index.html` declares both directives |
+| Daily security digest | ✅ | `security-digest` edge function runs daily via `pg_cron` (07:00 UTC), counts the last 24h of `security_events` by type/severity, and emails a summary to `daniel@phaosai.com` via the existing transactional pipeline. Subject is flagged with 🚨 if any `critical` events occurred. Idempotency key per UTC date prevents duplicate sends |
+| Purge audit log retention | ✅ | `pg_cron` job prunes `purge_audit_log` rows older than `system_state.purge_audit_retention_years` (default 7 years) to align with typical legal retention |
+| Dependency audit cadence | ✅ (operational) | Monthly: run Lovable's dependency scan + `npm audit` and apply non-breaking patches. Critical/High advisories are patched within 7 days. Logged in §9 change log |
 | HTTPS / TLS everywhere | ✅ | Lovable platform default |
-| Content Security Policy + security meta headers | ✅ (partial — see §8) | `index.html` ships a strict CSP (`default-src 'self'`, scoped allowlist for Supabase, Google Fonts, `cdn.gpteng.co`; `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and a hardened `Permissions-Policy` (camera/mic/geo/payment/sensors all denied). HSTS, true `X-Frame-Options`, and COOP/COEP cannot be set via `<meta>` and must come from the hosting layer — see §8 |
+| Content Security Policy + security meta headers | ✅ (partial — see §8) | `index.html` ships a strict CSP (`default-src 'self'`, scoped allowlist for Supabase, Google Fonts, `cdn.gpteng.co`; `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`, `report-uri` + `report-to` → `csp-report`), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and a hardened `Permissions-Policy` (camera/mic/geo/payment/sensors all denied). HSTS, true `X-Frame-Options`, and COOP/COEP cannot be set via `<meta>` and must come from the hosting layer — see §8 |
 
 ---
 
@@ -144,7 +151,7 @@ curl -X POST https://hjqokvoaopvtapbllico.functions.supabase.co/purge-contact \
   -d '{"email":"subject@example.com","include_suppressions":true}'
 ```
 
-**Optional GUI alternative — `/admin/purge`:** A minimal in-browser form is available at [`/admin/purge`](https://www.phaosai.com/admin/purge) for the same workflow. It is `noindex,nofollow`, not linked from anywhere, and disallowed in `robots.txt`. The page enforces a forced dry-run before the destructive button enables, holds the token only in volatile React state (no `localStorage`, no autocomplete, wiped on tab unload), and the real auth gate remains the constant-time token compare in the edge function. **The `PURGE_ADMIN_TOKEN` must never be saved in a password manager shared with non-owners, pasted into chat, committed to source control, or shared between team members. Rotate immediately on any suspected exposure.**
+**Optional GUI alternative — `/admin/purge`:** A minimal in-browser form is available at [`/admin/purge`](https://www.phaosai.com/admin/purge) for the same workflow. It is `noindex,nofollow`, not linked from anywhere, and disallowed in `robots.txt`. **Two-factor gate:** the page requires a signed-in Supabase Auth session whose user has the `admin` role in `public.user_roles` (checked client-side AND re-verified server-side by `purge-contact` via the caller's JWT and `has_role()`), AND the `PURGE_ADMIN_TOKEN` shared secret in the request body. Self-signup is disabled in auth config; admin accounts are seeded manually by inserting a row into `auth.users` plus `public.user_roles`. Sign-in happens at `/admin/login` (also `noindex,nofollow`, not linked publicly). The page enforces a forced dry-run before the destructive button enables, holds the token only in volatile React state (no `localStorage`, no autocomplete, wiped on tab unload). **The `PURGE_ADMIN_TOKEN` must never be saved in a password manager shared with non-owners, pasted into chat, committed to source control, or shared between team members. Rotate immediately on any suspected exposure.**
 
 **What the purge does:**
 - `chat_leads` → hard delete
@@ -152,9 +159,29 @@ curl -X POST https://hjqokvoaopvtapbllico.functions.supabase.co/purge-contact \
 - `email_send_log` → anonymize (replace recipient with `purged-<hash>@anon.invalid`, null metadata)
 - `suppressed_emails` → **retained** by default (legal opt-out proof)
 
-**Audit trail:** Every invocation (dry-run and real) writes one row to `purge_audit_log` with: SHA-256 hash of the admin token, SHA-256 hash of the target email, SHA-256 hash of the requester IP, `dry_run` flag, `include_suppressions` flag, per-table affected counts, and a status string. The table is `service_role`-only with no UPDATE or DELETE policies — append-only by design. Raw email, raw IP, and raw token are never stored or logged. The `/admin/purge` UI exposes the most recent 20 rows for at-a-glance review.
+**Audit trail:** Every invocation (dry-run and real) writes one row to `purge_audit_log` with: SHA-256 hash of the admin token, SHA-256 hash of the target email, SHA-256 hash of the requester IP, the authenticated `actor_user_id` (from the Supabase JWT), `dry_run` flag, `include_suppressions` flag, per-table affected counts, and a status string. The table is `service_role`-only with no UPDATE or DELETE policies — append-only by design. Raw email, raw IP, and raw token are never stored or logged. The `/admin/purge` UI exposes the most recent 20 rows for at-a-glance review. **Retention:** a `pg_cron` job prunes rows older than `system_state.purge_audit_retention_years` (default **7 years**) to align with typical legal retention.
 
 **Token management:** `PURGE_ADMIN_TOKEN` is stored only in Supabase secrets. Rotate immediately if a holder leaves the company or if the token is suspected compromised.
+
+---
+
+## 6.1 Detection, monitoring, and kill switch
+
+**`security_events` table.** Every defensive trip writes one append-only row: `event_type`, `severity` (`info|warn|error|critical`), `source` (which edge function), `metadata` (jsonb, slimmed), `ip_hash`, `created_at`. Service-role-write, admin-read only. No UPDATE/DELETE policies. Event types currently emitted:
+
+| Event type | Source | Severity | Trigger |
+|---|---|---|---|
+| `bot_detected` | `capture-lead` | warn | Honeypot field filled OR submission faster than 1.5s — silently 200s the bot |
+| `csp_violation` | `csp-report` (browser) | warn / error | Browser reports a Content-Security-Policy block. `error` if the disposition is `enforce`, `warn` if `report-only` |
+| `rate_limit_hit` | `phaos-chat`, `purge-contact`, `research-visitor`, `send-transactional-email` | warn | Per-IP bucket exceeded |
+| `kill_switch_hit` | any | warn | A request was refused because the relevant `system_state` flag was off |
+| `purge_executed` | `purge-contact` | info | Mirrors `purge_audit_log` row (for digest visibility) |
+
+**`system_state` kill switch.** Single-row table with three booleans: `chat_enabled`, `lead_capture_enabled`, `research_enabled`. Each relevant edge function calls `isFeatureEnabled()` (15s in-memory cache to keep cost ~zero) at the top; if the flag is off, the function returns `503` with a polite, non-leaky message ("temporarily paused — please email info@phaosai.com"). **Fail-open** on infra error so a transient DB issue never blocks live traffic. Toggles are admin-only via `/admin/purge`.
+
+**`csp-report` endpoint.** `verify_jwt = false` (browsers can't carry a JWT for violation reports). Bounded: per-IP rate-limited (30/min), 16 KB body cap, accepts ≤ 5 reports per payload. Captures only safe fields (`document_uri`, `violated_directive`, `blocked_uri`, `source_file`, `line/column`, `disposition`, `status_code`) — never raw blobs. Stored in `security_events` with severity derived from disposition.
+
+**`security-digest` daily cron.** Runs daily at **07:00 UTC** via `pg_cron`, counts the last 24h of `security_events` grouped by type and by severity (capped at 5000 rows per run), and emails a plain-text summary to `daniel@phaosai.com` through the existing `send-transactional-email` pipeline. Subject is `🚨 Phaos AI Security Digest — N CRITICAL in last 24h` if any `critical` events occurred, otherwise `Phaos AI Security Digest — N events / 24h`. Idempotency key is `security-digest-YYYY-MM-DD` so manual re-runs in the same day don't double-send.
 
 ---
 
@@ -198,3 +225,6 @@ When in doubt, the safest interpretation wins: refuse, redirect to `daniel@phaos
 | 2026-04-17 | Added `purge_audit_log` (append-only, service-role-only, hashed identifiers) and surfaced the latest 20 entries in `/admin/purge` |
 | 2026-04-17 | Tightened `index.html` CSP (added `cdn.gpteng.co`, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`) and added `X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`, hardened `Permissions-Policy` |
 | 2026-04-17 | Added §4.1 AI feature risk tiering — `phaos-chat` classified Medium, `research-visitor` classified Low, with re-tiering trigger documented |
+| 2026-04-17 | **Tier 4a** — Added Supabase Auth + `public.user_roles` (`app_role` enum, `has_role()` SECURITY DEFINER); `/admin/purge` now requires a signed-in admin AND `PURGE_ADMIN_TOKEN`; `purge-contact` re-verifies the caller's JWT + role server-side; `purge_audit_log` gained `actor_user_id`; added `/admin/login`; HIBP password check enabled; signups disabled |
+| 2026-04-17 | **Tier 4b** — Added `security_events` (append-only, admin-read), `system_state` kill switch (chat / lead-capture / research), `csp-report` edge function, `security-digest` daily cron (07:00 UTC) → email to `daniel@phaosai.com`. CSP in `index.html` extended with `report-uri` + `report-to`. `/admin/purge` now exposes kill-switch toggles + last 20 security events |
+| 2026-04-17 | **Tier 4c** — Added per-IP rate limit (10/5min) to `research-visitor`; honeypot + min-time-to-submit on `capture-lead`; `pg_cron` retention prune for `purge_audit_log` (default 7 years, configurable via `system_state.purge_audit_retention_years`); documented monthly dependency-audit cadence |
