@@ -23,6 +23,18 @@ type PurgeResponse = {
   error?: string;
 };
 
+type AuditEntry = {
+  id: string;
+  created_at: string;
+  email_hash: string;
+  ip_hash: string | null;
+  dry_run: boolean;
+  include_suppressions: boolean;
+  counts: Record<string, number>;
+  actions: Record<string, string>;
+  status: string;
+};
+
 const FUNCTIONS_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purge-contact`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +46,8 @@ const AdminPurge = () => {
   const [loading, setLoading] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<PurgeResponse | null>(null);
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  const [recent, setRecent] = useState<AuditEntry[] | null>(null);
+  const [recentLoading, setRecentLoading] = useState(false);
 
   // Wipe sensitive state when the tab is hidden or the user navigates away
   useEffect(() => {
@@ -41,6 +55,7 @@ const AdminPurge = () => {
       setToken("");
       setDryRunResult(null);
       setConfirmedEmail(null);
+      setRecent(null);
     };
     window.addEventListener("beforeunload", wipe);
     return () => window.removeEventListener("beforeunload", wipe);
