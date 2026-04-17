@@ -125,6 +125,8 @@ curl -X POST https://hjqokvoaopvtapbllico.functions.supabase.co/purge-contact \
   -d '{"email":"subject@example.com","include_suppressions":true}'
 ```
 
+**Optional GUI alternative — `/admin/purge`:** A minimal in-browser form is available at [`/admin/purge`](https://www.phaosai.com/admin/purge) for the same workflow. It is `noindex,nofollow`, not linked from anywhere, and disallowed in `robots.txt`. The page enforces a forced dry-run before the destructive button enables, holds the token only in volatile React state (no `localStorage`, no autocomplete, wiped on tab unload), and the real auth gate remains the constant-time token compare in the edge function. **The `PURGE_ADMIN_TOKEN` must never be saved in a password manager shared with non-owners, pasted into chat, committed to source control, or shared between team members. Rotate immediately on any suspected exposure.**
+
 **What the purge does:**
 - `chat_leads` → hard delete
 - `email_unsubscribe_tokens` → hard delete
