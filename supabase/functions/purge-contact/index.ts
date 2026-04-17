@@ -82,6 +82,28 @@ Deno.serve(async (req) => {
   // Validate input
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return json({ error: "Invalid request" }, 400);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
+
+  const supa = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+  // ---- Read-only action: list last 20 audit entries (no PII returned) ----
+  const action = typeof (body as any).action === "string" ? (body as any).action : "";
+  if (action === "recent") {
+    const { data, error } = await supa
+      .from("purge_audit_log")
+      .select("id, created_at, email_hash, ip_hash, dry_run, include_suppressions, counts, actions, status")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) {
+      console.error("purge_audit_log read error:", error);
+      return json({ error: "Failed to read audit log" }, 500);
+    }
+    return json({ ok: true, entries: data ?? [] });
+  }
+
   const rawEmail = typeof (body as any).email === "string" ? (body as any).email : "";
   const email = rawEmail.trim().toLowerCase();
   const dryRun = Boolean((body as any).dry_run);
@@ -90,12 +112,6 @@ Deno.serve(async (req) => {
   if (!email || email.length > 320 || !EMAIL_RE.test(email)) {
     return json({ error: "Invalid email" }, 400);
   }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
-
-  const supa = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   const result: Record<string, unknown> = {
     email_hash: (await sha256Hex(email)).slice(0, 16),
@@ -177,15 +193,32 @@ Deno.serve(async (req) => {
     }
 
     // Append-only audit log entry (no raw email — only hash)
+    const ipHash = (await sha256Hex(ip)).slice(0, 16);
+    const tokenHash = (await sha256Hex(provided)).slice(0, 16);
+
     console.log(JSON.stringify({
       evt: "purge-contact",
       email_hash: result.email_hash,
-      ip_hash: (await sha256Hex(ip)).slice(0, 16),
+      ip_hash: ipHash,
       dry_run: dryRun,
       include_suppressions: includeSuppressions,
       counts,
       ts: new Date().toISOString(),
     }));
+
+    // Persist to purge_audit_log (append-only by RLS — no UPDATE/DELETE policies).
+    // Failure here must not block the purge response, but we log it.
+    const { error: auditErr } = await supa.from("purge_audit_log").insert({
+      admin_token_hash: tokenHash,
+      email_hash: result.email_hash as string,
+      ip_hash: ipHash,
+      dry_run: dryRun,
+      include_suppressions: includeSuppressions,
+      counts,
+      actions,
+      status: "ok",
+    });
+    if (auditErr) console.error("purge_audit_log insert failed:", auditErr.message);
 
     return json({ ok: true, ...result });
   } catch (e) {
