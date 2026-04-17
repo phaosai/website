@@ -44,7 +44,9 @@
 | Email opt-out (CAN-SPAM) | ✅ | `handle-email-unsubscribe` (RFC 8058 one-click + GET) + `suppressed_emails` |
 | Idempotent email queue | ✅ | pgmq with DLQ; retries safe |
 | Right-to-be-Forgotten path | ✅ | `purge-contact` edge function (see §6) |
+| Append-only purge audit log | ✅ | `purge_audit_log` table — service-role-only, no UPDATE/DELETE policies; stores hashed token, hashed email, hashed IP, dry_run flag, per-table counts |
 | HTTPS / TLS everywhere | ✅ | Lovable platform default |
+| Content Security Policy + security meta headers | ✅ (partial — see §8) | `index.html` ships a strict CSP (`default-src 'self'`, scoped allowlist for Supabase, Google Fonts, `cdn.gpteng.co`; `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and a hardened `Permissions-Policy` (camera/mic/geo/payment/sensors all denied). HSTS, true `X-Frame-Options`, and COOP/COEP cannot be set via `<meta>` and must come from the hosting layer — see §8 |
 
 ---
 
@@ -84,6 +86,23 @@ If/when those surfaces are built, they belong in their own Lovable projects with
 All models are accessed exclusively via the **Lovable AI Gateway** (server-side, key in Supabase secrets). No direct provider calls. No fine-tuning. No embeddings. No RAG indexes.
 
 **Fallback behavior:** if the gateway returns 429 or 402, the chat widget shows a generic "service temporarily unavailable" message and suggests `daniel@phaosai.com`.
+
+### 4.1 AI feature risk tiering
+
+Each AI surface on this app is classified along three axes (data sensitivity / autonomy / external exposure) and assigned a risk tier. Controls scale with the tier.
+
+| Surface | Data sensitivity | Autonomy | External exposure | **Tier** | Controls applied |
+|---|---|---|---|---|---|
+| `phaos-chat` (consultative chatbot, customer-facing) | Medium — accepts free-text from anonymous visitors; may receive PII; never sees credentials, payment data, health/legal records | Read-only — generates conversational text only; cannot make DB writes other than appending to `chat_leads` after explicit user form submission; cannot call other tools, send emails, or trigger workflows | High — public, unauthenticated, anonymous internet | **Medium** | System prompt isolation; client-supplied `role: "system"` downgraded to `user`; turn cap (40), per-message cap (4k chars), conversation cap (60k chars), `max_tokens: 1024`; per-IP rate limit (20/5min); inbound PII/credential/OTP/SSN/card scrubbing; hard-coded refusal of credential, payment-card, OTP, SSN, and prompt-extraction requests; "not legal/financial/medical advice" disclaimer enforced in prompt; explicit lead-capture consent before any DB write; sanitized error responses; gateway 429/402 → generic fallback message |
+| `research-visitor` (visitor enrichment from public web) | Low — fetches only public web pages; no inbound user PII in prompts | Read-only — produces a structured summary; no DB writes, no outbound comms | Low — internal-only invocation, not exposed in the public UI | **Low** | SSRF allowlist (blocks RFC1918, link-local, loopback, cloud metadata IPs); response size cap; timeout cap; sanitized errors; no PII fields in prompts |
+
+**Tier definitions used here:**
+
+- **Low** — Read-only, internal trigger only, no PII in prompts, no autonomous actions. Standard input validation + rate limiting + sanitized errors are sufficient.
+- **Medium** — Customer-facing or accepts arbitrary user input, but read-only with respect to the rest of the system (cannot make state-changing calls beyond a single, narrowly-scoped, user-consented write). Requires prompt-injection hardening, refusal rules, PII scrubbing, per-IP rate limiting, token/turn caps, disclaimers, and sanitized fallback.
+- **High** — Autonomous outbound actions (places calls, sends SMS/email without per-event human approval), handles payment/health/credential data, or operates against multi-tenant customer data. **Not present on this app.** Would additionally require: per-action human-in-the-loop approval for irreversible actions, kill switch, consent verification per channel, full append-only action audit log, anomaly/spend monitoring, and circuit breakers on the downstream API.
+
+**Re-tiering trigger:** any change that gives an AI surface the ability to (a) write to a table other than `chat_leads`, (b) call another edge function or external API beyond the LLM gateway, or (c) operate on authenticated user data, requires re-classifying the surface and updating this table **before** the change is published.
 
 ---
 
@@ -133,7 +152,7 @@ curl -X POST https://hjqokvoaopvtapbllico.functions.supabase.co/purge-contact \
 - `email_send_log` → anonymize (replace recipient with `purged-<hash>@anon.invalid`, null metadata)
 - `suppressed_emails` → **retained** by default (legal opt-out proof)
 
-**Audit trail:** Every invocation logs a structured line with hashed email, hashed IP, dry_run flag, and per-table counts. Raw email is never logged.
+**Audit trail:** Every invocation (dry-run and real) writes one row to `purge_audit_log` with: SHA-256 hash of the admin token, SHA-256 hash of the target email, SHA-256 hash of the requester IP, `dry_run` flag, `include_suppressions` flag, per-table affected counts, and a status string. The table is `service_role`-only with no UPDATE or DELETE policies — append-only by design. Raw email, raw IP, and raw token are never stored or logged. The `/admin/purge` UI exposes the most recent 20 rows for at-a-glance review.
 
 **Token management:** `PURGE_ADMIN_TOKEN` is stored only in Supabase secrets. Rotate immediately if a holder leaves the company or if the token is suspected compromised.
 
@@ -159,10 +178,12 @@ This document and Lovable's tooling **cannot**:
 
 - Force human review of audit logs — that is an operational responsibility of the Security & Compliance Owner
 - Guarantee that future law/regulation changes are tracked automatically
-- Control the underlying Lovable / Supabase platform (HSTS headers, CSP, edge node placement) beyond what the platform exposes
+- Set true HTTP security headers from a static SPA. The CSP, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` we ship in `index.html` are delivered via `<meta http-equiv>` tags, which browsers honor for those four. **HSTS (`Strict-Transport-Security`), the real `X-Frame-Options` header, `Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`, and `Cross-Origin-Resource-Policy` are ignored when set via `<meta>` and must come from the hosting layer.** Lovable's hosting provides HTTPS/TLS by default; the remaining headers are accepted as a residual risk on this low-risk marketing surface. Clickjacking is mitigated in modern browsers by the CSP `frame-ancestors 'none'` directive we do ship
+- Control the underlying Lovable / Supabase platform (edge node placement, WAF tuning, DDoS shaping) beyond what the platform exposes
 - Prevent zero-day vulnerabilities in upstream dependencies between scans
 - Stop a holder of `PURGE_ADMIN_TOKEN` or `SUPABASE_SERVICE_ROLE_KEY` from misusing it — both are highly privileged
 - Recover anonymized rows in `email_send_log` once a purge has run (irreversible by design)
+- Recover or modify `purge_audit_log` rows once written — the table has no UPDATE/DELETE policies even for the service role via PostgREST
 
 When in doubt, the safest interpretation wins: refuse, redirect to `daniel@phaosai.com`, and escalate to the Security & Compliance Owner.
 
@@ -173,3 +194,7 @@ When in doubt, the safest interpretation wins: refuse, redirect to `daniel@phaos
 | Date | Change |
 |---|---|
 | 2026-04-17 | Initial document. Added `phaos-chat` hardening, `purge-contact` RTBF function, search-path hardening on DB functions, SSRF protection on `research-visitor`, per-IP rate limits across all edge functions |
+| 2026-04-17 | Added `/admin/purge` GUI for the RTBF workflow with volatile-state token handling, `noindex,nofollow`, and a forced-dry-run gate |
+| 2026-04-17 | Added `purge_audit_log` (append-only, service-role-only, hashed identifiers) and surfaced the latest 20 entries in `/admin/purge` |
+| 2026-04-17 | Tightened `index.html` CSP (added `cdn.gpteng.co`, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`) and added `X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`, hardened `Permissions-Policy` |
+| 2026-04-17 | Added §4.1 AI feature risk tiering — `phaos-chat` classified Medium, `research-visitor` classified Low, with re-tiering trigger documented |
