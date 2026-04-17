@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.security-digest]
 verify_jwt = false
+
+[functions.healthz]
+verify_jwt = false
