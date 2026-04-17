@@ -229,8 +229,23 @@ const AdminPurge = () => {
     if (!error && data) setSystemState(data as SystemState);
   }
 
+  // Kill-switch second-factor passphrase. Required for EVERY toggle (on or off).
+  // Client-side gate is intentional: it prevents accidental clicks by an authenticated admin.
+  // True security still rests on Supabase Auth + admin role + RLS on system_state.
+  const KILL_SWITCH_PASSPHRASE = "onlyjesus";
+
   async function toggleSystemState(field: keyof SystemState, value: boolean) {
     if (stateBusy) return;
+    const entered = window.prompt(
+      `Confirm kill-switch change:\n\n  ${field} → ${value ? "ENABLE" : "DISABLE"}\n\nEnter the kill-switch passphrase to proceed.`
+    );
+    if (entered === null) return; // user cancelled — no-op, switch will revert via state
+    if (entered !== KILL_SWITCH_PASSPHRASE) {
+      toast.error("Incorrect passphrase. Kill switch unchanged.");
+      // Force re-render so the Switch reflects unchanged state
+      setSystemState((s) => (s ? { ...s } : s));
+      return;
+    }
     setStateBusy(true);
     const { data: { session } } = await supabase.auth.getSession();
     const { error } = await supabase
