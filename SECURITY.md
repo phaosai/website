@@ -194,3 +194,7 @@ When in doubt, the safest interpretation wins: refuse, redirect to `daniel@phaos
 | Date | Change |
 |---|---|
 | 2026-04-17 | Initial document. Added `phaos-chat` hardening, `purge-contact` RTBF function, search-path hardening on DB functions, SSRF protection on `research-visitor`, per-IP rate limits across all edge functions |
+| 2026-04-17 | Added `/admin/purge` GUI for the RTBF workflow with volatile-state token handling, `noindex,nofollow`, and a forced-dry-run gate |
+| 2026-04-17 | Added `purge_audit_log` (append-only, service-role-only, hashed identifiers) and surfaced the latest 20 entries in `/admin/purge` |
+| 2026-04-17 | Tightened `index.html` CSP (added `cdn.gpteng.co`, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`) and added `X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`, hardened `Permissions-Policy` |
+| 2026-04-17 | Added §4.1 AI feature risk tiering — `phaos-chat` classified Medium, `research-visitor` classified Low, with re-tiering trigger documented |
