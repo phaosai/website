@@ -44,7 +44,9 @@
 | Email opt-out (CAN-SPAM) | ✅ | `handle-email-unsubscribe` (RFC 8058 one-click + GET) + `suppressed_emails` |
 | Idempotent email queue | ✅ | pgmq with DLQ; retries safe |
 | Right-to-be-Forgotten path | ✅ | `purge-contact` edge function (see §6) |
+| Append-only purge audit log | ✅ | `purge_audit_log` table — service-role-only, no UPDATE/DELETE policies; stores hashed token, hashed email, hashed IP, dry_run flag, per-table counts |
 | HTTPS / TLS everywhere | ✅ | Lovable platform default |
+| Content Security Policy + security meta headers | ✅ (partial — see §8) | `index.html` ships a strict CSP (`default-src 'self'`, scoped allowlist for Supabase, Google Fonts, `cdn.gpteng.co`; `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`), plus `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and a hardened `Permissions-Policy` (camera/mic/geo/payment/sensors all denied). HSTS, true `X-Frame-Options`, and COOP/COEP cannot be set via `<meta>` and must come from the hosting layer — see §8 |
 
 ---
 
