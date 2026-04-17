@@ -121,6 +121,35 @@ const AdminPurge = () => {
       toast.success("Purge complete.");
       setDryRunResult(data);
       setConfirmedEmail(null); // require fresh dry-run before another purge
+      loadRecent();
+    }
+  }
+
+  async function loadRecent() {
+    if (!token) {
+      toast.error("Enter admin token first.");
+      return;
+    }
+    setRecentLoading(true);
+    try {
+      const res = await fetch(FUNCTIONS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "recent" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || `Request failed (${res.status})`);
+        return;
+      }
+      setRecent(Array.isArray(data.entries) ? data.entries : []);
+    } catch {
+      toast.error("Network error loading audit log.");
+    } finally {
+      setRecentLoading(false);
     }
   }
 
