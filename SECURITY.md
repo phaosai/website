@@ -152,7 +152,7 @@ curl -X POST https://hjqokvoaopvtapbllico.functions.supabase.co/purge-contact \
 - `email_send_log` → anonymize (replace recipient with `purged-<hash>@anon.invalid`, null metadata)
 - `suppressed_emails` → **retained** by default (legal opt-out proof)
 
-**Audit trail:** Every invocation logs a structured line with hashed email, hashed IP, dry_run flag, and per-table counts. Raw email is never logged.
+**Audit trail:** Every invocation (dry-run and real) writes one row to `purge_audit_log` with: SHA-256 hash of the admin token, SHA-256 hash of the target email, SHA-256 hash of the requester IP, `dry_run` flag, `include_suppressions` flag, per-table affected counts, and a status string. The table is `service_role`-only with no UPDATE or DELETE policies — append-only by design. Raw email, raw IP, and raw token are never stored or logged. The `/admin/purge` UI exposes the most recent 20 rows for at-a-glance review.
 
 **Token management:** `PURGE_ADMIN_TOKEN` is stored only in Supabase secrets. Rotate immediately if a holder leaves the company or if the token is suspected compromised.
 
