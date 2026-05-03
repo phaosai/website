@@ -9,6 +9,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useErrorReporter } from "@/hooks/useErrorReporter";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
 const WorkflowTeardownPopup = lazy(() => import("./components/WorkflowTeardownPopup"));
@@ -41,6 +43,10 @@ const PhaosKyrios = lazy(() => import("./pages/PhaosKyrios.tsx"));
 const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
 const RunSimulation = lazy(() => import("./pages/RunSimulation.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
+const Auth = lazy(() => import("./pages/Auth.tsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -87,10 +93,18 @@ const DeferredGlobalUI = () => {
   );
 };
 
+const BrowserRouterAuthWrapper = () => (
+  <BrowserRouter>
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  </BrowserRouter>
+);
+
 const AppInner = () => {
   useErrorReporter();
   return (
-    <BrowserRouter>
+    <>
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <ErrorBoundary>
           <Routes>
@@ -120,6 +134,10 @@ const AppInner = () => {
             <Route path="/one/kyrios" element={<PhaosKyrios />} />
             <Route path="/one/run-simulation" element={<RunSimulation />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/app" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -136,7 +154,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AppInner />
+        <BrowserRouterAuthWrapper />
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
