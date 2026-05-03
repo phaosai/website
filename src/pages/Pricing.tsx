@@ -1,8 +1,11 @@
-import { Check, ArrowRight, Star } from "lucide-react";
+import { Check, ArrowRight, Star, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tier = {
   name: string;
@@ -10,7 +13,7 @@ type Tier = {
   cadence: string;
   perfectFor: string;
   features: string[];
-  cta: { label: string; href: string };
+  cta: { label: string; href?: string; priceId?: string };
   flagship?: boolean;
   highlight?: string;
   reserved?: string;
