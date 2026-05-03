@@ -123,16 +123,7 @@ const AppInner = () => {
               }
             />
             <Route path="/one/sunesis" element={<PhaosSunesis />} />
-            <Route
-              path="/one/kyrios"
-              element={
-                <OnePillarPage
-                  pillar="Kyrios"
-                  tagline="Governance, stewardship, workflows, and action orchestration."
-                  description="Phaos Kyrios is the governance and orchestration pillar — turning evidence into reviewed, approved, and audit-logged actions across your operating workflow."
-                />
-              }
-            />
+            <Route path="/one/kyrios" element={<PhaosKyrios />} />
             <Route
               path="/one/run-simulation"
               element={
