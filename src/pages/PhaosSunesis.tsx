@@ -100,7 +100,7 @@ const PhaosSunesis = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/contact"
+              to="/auth?mode=signup&plan=sunesis_monthly"
               className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
             >
               Start with Sunesis — $149/month
@@ -283,7 +283,7 @@ const PhaosSunesis = () => {
               <p className="text-4xl font-bold mb-1">$149<span className="text-base font-normal text-muted-foreground">/month</span></p>
               <p className="text-sm text-muted-foreground mb-6">Research engine, PCI, Truth Memos, Investment Themes.</p>
               <Link
-                to="/contact"
+                to="/auth?mode=signup&plan=sunesis_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 border border-border bg-card text-foreground text-sm font-semibold px-5 py-3 rounded-full hover:bg-card/80 transition-colors"
               >
                 Start with Sunesis
