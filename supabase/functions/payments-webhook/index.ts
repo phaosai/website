@@ -1,4 +1,4 @@
-// Stripe webhook handler. Persists subscriptions + one-time purchases, sends welcome email.
+// Stripe webhook handler. Idempotent. Persists subscriptions + one-time purchases, sends welcome email.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
 
@@ -42,10 +42,7 @@ async function sendWelcomeEmail(email: string, productName: string) {
 
 async function handleSubscriptionCreatedOrUpdated(subscription: any, env: StripeEnv) {
   const userId = subscription.metadata?.userId;
-  if (!userId) {
-    console.error("No userId in subscription metadata");
-    return;
-  }
+  if (!userId) return console.error("No userId in subscription metadata");
   const item = subscription.items?.data?.[0];
   const priceId = item?.price?.metadata?.lovable_external_id || item?.price?.id;
   const productId = item?.price?.product;
@@ -78,13 +75,42 @@ async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
     .eq("environment", env);
 }
 
+async function handleInvoicePaid(invoice: any, env: StripeEnv) {
+  const subId = invoice.subscription;
+  if (!subId) return;
+  await getSupabase()
+    .from("user_subscriptions")
+    .update({
+      status: "active",
+      last_payment_status: "succeeded",
+      past_due_since: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subId)
+    .eq("environment", env);
+}
+
+async function handleInvoiceFailed(invoice: any, env: StripeEnv) {
+  const subId = invoice.subscription;
+  if (!subId) return;
+  await getSupabase()
+    .from("user_subscriptions")
+    .update({
+      status: "past_due",
+      last_payment_status: "failed",
+      past_due_since: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subId)
+    .eq("environment", env);
+}
+
 async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const userId = session.metadata?.userId;
   const priceId = session.metadata?.priceId;
   const productName = priceId ? PRODUCT_NAMES[priceId] || priceId : "Phaos";
   const email = session.customer_details?.email || session.customer_email;
 
-  // Record one-time purchase rows; subscriptions are handled by customer.subscription.* events.
   if (session.mode === "payment" && userId && priceId) {
     await getSupabase().from("user_purchases").upsert(
       {
@@ -101,12 +127,22 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
       { onConflict: "stripe_session_id" },
     );
   }
-
   if (email) await sendWelcomeEmail(email, productName);
 }
 
 async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
+
+  // Idempotency: insert event id; if conflict, skip.
+  const { error: dupErr } = await getSupabase()
+    .from("webhook_events")
+    .insert({ id: event.id, type: event.type, environment: env });
+  if (dupErr) {
+    console.log(`[webhook] duplicate or insert failed for ${event.id}: ${dupErr.message}`);
+    if (dupErr.code === "23505") return; // already processed
+  }
+
+  console.log(`[webhook] processing ${event.type} (${event.id}) env=${env}`);
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
@@ -115,8 +151,17 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object, env);
       break;
+    case "invoice.payment_succeeded":
+      await handleInvoicePaid(event.data.object, env);
+      break;
+    case "invoice.payment_failed":
+      await handleInvoiceFailed(event.data.object, env);
+      break;
     case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object, env);
+    case "payment_intent.succeeded":
+      if (event.type === "checkout.session.completed") {
+        await handleCheckoutCompleted(event.data.object, env);
+      }
       break;
     default:
       console.log("Unhandled event:", event.type);
