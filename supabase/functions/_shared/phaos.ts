@@ -32,7 +32,7 @@ export async function requireUser(req: Request) {
   if (!authHeader?.startsWith("Bearer ")) return { error: json({ error: "Unauthorized" }, 401) };
   const supa = userClient(authHeader);
   const token = authHeader.replace("Bearer ", "");
-  const { data, error } = await supa.auth.getClaims(token);
+  const { data, error } = await (supa.auth as any).getClaims(token);
   if (error || !data?.claims) return { error: json({ error: "Unauthorized" }, 401) };
   return { userId: data.claims.sub as string, email: data.claims.email as string | undefined, supa };
 }
