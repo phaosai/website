@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/SEOHead";
-import phaosLogo from "@/assets/phaos-full-logo.png";
+import phaosCrown from "@/assets/phaos-crown-transparent.png";
 
 type Mode = "signup" | "signin";
 
