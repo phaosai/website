@@ -48,6 +48,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn.tsx"));
+const Billing = lazy(() => import("./pages/Billing.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -140,6 +141,7 @@ const AppInner = () => {
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/app" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
+            <Route path="/app/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
