@@ -39,6 +39,7 @@ const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
 const PhaosKyrios = lazy(() => import("./pages/PhaosKyrios.tsx"));
 const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
+const RunSimulation = lazy(() => import("./pages/RunSimulation.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -116,16 +117,7 @@ const AppInner = () => {
             <Route path="/one/aion" element={<PhaosAion />} />
             <Route path="/one/sunesis" element={<PhaosSunesis />} />
             <Route path="/one/kyrios" element={<PhaosKyrios />} />
-            <Route
-              path="/one/run-simulation"
-              element={
-                <OnePillarPage
-                  pillar="Run Simulation"
-                  tagline="Scenario analysis across the three pillars."
-                  description="Run Simulation is the entry point for scenario modeling inside Phaos ONE. All outputs are clearly labeled SIMULATED and are not financial forecasts."
-                />
-              }
-            />
+            <Route path="/one/run-simulation" element={<RunSimulation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
