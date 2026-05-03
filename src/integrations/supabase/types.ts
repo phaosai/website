@@ -618,10 +618,12 @@ export type Database = {
           company_name: string | null
           created_at: string
           id: string
+          market_cap_tier: string | null
           organization_id: string
           pci_components: Json | null
           pci_score: number | null
           pci_threshold: Database["public"]["Enums"]["pci_threshold"] | null
+          sector: string | null
           signal_categories_active: Json | null
           sources: Json | null
           ticker: string
@@ -632,10 +634,12 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
+          market_cap_tier?: string | null
           organization_id: string
           pci_components?: Json | null
           pci_score?: number | null
           pci_threshold?: Database["public"]["Enums"]["pci_threshold"] | null
+          sector?: string | null
           signal_categories_active?: Json | null
           sources?: Json | null
           ticker: string
@@ -646,10 +650,12 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
+          market_cap_tier?: string | null
           organization_id?: string
           pci_components?: Json | null
           pci_score?: number | null
           pci_threshold?: Database["public"]["Enums"]["pci_threshold"] | null
+          sector?: string | null
           signal_categories_active?: Json | null
           sources?: Json | null
           ticker?: string
@@ -905,6 +911,36 @@ export type Database = {
           research_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      ticker_snapshots: {
+        Row: {
+          captured_at: string
+          id: string
+          organization_id: string
+          pci_score: number | null
+          signal_categories_active: Json | null
+          sources_count: number | null
+          ticker: string
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          organization_id: string
+          pci_score?: number | null
+          signal_categories_active?: Json | null
+          sources_count?: number | null
+          ticker: string
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          organization_id?: string
+          pci_score?: number | null
+          signal_categories_active?: Json | null
+          sources_count?: number | null
+          ticker?: string
         }
         Relationships: []
       }
@@ -1223,10 +1259,47 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_events: {
+        Row: {
+          action: string
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json
+          organization_id: string
+          to_status: string | null
+          user_id: string | null
+          workflow_item_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          organization_id: string
+          to_status?: string | null
+          user_id?: string | null
+          workflow_item_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          to_status?: string | null
+          user_id?: string | null
+          workflow_item_id?: string
+        }
+        Relationships: []
+      }
       workflow_items: {
         Row: {
           assigned_to: string | null
           completed_at: string | null
+          compliance_checklist: Json
           created_at: string
           id: string
           organization_id: string
@@ -1240,6 +1313,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           completed_at?: string | null
+          compliance_checklist?: Json
           created_at?: string
           id?: string
           organization_id: string
@@ -1253,6 +1327,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           completed_at?: string | null
+          compliance_checklist?: Json
           created_at?: string
           id?: string
           organization_id?: string
@@ -1300,6 +1375,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          organization_id: string
+          user_id: string
+          workflow_item_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          user_id: string
+          workflow_item_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          user_id?: string
+          workflow_item_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
