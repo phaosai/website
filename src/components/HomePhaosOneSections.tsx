@@ -275,7 +275,7 @@ const HomePhaosOneSections = () => {
 
           <div className="mt-8">
             <Link
-              to="/contact"
+              to="/pricing"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
               See full pricing →
