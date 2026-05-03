@@ -84,17 +84,3 @@ export function Disclaimer({ children }: { children: ReactNode }) {
     <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-3">{children}</p>
   );
 }
-
-export function EmptyCard({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-      {children}
-    </div>
-  );
-}
-
-export function Disclaimer({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-3">{children}</p>
-  );
-}
