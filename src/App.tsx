@@ -47,6 +47,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
+const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -134,6 +135,7 @@ const AppInner = () => {
             <Route path="/one/kyrios" element={<PhaosKyrios />} />
             <Route path="/one/run-simulation" element={<RunSimulation />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout/return" element={<CheckoutReturn />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />

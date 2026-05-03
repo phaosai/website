@@ -1,8 +1,11 @@
-import { Check, ArrowRight, Star } from "lucide-react";
+import { Check, ArrowRight, Star, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tier = {
   name: string;
@@ -10,7 +13,7 @@ type Tier = {
   cadence: string;
   perfectFor: string;
   features: string[];
-  cta: { label: string; href: string };
+  cta: { label: string; href?: string; priceId?: string };
   flagship?: boolean;
   highlight?: string;
   reserved?: string;
@@ -48,7 +51,7 @@ const tiers: Tier[] = [
       "Institutional-style methodology context that adds depth, rigor, and perspective to the research experience",
       "Ongoing watchlist visibility so priority names and themes stay on your radar as the landscape changes",
     ],
-    cta: { label: "Start with Sunesis", href: "/one/sunesis" },
+    cta: { label: "Start with Sunesis", priceId: "sunesis_monthly" },
   },
   {
     name: "Phaos Aion",
@@ -65,7 +68,7 @@ const tiers: Tier[] = [
       "Freshness indicators that show which views are current and which ones are running on stale assumptions",
       "Pre-event and regime-shift simulations to help you think ahead instead of reacting after the fact",
     ],
-    cta: { label: "Start with Aion", href: "/one/aion" },
+    cta: { label: "Start with Aion", priceId: "aion_monthly" },
   },
   {
     name: "Phaos Kyrios",
@@ -81,7 +84,7 @@ const tiers: Tier[] = [
       "Publishing and delivery controls that let you decide what goes out, to whom, and on what cadence",
       "A full, navigable audit history so you can always answer: \u201cWho signed off on this, and what changed along the way?\u201d",
     ],
-    cta: { label: "Start with Kyrios", href: "/one/kyrios" },
+    cta: { label: "Start with Kyrios", priceId: "kyrios_monthly" },
   },
   {
     name: "Phaos ONE",
@@ -99,7 +102,7 @@ const tiers: Tier[] = [
       "A unified command center that puts conviction, risk context, open questions, and upcoming events on a single, glanceable screen",
     ],
     flagship: true,
-    cta: { label: "Get Phaos ONE", href: "/one" },
+    cta: { label: "Get Phaos ONE", priceId: "phaos_one_monthly" },
   },
   {
     name: "Pantheon",
@@ -123,30 +126,46 @@ const aLaCarte = [
   {
     name: "Single \u201cTruth Memo\u201d",
     price: "$29",
+    priceId: "truth_memo_single_price",
     description:
       "A focused, filing-backed research brief on one name. Includes a conviction signal, balanced upside/downside framing, and a clear evidence trail so you can see how the view was formed.",
   },
   {
     name: "Weekly Conviction Pack",
     price: "$49",
+    priceId: "weekly_conviction_pack_price",
     description:
       "A curated short list of the week\u2019s standout ideas, filtered to what you can actually access on your existing platform. Designed for people who want a concentrated set of candidates, not a firehose.",
   },
   {
     name: "\u201cSecond Opinion\u201d Audit",
     price: "$19",
+    priceId: "second_opinion_audit_price",
     description:
       "Run your current thesis through the Phaos lens to pressure-test the logic. Highlights blind spots, missing signals, and counter-arguments so you can refine, reinforce, or reconsider with more confidence.",
   },
   {
     name: "Earnings Simulation Run",
     price: "$39",
+    priceId: "earnings_simulation_run_price",
     description:
       "A pre-earnings scenario pass on one name that maps possible paths and how they could affect conviction. Clearly labeled as simulated context — a thinking aid, not a forecast or guarantee.",
   },
 ];
 
 const Pricing = () => {
+  const { user } = useAuth();
+  const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
+
+  const handleBuy = (priceId: string) => {
+    openCheckout({
+      priceId,
+      customerEmail: user?.email,
+      userId: user?.id,
+      returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
@@ -154,6 +173,7 @@ const Pricing = () => {
         description="Transparent pricing for Phaos AI. Free tier, Sunesis ($149), Aion ($199), Kyrios ($299), Phaos ONE ($599), and Pantheon ($999). Plus one-time deliverables from $19."
         canonical="/pricing"
       />
+      <PaymentTestModeBanner />
       <Navigation />
 
       {/* HERO */}
@@ -224,17 +244,31 @@ const Pricing = () => {
                 )}
               </div>
 
-              <Link
-                to={tier.cta.href}
-                className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  tier.flagship
-                    ? "bg-purple-deep text-white hover:bg-purple-deep/90"
-                    : "bg-foreground/10 text-foreground hover:bg-foreground/15"
-                }`}
-              >
-                {tier.cta.label}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {tier.cta.priceId ? (
+                <button
+                  onClick={() => handleBuy(tier.cta.priceId!)}
+                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    tier.flagship
+                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
+                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
+                  }`}
+                >
+                  {tier.cta.label}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <Link
+                  to={tier.cta.href!}
+                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    tier.flagship
+                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
+                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
+                  }`}
+                >
+                  {tier.cta.label}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -282,6 +316,13 @@ const Pricing = () => {
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed flex-1">
                   {item.description}
                 </p>
+                <button
+                  onClick={() => handleBuy(item.priceId)}
+                  className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
+                >
+                  Buy for {item.price}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
@@ -361,6 +402,25 @@ const Pricing = () => {
       </section>
 
       <Footer />
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border">
+            <button
+              onClick={closeCheckout}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground"
+              aria-label="Close checkout"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="p-6 pt-14">{checkoutElement}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
