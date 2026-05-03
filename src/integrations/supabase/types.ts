@@ -1055,6 +1055,8 @@ export type Database = {
           current_period_start: string | null
           environment: string
           id: string
+          last_payment_status: string | null
+          past_due_since: string | null
           price_id: string
           product_id: string
           status: string
@@ -1070,6 +1072,8 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          last_payment_status?: string | null
+          past_due_since?: string | null
           price_id: string
           product_id: string
           status?: string
@@ -1085,6 +1089,8 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          last_payment_status?: string | null
+          past_due_since?: string | null
           price_id?: string
           product_id?: string
           status?: string
@@ -1192,6 +1198,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhook_events: {
+        Row: {
+          environment: string
+          id: string
+          payload: Json | null
+          processed_at: string
+          type: string
+        }
+        Insert: {
+          environment: string
+          id: string
+          payload?: Json | null
+          processed_at?: string
+          type: string
+        }
+        Update: {
+          environment?: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string
+          type?: string
+        }
+        Relationships: []
       }
       workflow_items: {
         Row: {
