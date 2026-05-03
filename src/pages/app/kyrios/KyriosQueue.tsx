@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, EmptyCard } from "@/components/app/PageShell";
 
-const STATUSES = ["All", "draft", "under_review", "approved", "published", "rejected"];
+const STATUSES = ["All", "draft", "under_review", "approved", "completed", "rejected"];
 
 export default function KyriosQueue() {
   const [items, setItems] = useState<any[]>([]);
@@ -72,7 +72,7 @@ export function StatusBadge({ status }: { status: string }) {
     draft: "bg-muted text-muted-foreground",
     under_review: "bg-amber-500/15 text-amber-500",
     approved: "bg-emerald-500/15 text-emerald-500",
-    published: "bg-purple-deep/15 text-purple-deep",
+    completed: "bg-purple-deep/15 text-purple-deep",
     rejected: "bg-red-500/15 text-red-500",
   };
   return <span className={`text-[11px] px-2 py-0.5 rounded capitalize ${map[status] ?? "bg-muted"}`}>{status?.replace("_", " ")}</span>;
