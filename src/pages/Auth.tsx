@@ -99,12 +99,18 @@ const Auth = () => {
         {/* Logo */}
         <div className="flex flex-col items-center">
           <img
-            src={phaosLogo}
+            src={phaosCrown}
             alt="Phaos AI"
-            width={200}
-            height={200}
-            className="w-[180px] h-auto drop-shadow-[0_0_30px_rgba(138,43,226,0.45)] [&_*]:!text-white"
+            width={140}
+            height={90}
+            className="w-[110px] h-auto drop-shadow-[0_0_30px_rgba(138,43,226,0.45)]"
           />
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
+            <span className="text-white">PHAOS</span>{" "}
+            <span className="italic font-semibold bg-gradient-to-r from-[#B97AFF] to-[#8A2BE2] bg-clip-text text-transparent">
+              AI
+            </span>
+          </h1>
         </div>
 
         {/* Card */}
