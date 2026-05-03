@@ -29,7 +29,6 @@ const NAV: NavItem[] = [
       { label: "Aion", to: "/one/aion" },
       { label: "Sunesis", to: "/one/sunesis" },
       { label: "Kyrios", to: "/one/kyrios" },
-      { label: "Investment Themes", to: "/app/sunesis/themes" },
       { label: "Run Simulation", to: "/one/run-simulation" },
     ],
   },
