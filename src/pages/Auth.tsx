@@ -1,14 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/SEOHead";
+import phaosCrown from "@/assets/phaos-crown-transparent.png";
+
+type Mode = "signup" | "signin";
+
+const passwordRules = (pw: string) => ({
+  length: pw.length >= 10,
+  lower: /[a-z]/.test(pw),
+  upper: /[A-Z]/.test(pw),
+  number: /\d/.test(pw),
+  special: /[^A-Za-z0-9]/.test(pw),
+});
 
 const Auth = () => {
   const { session, loading } = useAuth();
@@ -17,20 +27,41 @@ const Auth = () => {
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<Mode>("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && session) navigate(from, { replace: true });
   }, [session, loading, from, navigate]);
 
-  const handleEmailPassword = async (e: React.FormEvent) => {
+  const rules = useMemo(() => passwordRules(password), [password]);
+  const passedRules = Object.values(rules).filter(Boolean).length;
+  const strengthLabel =
+    passedRules <= 1 ? "Too weak" : passedRules <= 3 ? "Fair" : passedRules === 4 ? "Strong" : "Excellent";
+  const strengthColor =
+    passedRules <= 1
+      ? "bg-red-500"
+      : passedRules <= 3
+        ? "bg-yellow-500"
+        : passedRules === 4
+          ? "bg-emerald-500"
+          : "bg-emerald-400";
+  const allRulesMet = passedRules === 5;
+  const confirmMatches = confirm.length > 0 && confirm === password;
+  const canSubmitSignup = email && allRulesMet && confirmMatches;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
       if (mode === "signup") {
+        if (!canSubmitSignup) throw new Error("Please satisfy all password requirements.");
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -49,92 +80,207 @@ const Auth = () => {
     }
   };
 
-  const handleMagicLink = async () => {
-    if (!email) {
-      toast({ title: "Email required", description: "Enter your email above first.", variant: "destructive" });
-      return;
-    }
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/app` },
-      });
-      if (error) throw error;
-      toast({ title: "Magic link sent", description: "Check your email to sign in." });
-    } catch (err) {
-      toast({ title: "Could not send link", description: (err as Error).message, variant: "destructive" });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/app" });
-    if (result.error) {
-      toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
-      setBusy(false);
-    }
-  };
+  const Rule = ({ ok, label }: { ok: boolean; label: string }) => (
+    <div className="flex items-center gap-2 text-[13px] text-white/70">
+      {ok ? (
+        <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+      ) : (
+        <X className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+      )}
+      <span>{label}</span>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: "#0b0b0f" }}>
       <SEOHead title="Sign in — Phaos AI" description="Sign in to your Phaos AI workspace." canonical="/auth" />
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card/50 p-8 space-y-6">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Welcome to Phaos AI</h1>
-          <p className="text-sm text-muted-foreground">Evidence-first research workspace</p>
+
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo */}
+        <div className="flex flex-col items-center">
+          <img
+            src={phaosCrown}
+            alt="Phaos AI"
+            width={120}
+            height={60}
+            className="drop-shadow-[0_0_30px_rgba(138,43,226,0.45)]"
+          />
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+            <span className="text-white">PHAOS</span>{" "}
+            <span className="italic font-semibold bg-gradient-to-r from-[#B97AFF] to-[#8A2BE2] bg-clip-text text-transparent">
+              AI
+            </span>
+          </h1>
         </div>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign in</TabsTrigger>
-            <TabsTrigger value="signup">Sign up</TabsTrigger>
-          </TabsList>
+        {/* Card */}
+        <div
+          className="rounded-2xl p-6 sm:p-8 space-y-6"
+          style={{
+            background: "rgba(20,18,30,0.85)",
+            border: "1px solid rgba(138,43,226,0.18)",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+          }}
+        >
+          {/* Tabs */}
+          <div className="grid grid-cols-2 rounded-full p-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+            {(["signup", "signin"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className="py-2.5 text-sm font-semibold rounded-full transition-all"
+                style={
+                  mode === m
+                    ? {
+                        background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
+                        color: "#fff",
+                        boxShadow: "0 0 20px rgba(138,43,226,0.4)",
+                      }
+                    : { color: "rgba(255,255,255,0.55)" }
+                }
+              >
+                {m === "signup" ? "Create Account" : "Sign In"}
+              </button>
+            ))}
+          </div>
 
-          <TabsContent value="signin" className="space-y-4 mt-4">
-            <form onSubmit={handleEmailPassword} className="space-y-3">
-              <Input type="email" placeholder="you@firm.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-              <Button type="submit" className="w-full" disabled={busy}>
-                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign in
-              </Button>
-            </form>
-            <div className="text-right text-xs">
-              <Link to="/auth/forgot-password" className="text-primary hover:underline">Forgot password?</Link>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">EMAIL</label>
+              <Input
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white placeholder:text-white/30 h-11"
+              />
             </div>
-          </TabsContent>
 
-          <TabsContent value="signup" className="space-y-4 mt-4">
-            <form onSubmit={handleEmailPassword} className="space-y-3">
-              <Input type="email" placeholder="you@firm.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input type="password" placeholder="Password (min 8 chars)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-              <Button type="submit" className="w-full" disabled={busy}>
-                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Create account
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+            {/* Password */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">PASSWORD</label>
+              <div className="relative">
+                <Input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
+            {/* Strength meter — only on signup */}
+            {mode === "signup" && (
+              <div className="space-y-3">
+                <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className={`h-full ${strengthColor} transition-all`}
+                    style={{ width: `${(passedRules / 5) * 100}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.2em]">
+                  <span className="text-white/55">STRENGTH</span>
+                  <span
+                    className={
+                      passedRules <= 1
+                        ? "text-red-400"
+                        : passedRules <= 3
+                          ? "text-yellow-400"
+                          : "text-emerald-400"
+                    }
+                  >
+                    {strengthLabel}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  <Rule ok={rules.length} label="At least 10 characters" />
+                  <Rule ok={rules.upper} label="One uppercase letter" />
+                  <Rule ok={rules.lower} label="One lowercase letter" />
+                  <Rule ok={rules.number} label="One number" />
+                  <Rule ok={rules.special} label="One special character" />
+                </div>
+              </div>
+            )}
+
+            {/* Confirm password — signup only */}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">CONFIRM PASSWORD</label>
+                <div className="relative">
+                  <Input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                    className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                    aria-label="Toggle password visibility"
+                  >
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {confirm.length > 0 && !confirmMatches && (
+                  <p className="text-xs text-red-400">Passwords don't match</p>
+                )}
+              </div>
+            )}
+
+            {/* Remember me */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="remember"
+                checked={remember}
+                onCheckedChange={(v) => setRemember(!!v)}
+                className="border-white/30 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+              />
+              <label htmlFor="remember" className="text-sm text-white/75 cursor-pointer">
+                Remember me on this device
+              </label>
+            </div>
+
+            {/* Submit */}
+            <Button
+              type="submit"
+              disabled={busy || (mode === "signup" && !canSubmitSignup)}
+              className="w-full h-12 text-base font-semibold rounded-xl text-white border-0 disabled:opacity-50"
+              style={{
+                background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
+                boxShadow: "0 0 25px rgba(138,43,226,0.35)",
+              }}
+            >
+              {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {mode === "signup" ? "Create Account" : "Sign In"}
+            </Button>
+
+            {/* Centered forgot password */}
+            <div className="text-center">
+              <Link to="/auth/forgot-password" className="text-sm text-white/70 hover:text-white transition-colors">
+                Reset Your Password
+              </Link>
+            </div>
+          </form>
         </div>
 
-        <div className="space-y-2">
-          <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={busy}>
-            Continue with Google
-          </Button>
-          <Button type="button" variant="outline" className="w-full" onClick={handleMagicLink} disabled={busy}>
-            Email me a magic link
-          </Button>
-        </div>
-
-        <p className="text-[11px] text-center text-muted-foreground">
+        <p className="text-[11px] text-center text-white/40">
           By continuing, you agree to our{" "}
-          <Link to="/terms" className="underline">Terms</Link> and{" "}
-          <Link to="/privacy" className="underline">Privacy Policy</Link>.
+          <Link to="/terms" className="underline hover:text-white/70">Terms</Link> and{" "}
+          <Link to="/privacy" className="underline hover:text-white/70">Privacy Policy</Link>.
         </p>
       </div>
     </div>
