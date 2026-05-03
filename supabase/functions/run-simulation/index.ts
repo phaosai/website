@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
     const simPci = Math.max(10, basePci - drag);
 
     const svc = serviceClient();
+    // TODO(PCI internal tiers): persist internal-tier designation alongside `pci_simulated`
+    // once the engineering tier taxonomy is finalized. Public UI must continue to show
+    // only the 5 user-facing PCI tiers (Strong/Constructive/Watch/Caution/Stand Aside).
     await svc.from("simulation_runs").insert({
       ticker: ticker?.toUpperCase() ?? null,
       scenario_type: scenario === "Custom" ? "custom" : scenario.toLowerCase().replaceAll(" ", "_"),
