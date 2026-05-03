@@ -35,6 +35,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
+const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,7 @@ const AppInner = () => {
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
+            <Route path="/one" element={<PhaosOne />} />
             <Route
               path="/one/aion"
               element={
