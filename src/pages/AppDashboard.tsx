@@ -41,11 +41,11 @@ const AppDashboard = () => {
             <p className="text-lg font-semibold mt-1">Upgrade or change plan</p>
             <p className="text-sm text-muted-foreground mt-2">Sunesis, Aion, Kyrios, Phaos ONE, Pantheon.</p>
           </Link>
-          <button onClick={openPortal} className="text-left rounded-xl border border-border bg-card/50 p-5 hover:bg-card transition-colors">
+          <Link to="/app/billing" className="text-left rounded-xl border border-border bg-card/50 p-5 hover:bg-card transition-colors block">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Billing</p>
             <p className="text-lg font-semibold mt-1">Manage subscription</p>
-            <p className="text-sm text-muted-foreground mt-2">Update payment method, invoices, cancel.</p>
-          </button>
+            <p className="text-sm text-muted-foreground mt-2">Invoices, payment method, plan changes, cancel.</p>
+          </Link>
           <Link to="/contact" className="rounded-xl border border-border bg-card/50 p-5 hover:bg-card transition-colors">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Support</p>
             <p className="text-lg font-semibold mt-1">Talk to a researcher</p>
