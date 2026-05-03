@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { workflowPageSchema } from "@/lib/seo-schemas";
 import WorkflowDiagram from "@/components/WorkflowDiagram";
+import { FeatureStatusBadge } from "@/components/phaos";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
