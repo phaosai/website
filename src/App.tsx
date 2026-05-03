@@ -64,6 +64,11 @@ const AionChanges = lazy(() => import("./pages/app/aion/AionChanges.tsx"));
 const AionSimulate = lazy(() => import("./pages/app/aion/AionSimulate.tsx"));
 const AionSecurity = lazy(() => import("./pages/app/aion/AionSecurity.tsx"));
 const AionAudit = lazy(() => import("./pages/app/aion/AionAudit.tsx"));
+const PantheonDashboard = lazy(() => import("./pages/app/pantheon/PantheonDashboard.tsx"));
+const PantheonTeam = lazy(() => import("./pages/app/pantheon/PantheonTeam.tsx"));
+const PantheonLogos = lazy(() => import("./pages/app/pantheon/PantheonLogos.tsx"));
+const PantheonAudit = lazy(() => import("./pages/app/pantheon/PantheonAudit.tsx"));
+const PantheonEntities = lazy(() => import("./pages/app/pantheon/PantheonEntities.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -176,6 +181,11 @@ const AppInner = () => {
               <Route path="aion/audit" element={<AionAudit />} />
               <Route path="security" element={<AionSecurity />} />
               <Route path="audit" element={<AionAudit />} />
+              <Route path="pantheon" element={<PantheonDashboard />} />
+              <Route path="pantheon/team" element={<PantheonTeam />} />
+              <Route path="pantheon/logos" element={<PantheonLogos />} />
+              <Route path="pantheon/audit" element={<PantheonAudit />} />
+              <Route path="pantheon/entities" element={<PantheonEntities />} />
             </Route>
             <Route path="/app/legacy" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

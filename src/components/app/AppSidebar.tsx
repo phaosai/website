@@ -26,6 +26,7 @@ const ITEMS: NavItem[] = [
   { title: "Kyrios", url: "/app/kyrios", icon: Workflow, min: "kyrios" },
   { title: "Client Portals", url: "/app/portals", icon: Users, min: "kyrios" },
   { title: "Aion", url: "/app/aion", icon: ShieldAlert, min: "aion" },
+  { title: "Pantheon", url: "/app/pantheon", icon: Crown, min: "pantheon" },
   { title: "Billing", url: "/app/billing", icon: Receipt, min: "free" },
   { title: "Settings", url: "/app/settings", icon: Settings, min: "free" },
 ];
