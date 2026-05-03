@@ -36,6 +36,7 @@ const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
 const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
+const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -120,16 +121,7 @@ const AppInner = () => {
                 />
               }
             />
-            <Route
-              path="/one/sunesis"
-              element={
-                <OnePillarPage
-                  pillar="Sunesis"
-                  tagline="Research, intelligence, and evidence."
-                  description="Phaos Sunesis is the research and evidence pillar — monitoring 60+ publicly accessible signal categories (SEC EDGAR, XBRL, FRED, USAspending, Form 4, Google Trends, Baltic Dry Index, public MarineTraffic, S&P 500 regime data) with institutional-grade feeds on the roadmap."
-                />
-              }
-            />
+            <Route path="/one/sunesis" element={<PhaosSunesis />} />
             <Route
               path="/one/kyrios"
               element={
