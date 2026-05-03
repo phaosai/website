@@ -14,13 +14,29 @@ interface Props {
 export function PageShell({ title, description, minTier, actions, children }: Props) {
   const ent = useEntitlements();
   if (minTier && !ent.has(minTier)) {
+    const isPantheon = minTier === "pantheon";
     return (
-      <div className="px-6 py-16 max-w-3xl mx-auto text-center">
+      <div className="px-6 py-16 max-w-2xl mx-auto text-center">
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-2 text-muted-foreground">Available on {minTier}+ plans.</p>
-        <Link to="/pricing" className="mt-6 inline-block">
-          <Button>View plans</Button>
-        </Link>
+        {isPantheon ? (
+          <>
+            <p className="mt-3 text-muted-foreground">
+              Pantheon is built for RIAs, family offices, and boutique firms that need
+              multi-user control, branded research delivery, and compliance audit trails.
+            </p>
+            <div className="mt-6 flex gap-3 justify-center flex-wrap">
+              <Link to="/contact"><Button>Talk to Us About Pantheon — $999/month</Button></Link>
+              <Link to="/contact"><Button variant="outline">Schedule a Call</Button></Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-muted-foreground">Available on {minTier}+ plans.</p>
+            <Link to="/pricing" className="mt-6 inline-block">
+              <Button>View plans</Button>
+            </Link>
+          </>
+        )}
       </div>
     );
   }
