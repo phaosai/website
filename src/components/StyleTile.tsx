@@ -199,6 +199,8 @@ const StyleTile = () => {
         </div>
       </section>
 
+      <HomePhaosOneSections />
+
       </main>
       <Footer />
     </div>
