@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json
+          organization_id: string | null
+          resource_id: string | null
+          resource_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_leads: {
         Row: {
           captured_at: string
@@ -49,6 +97,44 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      client_portals: {
+        Row: {
+          access_token_hash: string | null
+          client_name: string | null
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          status: Database["public"]["Enums"]["portal_status"]
+        }
+        Insert: {
+          access_token_hash?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          status?: Database["public"]["Enums"]["portal_status"]
+        }
+        Update: {
+          access_token_hash?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          status?: Database["public"]["Enums"]["portal_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -137,6 +223,354 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_themes: {
+        Row: {
+          contributing_tickers: Json | null
+          counter_thesis: string | null
+          created_at: string
+          historical_disclaimer: string | null
+          id: string
+          is_historical_example: boolean
+          narrative: string | null
+          organization_id: string
+          signal_strength: Database["public"]["Enums"]["signal_strength"] | null
+          source_categories: Json | null
+          status: Database["public"]["Enums"]["theme_status"]
+          theme_name: string
+          updated_at: string
+        }
+        Insert: {
+          contributing_tickers?: Json | null
+          counter_thesis?: string | null
+          created_at?: string
+          historical_disclaimer?: string | null
+          id?: string
+          is_historical_example?: boolean
+          narrative?: string | null
+          organization_id: string
+          signal_strength?:
+            | Database["public"]["Enums"]["signal_strength"]
+            | null
+          source_categories?: Json | null
+          status?: Database["public"]["Enums"]["theme_status"]
+          theme_name: string
+          updated_at?: string
+        }
+        Update: {
+          contributing_tickers?: Json | null
+          counter_thesis?: string | null
+          created_at?: string
+          historical_disclaimer?: string | null
+          id?: string
+          is_historical_example?: boolean
+          narrative?: string | null
+          organization_id?: string
+          signal_strength?:
+            | Database["public"]["Enums"]["signal_strength"]
+            | null
+          source_categories?: Json | null
+          status?: Database["public"]["Enums"]["theme_status"]
+          theme_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_themes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logos_settings: {
+        Row: {
+          accent_color: string | null
+          apply_to_memos: boolean
+          apply_to_portals: boolean
+          created_at: string
+          firm_name: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          apply_to_memos?: boolean
+          apply_to_portals?: boolean
+          created_at?: string
+          firm_name?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          apply_to_memos?: boolean
+          apply_to_portals?: boolean
+          created_at?: string
+          firm_name?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logos_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      one_time_purchases: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          organization_id: string | null
+          output_id: string | null
+          product_type: Database["public"]["Enums"]["purchase_product_type"]
+          status: Database["public"]["Enums"]["purchase_status"]
+          stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          output_id?: string | null
+          product_type: Database["public"]["Enums"]["purchase_product_type"]
+          status?: Database["public"]["Enums"]["purchase_status"]
+          stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          output_id?: string | null
+          product_type?: Database["public"]["Enums"]["purchase_product_type"]
+          status?: Database["public"]["Enums"]["purchase_status"]
+          stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_time_purchases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_time_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          plan_id: string | null
+          stripe_customer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          plan_id?: string | null
+          stripe_customer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          plan_id?: string | null
+          stripe_customer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          features: Json
+          id: string
+          monthly_price_cents: number
+          name: Database["public"]["Enums"]["plan_name"]
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          features?: Json
+          id?: string
+          monthly_price_cents: number
+          name: Database["public"]["Enums"]["plan_name"]
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          id?: string
+          monthly_price_cents?: number
+          name?: Database["public"]["Enums"]["plan_name"]
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferred_platform: Database["public"]["Enums"]["platform_pref"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferred_platform: Database["public"]["Enums"]["platform_pref"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferred_platform?: Database["public"]["Enums"]["platform_pref"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      published_artifacts: {
+        Row: {
+          id: string
+          organization_id: string
+          portal_id: string | null
+          published_at: string
+          truth_memo_id: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          portal_id?: string | null
+          published_at?: string
+          truth_memo_id?: string | null
+          user_id: string
+          version?: number
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          portal_id?: string | null
+          published_at?: string
+          truth_memo_id?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_artifacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_artifacts_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "client_portals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_artifacts_truth_memo_id_fkey"
+            columns: ["truth_memo_id"]
+            isOneToOne: false
+            referencedRelation: "truth_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_artifacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purge_audit_log: {
         Row: {
           actions: Json
@@ -179,6 +613,66 @@ export type Database = {
         }
         Relationships: []
       }
+      research_items: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          pci_components: Json | null
+          pci_score: number | null
+          pci_threshold: Database["public"]["Enums"]["pci_threshold"] | null
+          signal_categories_active: Json | null
+          sources: Json | null
+          ticker: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          pci_components?: Json | null
+          pci_score?: number | null
+          pci_threshold?: Database["public"]["Enums"]["pci_threshold"] | null
+          signal_categories_active?: Json | null
+          sources?: Json | null
+          ticker: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          pci_components?: Json | null
+          pci_score?: number | null
+          pci_threshold?: Database["public"]["Enums"]["pci_threshold"] | null
+          signal_categories_active?: Json | null
+          sources?: Json | null
+          ticker?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_events: {
         Row: {
           created_at: string
@@ -208,6 +702,157 @@ export type Database = {
           source?: string | null
         }
         Relationships: []
+      }
+      signal_cache: {
+        Row: {
+          expires_at: string | null
+          fetched_at: string
+          id: string
+          processed_data: Json | null
+          raw_data: Json | null
+          source_type: string
+          ticker: string
+        }
+        Insert: {
+          expires_at?: string | null
+          fetched_at?: string
+          id?: string
+          processed_data?: Json | null
+          raw_data?: Json | null
+          source_type: string
+          ticker: string
+        }
+        Update: {
+          expires_at?: string | null
+          fetched_at?: string
+          id?: string
+          processed_data?: Json | null
+          raw_data?: Json | null
+          source_type?: string
+          ticker?: string
+        }
+        Relationships: []
+      }
+      simulation_runs: {
+        Row: {
+          assumptions: Json | null
+          created_at: string
+          id: string
+          is_public_sandbox: boolean
+          organization_id: string | null
+          outputs: Json | null
+          pci_before: number | null
+          pci_simulated: number | null
+          platform_preference:
+            | Database["public"]["Enums"]["platform_pref"]
+            | null
+          scenario_type: Database["public"]["Enums"]["scenario_type"]
+          theme_id: string | null
+          ticker: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assumptions?: Json | null
+          created_at?: string
+          id?: string
+          is_public_sandbox?: boolean
+          organization_id?: string | null
+          outputs?: Json | null
+          pci_before?: number | null
+          pci_simulated?: number | null
+          platform_preference?:
+            | Database["public"]["Enums"]["platform_pref"]
+            | null
+          scenario_type: Database["public"]["Enums"]["scenario_type"]
+          theme_id?: string | null
+          ticker?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assumptions?: Json | null
+          created_at?: string
+          id?: string
+          is_public_sandbox?: boolean
+          organization_id?: string | null
+          outputs?: Json | null
+          pci_before?: number | null
+          pci_simulated?: number | null
+          platform_preference?:
+            | Database["public"]["Enums"]["platform_pref"]
+            | null
+          scenario_type?: Database["public"]["Enums"]["scenario_type"]
+          theme_id?: string | null
+          ticker?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_runs_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "investment_themes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          organization_id: string
+          plan_id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          organization_id: string
+          plan_id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressed_emails: {
         Row: {
@@ -263,6 +908,82 @@ export type Database = {
         }
         Relationships: []
       }
+      truth_memos: {
+        Row: {
+          bear_case: string | null
+          bull_case: string | null
+          content: string | null
+          created_at: string
+          id: string
+          is_one_time_purchase: boolean
+          methodology_notes: string | null
+          organization_id: string
+          purchase_type:
+            | Database["public"]["Enums"]["purchase_product_type"]
+            | null
+          research_item_id: string | null
+          sources: Json | null
+          status: Database["public"]["Enums"]["memo_status"]
+          user_id: string
+        }
+        Insert: {
+          bear_case?: string | null
+          bull_case?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_one_time_purchase?: boolean
+          methodology_notes?: string | null
+          organization_id: string
+          purchase_type?:
+            | Database["public"]["Enums"]["purchase_product_type"]
+            | null
+          research_item_id?: string | null
+          sources?: Json | null
+          status?: Database["public"]["Enums"]["memo_status"]
+          user_id: string
+        }
+        Update: {
+          bear_case?: string | null
+          bull_case?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_one_time_purchase?: boolean
+          methodology_notes?: string | null
+          organization_id?: string
+          purchase_type?:
+            | Database["public"]["Enums"]["purchase_product_type"]
+            | null
+          research_item_id?: string | null
+          sources?: Json | null
+          status?: Database["public"]["Enums"]["memo_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truth_memos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truth_memos_research_item_id_fkey"
+            columns: ["research_item_id"]
+            isOneToOne: false
+            referencedRelation: "research_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truth_memos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -284,6 +1005,182 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      watchlist_items: {
+        Row: {
+          added_at: string
+          company_name: string | null
+          id: string
+          ticker: string
+          watchlist_id: string
+        }
+        Insert: {
+          added_at?: string
+          company_name?: string | null
+          id?: string
+          ticker: string
+          watchlist_id: string
+        }
+        Update: {
+          added_at?: string
+          company_name?: string | null
+          id?: string
+          ticker?: string
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_items_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlists_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_items: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          research_item_id: string | null
+          status: Database["public"]["Enums"]["workflow_status"]
+          title: string
+          truth_memo_id: string | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          research_item_id?: string | null
+          status?: Database["public"]["Enums"]["workflow_status"]
+          title: string
+          truth_memo_id?: string | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          research_item_id?: string | null
+          status?: Database["public"]["Enums"]["workflow_status"]
+          title?: string
+          truth_memo_id?: string | null
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_items_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_research_item_id_fkey"
+            columns: ["research_item_id"]
+            isOneToOne: false
+            referencedRelation: "research_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_truth_memo_id_fkey"
+            columns: ["truth_memo_id"]
+            isOneToOne: false
+            referencedRelation: "truth_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -297,6 +1194,14 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _roles: Database["public"]["Enums"]["org_role"][]
+        }
+        Returns: boolean
+      }
+      has_pantheon_plan: { Args: { _org_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -304,6 +1209,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -324,6 +1230,48 @@ export type Database = {
     }
     Enums: {
       app_role: "admin"
+      memo_status: "draft" | "review" | "approved" | "published"
+      org_role: "owner" | "admin" | "reviewer" | "client_viewer"
+      pci_threshold: "no_signal" | "conservative" | "high_conviction"
+      plan_name:
+        | "free"
+        | "sunesis"
+        | "aion"
+        | "kyrios"
+        | "phaos_one"
+        | "pantheon"
+      platform_pref:
+        | "robinhood"
+        | "fidelity"
+        | "schwab"
+        | "etrade"
+        | "thinkorswim"
+        | "interactive_brokers"
+        | "other"
+      portal_status: "active" | "inactive"
+      purchase_product_type:
+        | "truth_memo"
+        | "conviction_pack"
+        | "second_opinion"
+        | "earnings_simulation"
+      purchase_status: "pending" | "completed" | "refunded"
+      scenario_type:
+        | "pre_earnings"
+        | "regime_change"
+        | "revenue_miss"
+        | "supply_chain"
+        | "macro_stress"
+        | "insider_reversal"
+        | "custom"
+      signal_strength: "low" | "medium" | "high"
+      subscription_status: "active" | "past_due" | "cancelled" | "trialing"
+      theme_status: "live" | "monitoring" | "archived"
+      workflow_status:
+        | "draft"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -452,6 +1400,46 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin"],
+      memo_status: ["draft", "review", "approved", "published"],
+      org_role: ["owner", "admin", "reviewer", "client_viewer"],
+      pci_threshold: ["no_signal", "conservative", "high_conviction"],
+      plan_name: ["free", "sunesis", "aion", "kyrios", "phaos_one", "pantheon"],
+      platform_pref: [
+        "robinhood",
+        "fidelity",
+        "schwab",
+        "etrade",
+        "thinkorswim",
+        "interactive_brokers",
+        "other",
+      ],
+      portal_status: ["active", "inactive"],
+      purchase_product_type: [
+        "truth_memo",
+        "conviction_pack",
+        "second_opinion",
+        "earnings_simulation",
+      ],
+      purchase_status: ["pending", "completed", "refunded"],
+      scenario_type: [
+        "pre_earnings",
+        "regime_change",
+        "revenue_miss",
+        "supply_chain",
+        "macro_stress",
+        "insider_reversal",
+        "custom",
+      ],
+      signal_strength: ["low", "medium", "high"],
+      subscription_status: ["active", "past_due", "cancelled", "trialing"],
+      theme_status: ["live", "monitoring", "archived"],
+      workflow_status: [
+        "draft",
+        "under_review",
+        "approved",
+        "rejected",
+        "completed",
+      ],
     },
   },
 } as const
