@@ -2,21 +2,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import SEOHead from "@/components/SEOHead";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 const AppDashboard = () => {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
-
-  const openPortal = async () => {
-    const { data, error } = await supabase.functions.invoke("customer-portal");
-    if (error || !data?.url) {
-      toast({ title: "Portal unavailable", description: error?.message || "No active subscription found.", variant: "destructive" });
-      return;
-    }
-    window.location.href = data.url;
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground px-6 py-16">
