@@ -1,36 +1,73 @@
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
-import { corsHeaders, json, requireUser, serviceClient } from "../_shared/phaos.ts";
+// Stripe Billing Portal session — authenticated.
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+
   try {
-    const auth = await requireUser(req);
-    if ("error" in auth) return auth.error;
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) return json({ error: "Stripe not configured" }, 503);
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
-
-    const { organization_id } = (await req.json().catch(() => ({}))) as { organization_id?: string };
-    const svc = serviceClient();
-    let customerId: string | null = null;
-    if (organization_id) {
-      const { data: org } = await svc.from("organizations").select("stripe_customer_id").eq("id", organization_id).maybeSingle();
-      customerId = org?.stripe_customer_id ?? null;
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    if (!customerId) {
-      // Try by email
-      const customers = await stripe.customers.list({ email: auth.email, limit: 1 });
-      customerId = customers.data[0]?.id ?? null;
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    if (!customerId) return json({ error: "No Stripe customer found" }, 404);
 
-    const origin = req.headers.get("origin") || "https://www.phaosai.com";
+    const { returnUrl, environment } = await req.json() as {
+      returnUrl?: string; environment: StripeEnv;
+    };
+    if (environment !== "sandbox" && environment !== "live") {
+      return new Response(JSON.stringify({ error: "Invalid environment" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: sub } = await supabase
+      .from("user_subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", user.id)
+      .eq("environment", environment)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!sub?.stripe_customer_id) {
+      return new Response(JSON.stringify({ error: "No subscription found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const stripe = createStripeClient(environment);
     const portal = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${origin}/app`,
+      customer: sub.stripe_customer_id,
+      ...(returnUrl && { return_url: returnUrl }),
     });
-    return json({ url: portal.url });
+
+    return new Response(JSON.stringify({ url: portal.url }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("customer-portal error:", e);
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
