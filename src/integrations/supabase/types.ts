@@ -62,6 +62,24 @@ export type Database = {
           },
         ]
       }
+      cache_warmup_tickers: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          ticker: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          ticker: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          ticker?: string
+        }
+        Relationships: []
+      }
       chat_leads: {
         Row: {
           captured_at: string
