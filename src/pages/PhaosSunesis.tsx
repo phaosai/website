@@ -1,3 +1,6 @@
+// TODO(PCI internal tiers): when the engineering tier taxonomy is locked,
+// surface internal designations in the methodology footnote — NEVER as a
+// second user-facing 1–100 score. PCI remains the only public score.
 import { ArrowRight, Microscope, FileText, Activity, Truck, MessageSquare, Globe, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
