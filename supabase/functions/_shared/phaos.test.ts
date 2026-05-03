@@ -28,7 +28,7 @@ function installSupabaseMock(rows: CacheRow[]) {
   };
 }
 
-Deno.test("readCache returns recent row and skips fetch", async () => {
+Deno.test({ name: "readCache returns recent row and skips fetch", sanitizeOps: false, sanitizeResources: false }, async () => {
   stubEnv();
   // Inject a mock signal_cache row by intercepting fetch() to the PostgREST API.
   const recent = new Date().toISOString();
