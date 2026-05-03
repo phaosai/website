@@ -19,6 +19,13 @@ const WorkflowTeardownPopup = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    // Suppress auto-open on pricing/auth/checkout — high-intent pages where popup is intrusive.
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const suppressedRoutes = ["/pricing", "/auth", "/checkout", "/billing"];
+    if (suppressedRoutes.some((p) => path.startsWith(p))) {
+      setMinimized(true);
+      return;
+    }
     const timer = setTimeout(() => {
       setIsOpen(true);
       setMinimized(false);
