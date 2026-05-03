@@ -154,6 +154,18 @@ const aLaCarte = [
 ];
 
 const Pricing = () => {
+  const { user } = useAuth();
+  const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
+
+  const handleBuy = (priceId: string) => {
+    openCheckout({
+      priceId,
+      customerEmail: user?.email,
+      userId: user?.id,
+      returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
@@ -161,6 +173,7 @@ const Pricing = () => {
         description="Transparent pricing for Phaos AI. Free tier, Sunesis ($149), Aion ($199), Kyrios ($299), Phaos ONE ($599), and Pantheon ($999). Plus one-time deliverables from $19."
         canonical="/pricing"
       />
+      <PaymentTestModeBanner />
       <Navigation />
 
       {/* HERO */}
