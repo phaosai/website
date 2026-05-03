@@ -1059,6 +1059,33 @@ export type Database = {
           },
         ]
       }
+      usage_counters: {
+        Row: {
+          action: string
+          count: number
+          day: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          day?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          day?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           amount_cents: number
@@ -1473,6 +1500,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_usage: {
+        Args: { _action: string; _limit: number; _user_id: string }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          day: string
+        }[]
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       move_to_dlq: {
