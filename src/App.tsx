@@ -144,7 +144,7 @@ const AppInner = () => {
         </ErrorBoundary>
       </Suspense>
       <DeferredGlobalUI />
-    </BrowserRouter>
+    </>
   );
 };
 
