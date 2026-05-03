@@ -159,7 +159,13 @@ export default function SunesisTicker() {
 
           <FormulaMethodologyPanel
             sourcesCount={sources.length}
-            freshness={item.updated_at ? new Date(item.updated_at).toLocaleDateString() : undefined}
+            categoryFreshness={sources.reduce((acc: Record<string, string>, s: any) => {
+              const cat = s.category ?? s.type ?? "Other";
+              const ts = s.fetched_at ?? s.updated_at ?? s.timestamp;
+              if (ts && (!acc[cat] || new Date(ts) > new Date(acc[cat]))) acc[cat] = ts;
+              return acc;
+            }, {})}
+            freshness={item.updated_at ? new Date(item.updated_at).toLocaleString() : undefined}
           />
         </>
       )}
