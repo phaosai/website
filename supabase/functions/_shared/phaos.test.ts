@@ -66,7 +66,7 @@ Deno.test({ name: "readCache returns recent row and skips fetch", sanitizeOps: f
   }
 });
 
-Deno.test("readCache returns null when row is older than maxAgeMinutes", async () => {
+Deno.test({ name: "readCache returns null when row is older than maxAgeMinutes", sanitizeOps: false, sanitizeResources: false }, async () => {
   stubEnv();
   const stale = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
   const origFetch = globalThis.fetch;
