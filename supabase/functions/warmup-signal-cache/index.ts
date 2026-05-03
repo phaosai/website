@@ -14,10 +14,14 @@ const SIGNAL_FETCHERS = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Only allow service role / cron
+  // Allow service role or the project's anon key (used by pg_cron)
   const auth = req.headers.get("Authorization") ?? "";
+  const allowed = new Set([
+    `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+    `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+  ]);
+  if (!allowed.has(auth)) return json({ error: "Forbidden" }, 403);
   const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-  if (auth !== expected) return json({ error: "Forbidden" }, 403);
 
   const svc = serviceClient();
   const { data: tickersRow } = await svc
