@@ -78,7 +78,7 @@ const PhaosKyrios = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/contact"
+              to="/auth?mode=signup&plan=kyrios_monthly"
               className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
             >
               Start with Kyrios — $299/month
@@ -215,7 +215,7 @@ const PhaosKyrios = () => {
                 <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />Permanent audit trail</li>
               </ul>
               <Link
-                to="/contact"
+                to="/auth?mode=signup&plan=kyrios_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 border border-border bg-background text-foreground text-sm font-semibold px-5 py-3 rounded-full hover:bg-card transition-colors"
               >
                 Start with Kyrios
