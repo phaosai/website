@@ -402,6 +402,25 @@ const Pricing = () => {
       </section>
 
       <Footer />
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border">
+            <button
+              onClick={closeCheckout}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground"
+              aria-label="Close checkout"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="p-6 pt-14">{checkoutElement}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
