@@ -45,6 +45,8 @@ export default function SunesisResearch() {
   const [marketCap, setMarketCap] = useState("All");
   const [freshIdx, setFreshIdx] = useState(0);
 
+  // TODO(PCI internal tiers): once `research_items.pci_internal_tier` is finalized,
+  // include it in the select and surface it in internal-only views (never user UI).
   useEffect(() => {
     (async () => {
       setLoading(true);
