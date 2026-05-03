@@ -58,6 +58,10 @@ export const InvestmentThemeCard = ({
             )}
           </div>
         )}
+        <p className="border-t border-border pt-3 text-[11px] leading-relaxed text-muted-foreground italic">
+          Investment themes are research frameworks, not buy recommendations. Historical examples
+          do not predict future performance.
+        </p>
       </CardContent>
     </Card>
   );
