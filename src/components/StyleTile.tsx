@@ -16,6 +16,7 @@ import SEOHead from "@/components/SEOHead";
 import FadeIn from "@/components/FadeIn";
 
 import LazyViewport from "@/components/LazyViewport";
+import HomePhaosOneSections from "@/components/HomePhaosOneSections";
 import { homeGraphSchema } from "@/lib/seo-schemas";
 
 const StyleTile = () => {
@@ -198,6 +199,8 @@ const StyleTile = () => {
           />
         </div>
       </section>
+
+      <HomePhaosOneSections />
 
       </main>
       <Footer />
