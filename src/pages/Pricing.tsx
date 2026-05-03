@@ -316,6 +316,13 @@ const Pricing = () => {
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed flex-1">
                   {item.description}
                 </p>
+                <button
+                  onClick={() => handleBuy(item.priceId)}
+                  className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
+                >
+                  Buy for {item.price}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
