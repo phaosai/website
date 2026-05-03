@@ -51,7 +51,7 @@ const tiers: Tier[] = [
       "Institutional-style methodology context that adds depth, rigor, and perspective to the research experience",
       "Ongoing watchlist visibility so priority names and themes stay on your radar as the landscape changes",
     ],
-    cta: { label: "Start with Sunesis", href: "/one/sunesis" },
+    cta: { label: "Start with Sunesis", priceId: "sunesis_monthly" },
   },
   {
     name: "Phaos Aion",
@@ -68,7 +68,7 @@ const tiers: Tier[] = [
       "Freshness indicators that show which views are current and which ones are running on stale assumptions",
       "Pre-event and regime-shift simulations to help you think ahead instead of reacting after the fact",
     ],
-    cta: { label: "Start with Aion", href: "/one/aion" },
+    cta: { label: "Start with Aion", priceId: "aion_monthly" },
   },
   {
     name: "Phaos Kyrios",
@@ -84,7 +84,7 @@ const tiers: Tier[] = [
       "Publishing and delivery controls that let you decide what goes out, to whom, and on what cadence",
       "A full, navigable audit history so you can always answer: \u201cWho signed off on this, and what changed along the way?\u201d",
     ],
-    cta: { label: "Start with Kyrios", href: "/one/kyrios" },
+    cta: { label: "Start with Kyrios", priceId: "kyrios_monthly" },
   },
   {
     name: "Phaos ONE",
@@ -102,7 +102,7 @@ const tiers: Tier[] = [
       "A unified command center that puts conviction, risk context, open questions, and upcoming events on a single, glanceable screen",
     ],
     flagship: true,
-    cta: { label: "Get Phaos ONE", href: "/one" },
+    cta: { label: "Get Phaos ONE", priceId: "phaos_one_monthly" },
   },
   {
     name: "Pantheon",
@@ -126,24 +126,28 @@ const aLaCarte = [
   {
     name: "Single \u201cTruth Memo\u201d",
     price: "$29",
+    priceId: "truth_memo_single_price",
     description:
       "A focused, filing-backed research brief on one name. Includes a conviction signal, balanced upside/downside framing, and a clear evidence trail so you can see how the view was formed.",
   },
   {
     name: "Weekly Conviction Pack",
     price: "$49",
+    priceId: "weekly_conviction_pack_price",
     description:
       "A curated short list of the week\u2019s standout ideas, filtered to what you can actually access on your existing platform. Designed for people who want a concentrated set of candidates, not a firehose.",
   },
   {
     name: "\u201cSecond Opinion\u201d Audit",
     price: "$19",
+    priceId: "second_opinion_audit_price",
     description:
       "Run your current thesis through the Phaos lens to pressure-test the logic. Highlights blind spots, missing signals, and counter-arguments so you can refine, reinforce, or reconsider with more confidence.",
   },
   {
     name: "Earnings Simulation Run",
     price: "$39",
+    priceId: "earnings_simulation_run_price",
     description:
       "A pre-earnings scenario pass on one name that maps possible paths and how they could affect conviction. Clearly labeled as simulated context — a thinking aid, not a forecast or guarantee.",
   },
