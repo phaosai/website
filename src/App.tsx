@@ -35,6 +35,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
+const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 
 const queryClient = new QueryClient();
 
