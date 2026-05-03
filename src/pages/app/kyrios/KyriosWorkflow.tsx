@@ -37,7 +37,7 @@ export default function KyriosWorkflow() {
     })();
   }, [id]);
 
-  const updateStatus = async (status: string) => {
+  const updateStatus = async (status: "draft" | "under_review" | "approved" | "completed" | "rejected") => {
     if (!id) return;
     const { error } = await supabase.from("workflow_items").update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
@@ -98,7 +98,7 @@ export default function KyriosWorkflow() {
               </>
             )}
             {item.status === "approved" && (
-              <Button disabled={!allChecked} onClick={() => updateStatus("published")}>
+              <Button disabled={!allChecked} onClick={() => updateStatus("completed")}>
                 {allChecked ? "Publish to Portal" : "Complete checklist to publish"}
               </Button>
             )}
