@@ -1,5 +1,5 @@
 import { Check, ArrowRight, Star, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
@@ -155,9 +155,14 @@ const aLaCarte = [
 
 const Pricing = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
 
   const handleBuy = (priceId: string) => {
+    if (!user) {
+      navigate(`/auth?mode=signup&plan=${priceId}`);
+      return;
+    }
     openCheckout({
       priceId,
       customerEmail: user?.email,
