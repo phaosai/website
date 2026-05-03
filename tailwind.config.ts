@@ -59,6 +59,13 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        pci: {
+          "no-go": "hsl(var(--pci-no-go))",
+          warning: "hsl(var(--pci-warning))",
+          potential: "hsl(var(--pci-potential))",
+          go: "hsl(var(--pci-go))",
+          choice: "hsl(var(--pci-choice))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

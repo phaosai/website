@@ -62,14 +62,14 @@ const PhaosAion = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/contact"
+              to="/auth?mode=signup&plan=aion_monthly"
               className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
             >
               Start with Aion — $199/month
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              to="/one"
+              to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
             >
               Get everything with Phaos ONE — $599/month
@@ -238,7 +238,7 @@ const PhaosAion = () => {
                 <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />Append-only audit trail</li>
               </ul>
               <Link
-                to="/contact"
+                to="/auth?mode=signup&plan=aion_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 border border-border bg-background text-foreground text-sm font-semibold px-5 py-3 rounded-full hover:bg-card transition-colors"
               >
                 Start with Aion
@@ -257,7 +257,7 @@ const PhaosAion = () => {
                 <li className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />Single subscription, single environment</li>
               </ul>
               <Link
-                to="/one"
+                to="/auth?mode=signup&plan=phaos_one_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
               >
                 Get everything with Phaos ONE
