@@ -34,6 +34,7 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,46 @@ const AppInner = () => {
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
+            <Route
+              path="/one/aion"
+              element={
+                <OnePillarPage
+                  pillar="Aion"
+                  tagline="Security, resilience, simulation, and long-horizon protection."
+                  description="Phaos Aion is the resilience pillar of Phaos ONE — modeling stress, regime shifts, and long-horizon scenarios so portfolios stand up to the conditions that actually matter."
+                />
+              }
+            />
+            <Route
+              path="/one/sunesis"
+              element={
+                <OnePillarPage
+                  pillar="Sunesis"
+                  tagline="Research, intelligence, and evidence."
+                  description="Phaos Sunesis is the research and evidence pillar — monitoring 60+ publicly accessible signal categories (SEC EDGAR, XBRL, FRED, USAspending, Form 4, Google Trends, Baltic Dry Index, public MarineTraffic, S&P 500 regime data) with institutional-grade feeds on the roadmap."
+                />
+              }
+            />
+            <Route
+              path="/one/kyrios"
+              element={
+                <OnePillarPage
+                  pillar="Kyrios"
+                  tagline="Governance, stewardship, workflows, and action orchestration."
+                  description="Phaos Kyrios is the governance and orchestration pillar — turning evidence into reviewed, approved, and audit-logged actions across your operating workflow."
+                />
+              }
+            />
+            <Route
+              path="/one/run-simulation"
+              element={
+                <OnePillarPage
+                  pillar="Run Simulation"
+                  tagline="Scenario analysis across the three pillars."
+                  description="Run Simulation is the entry point for scenario modeling inside Phaos ONE. All outputs are clearly labeled SIMULATED and are not financial forecasts."
+                />
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
