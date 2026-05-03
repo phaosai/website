@@ -27,8 +27,8 @@ export default function AionSimulate() {
           Run new simulation
         </Link>
       }>
-      <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-500 inline-block">
-        SIMULATED — outputs are scenario projections, not predictions.
+      <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-500">
+        <span className="font-semibold">SIMULATED</span> — This is a scenario analysis tool, not a financial forecast.
       </div>
 
       <section>
