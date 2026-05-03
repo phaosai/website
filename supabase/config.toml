@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.warmup-signal-cache]
 verify_jwt = false
+
+[functions.signal-cache-health]
+verify_jwt = false
