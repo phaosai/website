@@ -107,7 +107,7 @@ const PhaosSunesis = () => {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              to="/one"
+              to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
             >
               Explore Phaos ONE — $599/month
@@ -297,7 +297,7 @@ const PhaosSunesis = () => {
               <p className="text-4xl font-bold mb-1">$599<span className="text-base font-normal text-muted-foreground">/month</span></p>
               <p className="text-sm text-muted-foreground mb-6">Sunesis + Kyrios + Aion. One environment, one subscription.</p>
               <Link
-                to="/one"
+                to="/auth?mode=signup&plan=phaos_one_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
               >
                 Get everything with Phaos ONE
