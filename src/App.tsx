@@ -49,6 +49,10 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn.tsx"));
 const Billing = lazy(() => import("./pages/Billing.tsx"));
+const AppLayout = lazy(() => import("./components/app/AppLayout.tsx"));
+const CommandCenter = lazy(() => import("./pages/app/CommandCenter.tsx"));
+const AppSection = lazy(() => import("./pages/app/AppSectionPlaceholder.tsx"));
+const AppSettings = lazy(() => import("./pages/app/Settings.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -140,8 +144,19 @@ const AppInner = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
-            <Route path="/app" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
-            <Route path="/app/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/app" element={<AppLayout />}>
+              <Route index element={<CommandCenter />} />
+              <Route path="billing" element={<Billing />} />
+              <Route path="settings" element={<AppSettings />} />
+              <Route path="sunesis" element={<AppSection title="Sunesis" description="Source-grounded research." minTier="sunesis" emptyState="Generate your first Truth Memo on any ticker →" primaryCta={{ label: "Run a simulation", to: "/one/run-simulation" }} />} />
+              <Route path="themes" element={<AppSection title="Investment Themes" description="Cross-signal narratives." minTier="sunesis" emptyState="No active themes yet." />} />
+              <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
+              <Route path="simulations" element={<AppSection title="Simulations" description="Stress-test scenarios." minTier="aion" emptyState="Run a free simulation to see scenario analysis →" primaryCta={{ label: "Run a simulation", to: "/one/run-simulation" }} />} />
+              <Route path="kyrios" element={<AppSection title="Kyrios" description="Workflows and approvals." minTier="kyrios" emptyState="Your research review queue is clear." />} />
+              <Route path="portals" element={<AppSection title="Client Portals" description="Branded research portals." minTier="kyrios" emptyState="No portals created yet." />} />
+              <Route path="aion" element={<AppSection title="Aion" description="Monitoring and change detection." minTier="aion" emptyState="No material signal changes detected." />} />
+            </Route>
+            <Route path="/app/legacy" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
