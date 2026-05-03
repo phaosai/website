@@ -19,7 +19,7 @@ const OnePillarPage = ({ pillar, tagline, description }: Props) => {
       <SEOHead
         title={`${title} — Phaos AI`}
         description={description}
-        path={`/one/${pillar.toLowerCase().replace(/\s+/g, "-")}`}
+        canonical={`/one/${pillar.toLowerCase().replace(/\s+/g, "-")}`}
       />
       <Navigation />
       <main className="min-h-screen bg-background pt-28 pb-24">
