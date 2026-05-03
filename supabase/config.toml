@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.run-simulation]
 verify_jwt = false
+
+[functions.warmup-signal-cache]
+verify_jwt = false

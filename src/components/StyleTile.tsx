@@ -40,7 +40,7 @@ const StyleTile = () => {
             alt=""
             width={1449}
             height={710}
-            fetchPriority="high"
+            {...({ fetchpriority: "high" } as any)}
             loading="eager"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
