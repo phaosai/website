@@ -38,6 +38,7 @@ const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
 const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
 const PhaosKyrios = lazy(() => import("./pages/PhaosKyrios.tsx"));
+const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
 
 const queryClient = new QueryClient();
 
