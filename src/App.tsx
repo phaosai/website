@@ -109,7 +109,6 @@ const AppInner = () => {
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
-            <Route
             <Route path="/one" element={<PhaosOne />} />
             <Route
               path="/one/aion"
