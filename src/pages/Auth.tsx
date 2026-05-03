@@ -8,9 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/SEOHead";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import phaosCrown from "@/assets/phaos-crown-transparent.png";
 
 type Mode = "signup" | "signin";
+
+const planNames: Record<string, string> = {
+  sunesis_monthly: "Phaos Sunesis",
+  aion_monthly: "Phaos Aion",
+  kyrios_monthly: "Phaos Kyrios",
+  phaos_one_monthly: "Phaos ONE",
+};
 
 const passwordRules = (pw: string) => ({
   length: pw.length >= 10,
@@ -26,8 +35,11 @@ const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
+  const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
+  const selectedPlanName = planNames[selectedPlan] || "your plan";
+  const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
 
-  const [mode, setMode] = useState<Mode>("signup");
+  const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(location.search).get("mode") === "signin" ? "signin" : "signup"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -35,10 +47,24 @@ const Auth = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [checkoutStarted, setCheckoutStarted] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate(from, { replace: true });
-  }, [session, loading, from, navigate]);
+    if (loading || !session) return;
+    if (!selectedPlan) {
+      navigate(from, { replace: true });
+      return;
+    }
+    if (!checkoutStarted) {
+      setCheckoutStarted(true);
+      openCheckout({
+        priceId: selectedPlan,
+        customerEmail: session.user.email,
+        userId: session.user.id,
+        returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+      });
+    }
+  }, [checkoutStarted, from, loading, navigate, openCheckout, selectedPlan, session]);
 
   const rules = useMemo(() => passwordRules(password), [password]);
   const passedRules = Object.values(rules).filter(Boolean).length;
@@ -62,13 +88,20 @@ const Auth = () => {
     try {
       if (mode === "signup") {
         if (!canSubmitSignup) throw new Error("Please satisfy all password requirements.");
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/app` },
         });
         if (error) throw error;
-        toast({ title: "Check your email", description: "Confirm your email to finish signing up." });
+        toast({
+          title: data.session ? "Account created" : "Check your email",
+          description: data.session
+            ? `Opening checkout for ${selectedPlanName}.`
+            : selectedPlan
+              ? "Confirm your email, then sign in here to finish checkout."
+              : "Confirm your email to finish signing up.",
+        });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
