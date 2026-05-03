@@ -125,8 +125,9 @@ const Auth = () => {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: "#0b0b0f" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
       <SEOHead title="Sign in — Phaos AI" description="Sign in to your Phaos AI workspace." canonical="/auth" />
+      <PaymentTestModeBanner />
 
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
@@ -179,6 +180,14 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {selectedPlan && (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Selected plan</p>
+                <p className="mt-1 text-sm font-semibold text-white">{selectedPlanName}</p>
+                <p className="mt-1 text-xs text-white/55">Create your account, then secure checkout opens automatically.</p>
+              </div>
+            )}
+
             {/* Email */}
             <div className="space-y-2">
               <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">EMAIL</label>
@@ -316,6 +325,25 @@ const Auth = () => {
           <Link to="/privacy" className="underline hover:text-white/70">Privacy Policy</Link>.
         </p>
       </div>
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl">
+            <button
+              onClick={closeCheckout}
+              className="absolute right-4 top-4 z-10 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-muted"
+              aria-label="Close checkout"
+            >
+              Close
+            </button>
+            <div className="p-6 pt-14">{checkoutElement}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
