@@ -57,7 +57,7 @@ const PhaosOne = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/contact"
+              to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-7 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group"
               data-interactive
             >
@@ -231,7 +231,7 @@ const PhaosOne = () => {
 
           <div className="text-center mt-8">
             <Link
-              to="/contact"
+              to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-7 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group"
               data-interactive
             >
