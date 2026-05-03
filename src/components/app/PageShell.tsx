@@ -62,7 +62,10 @@ export function PCITierBadge({ score }: { score: number | null | undefined }) {
   else if (score >= 40) { label = "Watch"; color = "text-amber-400"; }
   else if (score >= 20) { label = "Caution"; color = "text-orange-400"; }
   return (
-    <span className={`font-semibold ${color}`}>
+    <span
+      className={`font-semibold ${color}`}
+      title="PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns."
+    >
       {score}<span className="ml-2 text-xs font-normal text-muted-foreground">{label}</span>
     </span>
   );

@@ -48,11 +48,16 @@ export const TruthMemoCard = ({
     <CardContent className="space-y-4">
       <p className="text-sm leading-relaxed text-foreground/85">{summary}</p>
       {children}
-      <p className="border-t border-border pt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Phaos AI is not a registered investment advisor. This memo is research and scenario
-        analysis based on public filings and signals — not a recommendation to buy or sell any
-        security.
-      </p>
+      <div className="border-t border-border pt-3 space-y-2">
+        <p className="text-[11px] leading-relaxed text-muted-foreground italic">
+          This memo is research intelligence based on publicly available information. It is not
+          personalized financial advice.
+        </p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground italic">
+          PCI is a research confidence score based on publicly available signals. It does not
+          predict or guarantee investment returns.
+        </p>
+      </div>
     </CardContent>
   </Card>
 );

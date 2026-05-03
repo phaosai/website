@@ -100,7 +100,7 @@ export default function SunesisTicker() {
                 volatility-adjusted confidence (GARCH(1,1)).
               </p>
             </details>
-            <Disclaimer>PCI is a research confidence framework. Not a prediction of returns.</Disclaimer>
+            <Disclaimer>PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns.</Disclaimer>
           </section>
 
           {/* Signal breakdown */}
@@ -151,6 +151,9 @@ export default function SunesisTicker() {
                 ))}
               </ul>
             )}
+            <p className="mt-4 text-[11px] italic text-muted-foreground border-l-2 border-border pl-3">
+              This memo is research intelligence based on publicly available information. It is not personalized financial advice.
+            </p>
           </section>
 
           {/* Methodology */}

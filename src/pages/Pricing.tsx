@@ -393,10 +393,8 @@ const Pricing = () => {
       <section className="px-6 py-12 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-muted-foreground leading-relaxed text-center italic">
-            All Phaos AI plans provide access to research and workflow
-            intelligence tools. Phaos AI does not provide personalized
-            investment advice and is not a registered investment advisor. All
-            research outputs are for informational purposes only.
+            All plans provide access to research and workflow intelligence tools. Phaos AI does
+            not provide investment advice.
           </p>
         </div>
       </section>
