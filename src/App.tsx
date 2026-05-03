@@ -53,6 +53,17 @@ const AppLayout = lazy(() => import("./components/app/AppLayout.tsx"));
 const CommandCenter = lazy(() => import("./pages/app/CommandCenter.tsx"));
 const AppSection = lazy(() => import("./pages/app/AppSectionPlaceholder.tsx"));
 const AppSettings = lazy(() => import("./pages/app/Settings.tsx"));
+const SunesisResearch = lazy(() => import("./pages/app/sunesis/SunesisResearch.tsx"));
+const SunesisTicker = lazy(() => import("./pages/app/sunesis/SunesisTicker.tsx"));
+const SunesisThemes = lazy(() => import("./pages/app/sunesis/SunesisThemes.tsx"));
+const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
+const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
+const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
+const AionMonitor = lazy(() => import("./pages/app/aion/AionMonitor.tsx"));
+const AionChanges = lazy(() => import("./pages/app/aion/AionChanges.tsx"));
+const AionSimulate = lazy(() => import("./pages/app/aion/AionSimulate.tsx"));
+const AionSecurity = lazy(() => import("./pages/app/aion/AionSecurity.tsx"));
+const AionAudit = lazy(() => import("./pages/app/aion/AionAudit.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -148,13 +159,23 @@ const AppInner = () => {
               <Route index element={<CommandCenter />} />
               <Route path="billing" element={<Billing />} />
               <Route path="settings" element={<AppSettings />} />
-              <Route path="sunesis" element={<AppSection title="Sunesis" description="Source-grounded research." minTier="sunesis" emptyState="Generate your first Truth Memo on any ticker →" primaryCta={{ label: "Run a simulation", to: "/one/run-simulation" }} />} />
-              <Route path="themes" element={<AppSection title="Investment Themes" description="Cross-signal narratives." minTier="sunesis" emptyState="No active themes yet." />} />
+              <Route path="sunesis" element={<SunesisResearch />} />
+              <Route path="sunesis/ticker/:symbol" element={<SunesisTicker />} />
+              <Route path="sunesis/themes" element={<SunesisThemes />} />
+              <Route path="themes" element={<SunesisThemes />} />
               <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
-              <Route path="simulations" element={<AppSection title="Simulations" description="Stress-test scenarios." minTier="aion" emptyState="Run a free simulation to see scenario analysis →" primaryCta={{ label: "Run a simulation", to: "/one/run-simulation" }} />} />
-              <Route path="kyrios" element={<AppSection title="Kyrios" description="Workflows and approvals." minTier="kyrios" emptyState="Your research review queue is clear." />} />
-              <Route path="portals" element={<AppSection title="Client Portals" description="Branded research portals." minTier="kyrios" emptyState="No portals created yet." />} />
-              <Route path="aion" element={<AppSection title="Aion" description="Monitoring and change detection." minTier="aion" emptyState="No material signal changes detected." />} />
+              <Route path="simulations" element={<AionSimulate />} />
+              <Route path="kyrios" element={<KyriosQueue />} />
+              <Route path="kyrios/workflow/:id" element={<KyriosWorkflow />} />
+              <Route path="kyrios/portals" element={<KyriosPortals />} />
+              <Route path="portals" element={<KyriosPortals />} />
+              <Route path="aion" element={<AionMonitor />} />
+              <Route path="aion/changes/:ticker" element={<AionChanges />} />
+              <Route path="aion/simulate" element={<AionSimulate />} />
+              <Route path="aion/security" element={<AionSecurity />} />
+              <Route path="aion/audit" element={<AionAudit />} />
+              <Route path="security" element={<AionSecurity />} />
+              <Route path="audit" element={<AionAudit />} />
             </Route>
             <Route path="/app/legacy" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
