@@ -244,17 +244,31 @@ const Pricing = () => {
                 )}
               </div>
 
-              <Link
-                to={tier.cta.href}
-                className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  tier.flagship
-                    ? "bg-purple-deep text-white hover:bg-purple-deep/90"
-                    : "bg-foreground/10 text-foreground hover:bg-foreground/15"
-                }`}
-              >
-                {tier.cta.label}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {tier.cta.priceId ? (
+                <button
+                  onClick={() => handleBuy(tier.cta.priceId!)}
+                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    tier.flagship
+                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
+                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
+                  }`}
+                >
+                  {tier.cta.label}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <Link
+                  to={tier.cta.href!}
+                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    tier.flagship
+                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
+                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
+                  }`}
+                >
+                  {tier.cta.label}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           ))}
         </div>
