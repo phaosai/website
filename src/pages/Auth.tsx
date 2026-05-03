@@ -101,11 +101,11 @@ const Auth = () => {
           <img
             src={phaosCrown}
             alt="Phaos AI"
-            width={120}
-            height={60}
-            className="drop-shadow-[0_0_30px_rgba(138,43,226,0.45)]"
+            width={140}
+            height={90}
+            className="w-[110px] h-auto drop-shadow-[0_0_30px_rgba(138,43,226,0.45)]"
           />
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
             <span className="text-white">PHAOS</span>{" "}
             <span className="italic font-semibold bg-gradient-to-r from-[#B97AFF] to-[#8A2BE2] bg-clip-text text-transparent">
               AI
