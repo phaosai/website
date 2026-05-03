@@ -98,9 +98,43 @@ export type Database = {
         }
         Relationships: []
       }
+      client_entities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_type: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_type?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_type?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_portals: {
         Row: {
           access_token_hash: string | null
+          client_entity_id: string | null
           client_name: string | null
           created_at: string
           id: string
@@ -110,6 +144,7 @@ export type Database = {
         }
         Insert: {
           access_token_hash?: string | null
+          client_entity_id?: string | null
           client_name?: string | null
           created_at?: string
           id?: string
@@ -119,6 +154,7 @@ export type Database = {
         }
         Update: {
           access_token_hash?: string | null
+          client_entity_id?: string | null
           client_name?: string | null
           created_at?: string
           id?: string
@@ -615,6 +651,7 @@ export type Database = {
       }
       research_items: {
         Row: {
+          client_entity_id: string | null
           company_name: string | null
           created_at: string
           id: string
@@ -631,6 +668,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_entity_id?: string | null
           company_name?: string | null
           created_at?: string
           id?: string
@@ -647,6 +685,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_entity_id?: string | null
           company_name?: string | null
           created_at?: string
           id?: string
@@ -1457,7 +1496,7 @@ export type Database = {
     Enums: {
       app_role: "admin"
       memo_status: "draft" | "review" | "approved" | "published"
-      org_role: "owner" | "admin" | "reviewer" | "client_viewer"
+      org_role: "owner" | "admin" | "reviewer" | "client_viewer" | "analyst"
       pci_threshold: "no_signal" | "conservative" | "high_conviction"
       plan_name:
         | "free"
@@ -1627,7 +1666,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin"],
       memo_status: ["draft", "review", "approved", "published"],
-      org_role: ["owner", "admin", "reviewer", "client_viewer"],
+      org_role: ["owner", "admin", "reviewer", "client_viewer", "analyst"],
       pci_threshold: ["no_signal", "conservative", "high_conviction"],
       plan_name: ["free", "sunesis", "aion", "kyrios", "phaos_one", "pantheon"],
       platform_pref: [
