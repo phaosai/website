@@ -74,7 +74,7 @@ const RunSimulation = () => {
 
   const canRun = (ticker.trim() || theme) && platform && scenario;
 
-  const runSimulation = () => {
+  const runSimulation = async () => {
     if (!canRun) return;
     setResult(null);
     setLoading(true);
@@ -84,28 +84,40 @@ const RunSimulation = () => {
       setProgress((p) => Math.min(p + 7, 95));
     }, 120);
 
-    window.setTimeout(() => {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke("run-simulation", {
+        body: {
+          ticker: ticker.trim() || undefined,
+          theme: theme === "Custom" ? customTheme : theme || undefined,
+          scenario,
+          platform,
+        },
+      });
       window.clearInterval(interval);
       setProgress(100);
-      const basePci = 72 + Math.floor(Math.random() * 18); // 72-89
-      const drag =
-        scenario === "Pre-Earnings" ? 18 :
-        scenario === "Regime Change" ? 22 :
-        scenario === "Revenue Miss" ? 25 :
-        scenario === "Supply Chain Disruption" ? 16 :
-        scenario === "Macro Stress" ? 20 :
-        scenario === "Insider Reversal" ? 28 : 14;
-      const simPci = Math.max(10, basePci - drag);
-      setResult({
-        ticker: ticker.trim().toUpperCase() || "—",
-        theme: theme === "Custom" ? customTheme || "Custom theme" : theme || "—",
-        platform,
-        scenario,
-        basePci,
-        simPci,
-      });
+      if (!error && data) {
+        setResult({
+          ticker: data.ticker || "—",
+          theme: data.theme || (theme === "Custom" ? customTheme : theme) || "—",
+          platform: data.platform || platform,
+          scenario: data.scenario || scenario,
+          basePci: data.pci_before,
+          simPci: data.pci_simulated,
+        });
+      } else {
+        // Fallback to deterministic local sim if backend unavailable
+        const basePci = 72 + Math.floor(Math.random() * 18);
+        const drag = scenario === "Insider Reversal" ? 28 : 18;
+        setResult({
+          ticker: ticker.trim().toUpperCase() || "—",
+          theme: theme === "Custom" ? customTheme || "Custom theme" : theme || "—",
+          platform, scenario, basePci, simPci: Math.max(10, basePci - drag),
+        });
+      }
+    } finally {
       setLoading(false);
-    }, 1800);
+    }
   };
 
   return (
