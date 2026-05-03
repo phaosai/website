@@ -113,16 +113,7 @@ const AppInner = () => {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             <Route path="/one" element={<PhaosOne />} />
-            <Route
-              path="/one/aion"
-              element={
-                <OnePillarPage
-                  pillar="Aion"
-                  tagline="Security, resilience, simulation, and long-horizon protection."
-                  description="Phaos Aion is the resilience pillar of Phaos ONE — modeling stress, regime shifts, and long-horizon scenarios so portfolios stand up to the conditions that actually matter."
-                />
-              }
-            />
+            <Route path="/one/aion" element={<PhaosAion />} />
             <Route path="/one/sunesis" element={<PhaosSunesis />} />
             <Route path="/one/kyrios" element={<PhaosKyrios />} />
             <Route
