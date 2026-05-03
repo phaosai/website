@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Button } from "@/components/ui/button";
 import { PageShell, PCITierBadge, Disclaimer } from "@/components/app/PageShell";
+import { FormulaMethodologyPanel } from "@/components/phaos";
 import { toast } from "sonner";
 
 const SIGNAL_CATEGORIES = [
@@ -156,27 +157,10 @@ export default function SunesisTicker() {
             </p>
           </section>
 
-          {/* Methodology */}
-          <details className="rounded-xl border border-border bg-card/50 p-5 group">
-            <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2">
-              <ChevronDown className="w-4 h-4 group-open:rotate-180 transition" /> Formula methodology
-            </summary>
-            <div className="mt-3 text-sm space-y-2">
-              <p className="text-muted-foreground">This PCI score was informed by:</p>
-              <ul className="space-y-1.5 text-sm">
-                <li><strong>Sharpe Ratio</strong> — risk-adjusted signal strength</li>
-                <li><strong>Kelly Criterion</strong> — optimal signal weighting</li>
-                <li><strong>DCF / WACC</strong> — fundamental valuation baseline</li>
-                <li><strong>CAPM</strong> — market-relative expected return context</li>
-                <li><strong>GARCH(1,1)</strong> — volatility-adjusted confidence</li>
-                <li><strong>Fama-French</strong> — quality/value/momentum factor influence</li>
-              </ul>
-              <p className="text-xs text-muted-foreground italic">
-                These frameworks inform our scoring architecture. Individual ticker calculations
-                use simplified factor models optimized for public data availability.
-              </p>
-            </div>
-          </details>
+          <FormulaMethodologyPanel
+            sourcesCount={sources.length}
+            freshness={item.updated_at ? new Date(item.updated_at).toLocaleDateString() : undefined}
+          />
         </>
       )}
     </PageShell>

@@ -389,6 +389,43 @@ const Pricing = () => {
         </div>
       </section>
 
+      {/* METHODOLOGY */}
+      <section className="px-6 py-20 border-t border-border/40" aria-label="Methodology">
+        <div className="max-w-4xl mx-auto">
+          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+            Methodology
+          </span>
+          <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+            Built on the same families of quantitative thinking that sit behind institutional research.
+          </h2>
+          <p className="mt-6 text-muted-foreground leading-relaxed">
+            Phaos Sunesis is powered by risk-adjusted performance lenses, conviction-based sizing
+            logic, multi-factor perspectives, and volatility-aware confidence modeling. Distilled
+            from public data and presented with uncommon transparency.
+          </p>
+          <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
+            {[
+              ["Sharpe Ratio-inspired", "Risk-adjusted signal strength"],
+              ["Kelly Criterion-inspired", "Optimal signal weighting"],
+              ["DCF / WACC-inspired", "Intrinsic value context"],
+              ["CAPM-inspired", "Risk-adjusted market relative baseline"],
+              ["GARCH(1,1)-inspired", "Time-varying confidence weighting"],
+              ["Fama-French-inspired", "Quality / value / momentum factors"],
+            ].map(([k, v]) => (
+              <li key={k} className="rounded-md border border-border/60 bg-card/40 p-3">
+                <p className="text-foreground font-medium">{k}</p>
+                <p className="text-muted-foreground">{v}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-xs text-muted-foreground italic leading-relaxed">
+            These frameworks inform our scoring architecture using simplified factor models
+            optimized for public data. Not a direct implementation of the full academic formulas,
+            which require institutional data infrastructure.
+          </p>
+        </div>
+      </section>
+
       {/* DISCLAIMER */}
       <section className="px-6 py-12 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
