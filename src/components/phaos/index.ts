@@ -9,3 +9,4 @@ export { EvidenceDrawer, type EvidenceSource } from "./EvidenceDrawer";
 export { InvestmentThemeCard } from "./InvestmentThemeCard";
 export { HistoricalExampleCard } from "./HistoricalExampleCard";
 export { TruthMemoCard } from "./TruthMemoCard";
+export { FormulaMethodologyPanel } from "./FormulaMethodologyPanel";
