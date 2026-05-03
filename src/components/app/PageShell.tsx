@@ -62,9 +62,26 @@ export function PCITierBadge({ score }: { score: number | null | undefined }) {
   else if (score >= 40) { label = "Watch"; color = "text-amber-400"; }
   else if (score >= 20) { label = "Caution"; color = "text-orange-400"; }
   return (
-    <span className={`font-semibold ${color}`}>
+    <span
+      className={`font-semibold ${color}`}
+      title="PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns."
+    >
       {score}<span className="ml-2 text-xs font-normal text-muted-foreground">{label}</span>
     </span>
+  );
+}
+
+export function EmptyCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+      {children}
+    </div>
+  );
+}
+
+export function Disclaimer({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-3">{children}</p>
   );
 }
 
