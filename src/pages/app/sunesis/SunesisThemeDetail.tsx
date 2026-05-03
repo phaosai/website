@@ -75,8 +75,8 @@ export default function SunesisThemeDetail() {
       Object.entries(r?.category_stats ?? {}).forEach(([cat, s]) => {
         const cur = agg[cat] ?? { count: 0, latest: null };
         cur.count += s.count;
-        const latestStr = s.latest instanceof Date ? s.latest.toISOString() : (s.latest ?? null);
-        const curStr = cur.latest instanceof Date ? cur.latest.toISOString() : (cur.latest ?? null);
+        const latestStr = s.latest as string | null;
+        const curStr = cur.latest as string | null;
         if (latestStr && (!curStr || latestStr > curStr)) cur.latest = latestStr;
         agg[cat] = cur;
       });
