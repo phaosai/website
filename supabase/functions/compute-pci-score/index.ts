@@ -14,6 +14,24 @@ async function callFn(name: string, body: unknown, authHeader: string) {
   return r.ok ? await r.json() : null;
 }
 
+// Free-tier daily limit on PCI computations. Paid tiers (any active user_subscription) bypass this.
+const FREE_TIER_DAILY_LIMIT = 5;
+
+async function isPaidUser(userId: string): Promise<boolean> {
+  const svc = serviceClient();
+  const { data } = await svc
+    .from("user_subscriptions")
+    .select("status,current_period_end")
+    .eq("user_id", userId)
+    .in("status", ["active", "trialing", "past_due"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return false;
+  if (!data.current_period_end) return true;
+  return new Date(data.current_period_end as string) > new Date();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -23,6 +41,26 @@ Deno.serve(async (req) => {
     if (!ticker) return json({ error: "ticker required" }, 400);
     const t = ticker.toUpperCase();
     const authHeader = req.headers.get("Authorization")!;
+
+    // Rate limit free-tier users to keep SEC EDGAR/XBRL traffic within polite caps.
+    const paid = await isPaidUser(auth.userId);
+    if (!paid) {
+      const svc = serviceClient();
+      const { data: rl } = await svc.rpc("increment_usage", {
+        _user_id: auth.userId,
+        _action: "compute_pci",
+        _limit: FREE_TIER_DAILY_LIMIT,
+      });
+      const row = Array.isArray(rl) ? rl[0] : rl;
+      if (row && row.allowed === false) {
+        return json({
+          error: "Daily free-tier limit reached",
+          limit: FREE_TIER_DAILY_LIMIT,
+          current: row.current_count,
+          upgrade_url: "/pricing",
+        }, 429);
+      }
+    }
 
     const [filings, xbrl, contracts, insiders, macro] = await Promise.all([
       callFn("fetch-sec-filings", { ticker: t }, authHeader),
