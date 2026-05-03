@@ -2,12 +2,16 @@ import * as React from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export type CategoryStat = { count: number; latest: string | Date | null };
+
 interface Props {
   sourcesCount?: number;
   /** Fallback freshness label (used if no per-category map provided). */
   freshness?: string;
   /** Per-category freshness timestamps. Values may be ISO strings or Date. */
   categoryFreshness?: Record<string, string | Date | null | undefined>;
+  /** Per-category source counts + freshness. Takes precedence over categoryFreshness. */
+  categoryStats?: Record<string, CategoryStat>;
   className?: string;
   /** Optional small inline variant (no border / wrapper) */
   inline?: boolean;
@@ -29,18 +33,23 @@ function fmt(ts: string | Date | null | undefined): string {
   return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-/**
- * "How This Score Was Built" — formula methodology panel for any PCI display.
- * Expandable details element so it can be reused inline in cards or pages.
- */
 export const FormulaMethodologyPanel = ({
   sourcesCount,
   freshness,
   categoryFreshness,
+  categoryStats,
   className,
   inline,
 }: Props) => {
-  const catEntries = categoryFreshness ? Object.entries(categoryFreshness) : [];
+  const stats: Array<[string, CategoryStat]> = categoryStats
+    ? Object.entries(categoryStats)
+    : categoryFreshness
+    ? Object.entries(categoryFreshness).map(([k, v]) => [k, { count: 0, latest: v ?? null }])
+    : [];
+
+  const totalCount =
+    sourcesCount ??
+    (categoryStats ? Object.values(categoryStats).reduce((s, c) => s + c.count, 0) : 0);
 
   const body = (
     <>
@@ -57,30 +66,35 @@ export const FormulaMethodologyPanel = ({
       </ul>
       <div className="mt-4 grid sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
         <div>
-          Sources consulted: <span className="text-foreground">{sourcesCount ?? 0} public sources</span>
+          Sources consulted: <span className="text-foreground">{totalCount} public sources</span>
         </div>
         <div>
           Data freshness:{" "}
           <span className="text-foreground">
-            {catEntries.length === 0 ? freshness ?? "varies by source" : "see breakdown ↓"}
+            {stats.length === 0 ? freshness ?? "varies by source" : "see breakdown ↓"}
           </span>
         </div>
         <div>Model type: <span className="text-foreground">Determinative factor model</span></div>
       </div>
 
-      {catEntries.length > 0 && (
+      {stats.length > 0 && (
         <div className="mt-4">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-            Per-category data freshness
+            Per-category source counts &amp; freshness
           </p>
           <ul className="grid sm:grid-cols-2 gap-2 text-xs">
-            {catEntries.map(([cat, ts]) => (
+            {stats.map(([cat, s]) => (
               <li
                 key={cat}
                 className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2"
               >
-                <span className="text-foreground/85">{cat}</span>
-                <span className="text-muted-foreground tabular-nums">{fmt(ts)}</span>
+                <span className="text-foreground/85">
+                  {cat}
+                  {s.count > 0 && (
+                    <span className="ml-1.5 text-muted-foreground">· {s.count} src</span>
+                  )}
+                </span>
+                <span className="text-muted-foreground tabular-nums">{fmt(s.latest)}</span>
               </li>
             ))}
           </ul>
