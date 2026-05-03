@@ -40,6 +40,7 @@ const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
 const PhaosKyrios = lazy(() => import("./pages/PhaosKyrios.tsx"));
 const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
 const RunSimulation = lazy(() => import("./pages/RunSimulation.tsx"));
+const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,7 @@ const AppInner = () => {
             <Route path="/one/sunesis" element={<PhaosSunesis />} />
             <Route path="/one/kyrios" element={<PhaosKyrios />} />
             <Route path="/one/run-simulation" element={<RunSimulation />} />
+            <Route path="/pricing" element={<Pricing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
