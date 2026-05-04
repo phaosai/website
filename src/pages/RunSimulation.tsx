@@ -270,25 +270,25 @@ const RunSimulation = () => {
       </section>
 
       <section className="px-6 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-8 space-y-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
             {/* Step 1 — Investment type */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">1</span>
-                <p className="text-sm font-semibold">Choose the investment type</p>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
+                <p className="text-lg font-semibold">Choose the investment type</p>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {investmentGroups.map((g) => (
                   <div key={g.group}>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.group}</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">{g.group}</p>
+                    <div className="flex flex-wrap gap-2.5">
                       {g.items.map((t) => (
                         <button
                           key={t.value}
                           type="button"
                           onClick={() => setInvestmentType(t.value)}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          className={`flex-1 min-w-[140px] sm:flex-initial sm:min-w-[160px] rounded-full border px-5 py-2.5 text-base font-semibold transition-colors ${
                             investmentType === t.value
                               ? "border-primary bg-primary/15 text-primary"
                               : "border-border bg-background/60 text-foreground/80 hover:bg-card"
@@ -305,29 +305,29 @@ const RunSimulation = () => {
 
             {/* Step 2 — Ticker */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">2</span>
-                <p className="text-sm font-semibold">Enter the ticker / symbol / pair</p>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <p className="text-lg font-semibold">Enter the ticker / symbol / pair</p>
               </div>
               <Input
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
                 placeholder={activeType.placeholder}
-                className="uppercase"
+                className="uppercase text-base h-12"
                 maxLength={48}
               />
             </div>
 
             {/* Step 3 — Platforms */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">3</span>
-                <p className="text-sm font-semibold">Select every platform where this is available to you</p>
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
+                <p className="text-lg font-semibold">Select every platform where this is available to you</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedPlatforms(platforms.map((p) => p.slug))}
-                    className="rounded-full border border-border bg-background/60 px-3 py-1 text-[11px] font-semibold hover:bg-card transition-colors"
+                    className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold hover:bg-card transition-colors"
                   >
                     Select all
                   </button>
@@ -335,14 +335,14 @@ const RunSimulation = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedPlatforms([])}
-                      className="rounded-full border border-border bg-background/60 px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-card transition-colors"
+                      className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold text-muted-foreground hover:bg-card transition-colors"
                     >
                       Clear
                     </button>
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {platforms.map((p) => {
                   const selected = selectedPlatforms.includes(p.slug);
                   return (
@@ -350,19 +350,19 @@ const RunSimulation = () => {
                       key={p.slug}
                       type="button"
                       onClick={() => togglePlatform(p.slug)}
-                      className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors text-center ${
+                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-base font-semibold transition-colors text-center ${
                         selected
                           ? "border-primary bg-primary/15 text-primary"
                           : "border-border bg-background/60 text-foreground/80 hover:bg-card"
                       }`}
                     >
-                      {selected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {selected && <Check className="w-4 h-4 flex-shrink-0" />}
                       <span className="truncate">{p.name}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-4 text-base text-muted-foreground">
                 Sunesis discovers market pressures, company / asset events and position stresses on its own — you don't pick scenarios.
               </p>
             </div>
@@ -371,9 +371,9 @@ const RunSimulation = () => {
               type="button"
               onClick={runSimulation}
               disabled={!canRun || loading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3.5 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-5 h-5" />
               Run Normalized Simulation
             </button>
           </div>
