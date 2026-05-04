@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
 import PhaosLogo from "@/components/PhaosLogo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 type NavChild = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavChild[] };
