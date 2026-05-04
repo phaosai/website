@@ -64,16 +64,19 @@ export type Database = {
       }
       cache_warmup_tickers: {
         Row: {
+          asset_class: string
           created_at: string
           enabled: boolean
           ticker: string
         }
         Insert: {
+          asset_class?: string
           created_at?: string
           enabled?: boolean
           ticker: string
         }
         Update: {
+          asset_class?: string
           created_at?: string
           enabled?: boolean
           ticker?: string
@@ -796,6 +799,54 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_findings: {
+        Row: {
+          category: string
+          confidence: string
+          created_at: string
+          direction: string
+          evidence: string | null
+          headline: string
+          id: string
+          organization_id: string | null
+          rank: number | null
+          run_id: string | null
+          source: Json | null
+          ticker: string
+          weight: number
+        }
+        Insert: {
+          category: string
+          confidence: string
+          created_at?: string
+          direction: string
+          evidence?: string | null
+          headline: string
+          id?: string
+          organization_id?: string | null
+          rank?: number | null
+          run_id?: string | null
+          source?: Json | null
+          ticker: string
+          weight?: number
+        }
+        Update: {
+          category?: string
+          confidence?: string
+          created_at?: string
+          direction?: string
+          evidence?: string | null
+          headline?: string
+          id?: string
+          organization_id?: string | null
+          rank?: number | null
+          run_id?: string | null
+          source?: Json | null
+          ticker?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       simulation_runs: {
         Row: {
           assumptions: Json | null
@@ -998,6 +1049,63 @@ export type Database = {
           signal_categories_active?: Json | null
           sources_count?: number | null
           ticker?: string
+        }
+        Relationships: []
+      }
+      trading_platforms: {
+        Row: {
+          asset_classes: Json
+          created_at: string
+          name: string
+          region: string | null
+          retail_access: boolean
+          slug: string
+        }
+        Insert: {
+          asset_classes?: Json
+          created_at?: string
+          name: string
+          region?: string | null
+          retail_access?: boolean
+          slug: string
+        }
+        Update: {
+          asset_classes?: Json
+          created_at?: string
+          name?: string
+          region?: string | null
+          retail_access?: boolean
+          slug?: string
+        }
+        Relationships: []
+      }
+      truth_ledger_lines: {
+        Row: {
+          created_at: string
+          id: string
+          line: string
+          organization_id: string | null
+          run_id: string
+          source_family: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line: string
+          organization_id?: string | null
+          run_id: string
+          source_family?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line?: string
+          organization_id?: string | null
+          run_id?: string
+          source_family?: string | null
+          status?: string
         }
         Relationships: []
       }
