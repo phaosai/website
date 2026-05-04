@@ -139,8 +139,8 @@ const Auth = () => {
             alt="Phaos AI"
             width={520}
             height={420}
-            className="w-[260px] h-auto object-contain drop-shadow-[0_0_40px_rgba(138,43,226,0.35)] dark:invert-0 [filter:drop-shadow(0_0_40px_rgba(138,43,226,0.35))]"
-            style={{ maxWidth: "100%" }}
+            className="w-[260px] h-auto object-contain"
+            style={{ maxWidth: "100%", filter: "invert(1) hue-rotate(180deg) drop-shadow(0 0 30px rgba(138,43,226,0.45))" }}
           />
         </div>
 
