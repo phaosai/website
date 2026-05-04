@@ -378,26 +378,17 @@ const RunSimulation = () => {
             </button>
           </div>
 
-          {/* Truth Ledger live log */}
-          {(loading || liveLedger.length > 0) && (
-            <div className="mt-6 rounded-xl border border-border bg-[#0b0b0f] p-5 font-mono text-xs">
-              <div className="flex items-center gap-2 mb-3">
-                <Terminal className="w-4 h-4 text-primary" />
-                <p className="font-semibold uppercase tracking-wider text-muted-foreground">Truth Ledger</p>
-                {loading && (
-                  <div className="ml-auto h-1 w-32 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
-                  </div>
-                )}
+          {/* Working indicator — never expose the underlying source families */}
+          {loading && (
+            <div className="mt-6 rounded-xl border border-border bg-card/40 p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                <p className="text-sm font-semibold">Running normalized evidence pass…</p>
+                <div className="ml-auto h-1 w-40 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
+                </div>
               </div>
-              <div className="space-y-1.5 text-foreground/85 max-h-72 overflow-auto">
-                {liveLedger.map((l, idx) => (
-                  <p key={idx} className="leading-relaxed">
-                    <span className="text-muted-foreground mr-2">›</span>{l.line}
-                  </p>
-                ))}
-                {loading && <p className="text-muted-foreground animate-pulse">› Working…</p>}
-              </div>
+              <p className="text-xs text-muted-foreground">Sunesis is normalizing macro, fundamental, insider, positioning and on-chain evidence for {ticker.toUpperCase() || "your asset"}. This usually takes a few seconds.</p>
             </div>
           )}
 
