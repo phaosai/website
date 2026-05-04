@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
+import PciCommandCenter from "@/components/phaos/PciCommandCenter";
 
 type AssetClass =
   | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
