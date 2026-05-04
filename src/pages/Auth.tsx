@@ -132,16 +132,21 @@ const Auth = () => {
       </div>
 
       <div className="w-full max-w-md space-y-8">
-        {/* Logo — full lockup matching voice.phaosai.com */}
+        {/* Logo — matches voice.phaosai.com lockup */}
         <div className="flex flex-col items-center pt-2">
           <img
-            src={phaosFullLogo}
+            src={phaosCrown}
             alt="Phaos AI"
-            width={520}
-            height={420}
-            className="w-[260px] h-auto object-contain"
-            style={{ maxWidth: "100%", filter: "invert(1) hue-rotate(180deg) drop-shadow(0 0 30px rgba(138,43,226,0.45))" }}
+            width={200}
+            height={130}
+            className="w-[150px] h-auto drop-shadow-[0_0_35px_rgba(138,43,226,0.45)]"
           />
+          <h1 className="mt-3 text-3xl font-extrabold tracking-[0.05em] leading-none whitespace-nowrap px-2">
+            <span className="text-white">PHAOS</span>
+            <span className="italic font-semibold bg-gradient-to-r from-[#B97AFF] to-[#8A2BE2] bg-clip-text text-transparent">
+              {"\u00A0"}AI
+            </span>
+          </h1>
         </div>
 
         {/* Card */}
