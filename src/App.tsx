@@ -36,6 +36,7 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
 const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
