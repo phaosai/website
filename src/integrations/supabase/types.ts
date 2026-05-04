@@ -200,6 +200,45 @@ export type Database = {
           },
         ]
       }
+      credit_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          credit_type: string
+          direction: string
+          id: string
+          note: string | null
+          source_ref: string | null
+          source_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          credit_type: string
+          direction: string
+          id?: string
+          note?: string | null
+          source_ref?: string | null
+          source_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          credit_type?: string
+          direction?: string
+          id?: string
+          note?: string | null
+          source_ref?: string | null
+          source_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -631,6 +670,53 @@ export type Database = {
           },
         ]
       }
+      premium_reports: {
+        Row: {
+          created_at: string
+          entitlement_source: string | null
+          id: string
+          quantum_audit_id: string | null
+          report_payload: Json | null
+          report_type: string
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entitlement_source?: string | null
+          id?: string
+          quantum_audit_id?: string | null
+          report_payload?: Json | null
+          report_type: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entitlement_source?: string | null
+          id?: string
+          quantum_audit_id?: string | null
+          report_payload?: Json | null
+          report_type?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_reports_quantum_audit_id_fkey"
+            columns: ["quantum_audit_id"]
+            isOneToOne: false
+            referencedRelation: "quantum_audits_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       published_artifacts: {
         Row: {
           id: string
@@ -834,6 +920,80 @@ export type Database = {
           validation_mode?: string
         }
         Relationships: []
+      }
+      quantum_audits_v2: {
+        Row: {
+          completed_at: string | null
+          compliance_note: string
+          created_at: string
+          entitlement_source: string | null
+          ibm_backend: string | null
+          ibm_workload_id: string | null
+          id: string
+          raw_result_metadata: Json | null
+          result_summary: string | null
+          selected_asset_type: string | null
+          selected_platforms: Json
+          selected_symbol: string | null
+          simulation_input_snapshot: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+          usage_period_id: string | null
+          user_id: string
+          validation_mode: string
+        }
+        Insert: {
+          completed_at?: string | null
+          compliance_note?: string
+          created_at?: string
+          entitlement_source?: string | null
+          ibm_backend?: string | null
+          ibm_workload_id?: string | null
+          id?: string
+          raw_result_metadata?: Json | null
+          result_summary?: string | null
+          selected_asset_type?: string | null
+          selected_platforms?: Json
+          selected_symbol?: string | null
+          simulation_input_snapshot?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          usage_period_id?: string | null
+          user_id: string
+          validation_mode?: string
+        }
+        Update: {
+          completed_at?: string | null
+          compliance_note?: string
+          created_at?: string
+          entitlement_source?: string | null
+          ibm_backend?: string | null
+          ibm_workload_id?: string | null
+          id?: string
+          raw_result_metadata?: Json | null
+          result_summary?: string | null
+          selected_asset_type?: string | null
+          selected_platforms?: Json
+          selected_symbol?: string | null
+          simulation_input_snapshot?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          usage_period_id?: string | null
+          user_id?: string
+          validation_mode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quantum_audits_v2_usage_period_id_fkey"
+            columns: ["usage_period_id"]
+            isOneToOne: false
+            referencedRelation: "user_usage_periods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       research_items: {
         Row: {
@@ -1101,6 +1261,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          monthly_quantum_audit_limit: number
+          monthly_report_credit_limit: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          monthly_quantum_audit_limit?: number
+          monthly_report_credit_limit?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          monthly_quantum_audit_limit?: number
+          monthly_report_credit_limit?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -1398,6 +1594,74 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_events: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          usage_period_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          usage_period_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          usage_period_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_usage_period_id_fkey"
+            columns: ["usage_period_id"]
+            isOneToOne: false
+            referencedRelation: "user_usage_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_credit_balances: {
+        Row: {
+          audit_execution_credits_balance: number
+          created_at: string
+          id: string
+          report_generation_credits_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audit_execution_credits_balance?: number
+          created_at?: string
+          id?: string
+          report_generation_credits_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audit_execution_credits_balance?: number
+          created_at?: string
+          id?: string
+          report_generation_credits_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           amount_cents: number
@@ -1510,6 +1774,98 @@ export type Database = {
           status?: string
           stripe_customer_id?: string
           stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions_v2: {
+        Row: {
+          billing_cycle_anchor: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_cycle_anchor?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_cycle_anchor?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_v2_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_usage_periods: {
+        Row: {
+          add_on_audit_credits_used: number
+          add_on_report_credits_used: number
+          created_at: string
+          id: string
+          included_audit_limit: number
+          included_audits_used: number
+          included_report_limit: number
+          included_reports_used: number
+          period_end: string
+          period_key: string
+          period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          add_on_audit_credits_used?: number
+          add_on_report_credits_used?: number
+          created_at?: string
+          id?: string
+          included_audit_limit?: number
+          included_audits_used?: number
+          included_report_limit?: number
+          included_reports_used?: number
+          period_end: string
+          period_key: string
+          period_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          add_on_audit_credits_used?: number
+          add_on_report_credits_used?: number
+          created_at?: string
+          id?: string
+          included_audit_limit?: number
+          included_audits_used?: number
+          included_report_limit?: number
+          included_reports_used?: number
+          period_end?: string
+          period_key?: string
+          period_start?: string
           updated_at?: string
           user_id?: string
         }
@@ -1828,6 +2184,68 @@ export type Database = {
       }
     }
     Functions: {
+      _ensure_credit_balance: {
+        Args: { _user_id: string }
+        Returns: {
+          audit_execution_credits_balance: number
+          created_at: string
+          id: string
+          report_generation_credits_balance: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_credit_balances"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      consume_quantum_audit_credit: {
+        Args: { _audit_id: string; _user_id: string }
+        Returns: Json
+      }
+      consume_report_credit: {
+        Args: { _report_id: string; _user_id: string }
+        Returns: Json
+      }
+      create_quantum_audit_record: {
+        Args: {
+          _selected_asset_type: string
+          _selected_platforms: Json
+          _selected_symbol: string
+          _simulation_input_snapshot: Json
+          _user_id: string
+          _validation_mode?: string
+        }
+        Returns: {
+          completed_at: string | null
+          compliance_note: string
+          created_at: string
+          entitlement_source: string | null
+          ibm_backend: string | null
+          ibm_workload_id: string | null
+          id: string
+          raw_result_metadata: Json | null
+          result_summary: string | null
+          selected_asset_type: string | null
+          selected_platforms: Json
+          selected_symbol: string | null
+          simulation_input_snapshot: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+          usage_period_id: string | null
+          user_id: string
+          validation_mode: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quantum_audits_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1835,6 +2253,58 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_account_summary: { Args: { _user_id?: string }; Returns: Json }
+      get_or_create_usage_period: {
+        Args: { _ref_date?: string; _user_id: string }
+        Returns: {
+          add_on_audit_credits_used: number
+          add_on_report_credits_used: number
+          created_at: string
+          id: string
+          included_audit_limit: number
+          included_audits_used: number
+          included_report_limit: number
+          included_reports_used: number
+          period_end: string
+          period_key: string
+          period_start: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_usage_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_user_active_plan: {
+        Args: { _user_id: string }
+        Returns: {
+          code: string
+          monthly_quantum_audit_limit: number
+          monthly_report_credit_limit: number
+          name: string
+          plan_id: string
+          status: string
+        }[]
+      }
+      get_user_quantum_audit_entitlement: {
+        Args: { _user_id: string }
+        Returns: Json
+      }
+      get_user_report_entitlement: { Args: { _user_id: string }; Returns: Json }
+      grant_add_on_credits: {
+        Args: {
+          _amount: number
+          _credit_type: string
+          _note?: string
+          _source_ref?: string
+          _source_type?: string
+          _user_id: string
+        }
+        Returns: Json
       }
       has_active_user_subscription: {
         Args: { check_env?: string; user_uuid: string }
@@ -1880,6 +2350,40 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      refund_quantum_audit_credit: {
+        Args: { _audit_id: string; _user_id: string }
+        Returns: Json
+      }
+      update_quantum_audit_status: {
+        Args: { _audit_id: string; _metadata?: Json; _new_status: string }
+        Returns: {
+          completed_at: string | null
+          compliance_note: string
+          created_at: string
+          entitlement_source: string | null
+          ibm_backend: string | null
+          ibm_workload_id: string | null
+          id: string
+          raw_result_metadata: Json | null
+          result_summary: string | null
+          selected_asset_type: string | null
+          selected_platforms: Json
+          selected_symbol: string | null
+          simulation_input_snapshot: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+          usage_period_id: string | null
+          user_id: string
+          validation_mode: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quantum_audits_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
