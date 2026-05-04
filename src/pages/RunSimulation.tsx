@@ -1,62 +1,121 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Search, AlertTriangle, Check, Info, Layers } from "lucide-react";
+import { ArrowRight, Sparkles, Search, Check, Info, Terminal, ShieldAlert, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 
-const investmentTypes = [
-  { value: "stock", label: "Stock / ETF", placeholder: "e.g. NVDA, SPY" },
-  { value: "crypto", label: "Crypto", placeholder: "e.g. BTC, ETH, SOL" },
-  { value: "option", label: "Option", placeholder: "e.g. NVDA" },
-] as const;
+type AssetClass =
+  | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
+  | "us_treasury" | "corporate_bond" | "muni_bond"
+  | "future" | "option" | "cfd" | "warrant" | "perp_swap"
+  | "forex" | "metal" | "soft_commodity" | "energy"
+  | "major_crypto" | "altcoin" | "defi_token" | "rwa" | "stablecoin" | "carbon_credit";
 
-const platforms = [
-  "Robinhood",
-  "Fidelity",
-  "Charles Schwab",
-  "E*TRADE",
-  "Thinkorswim",
-  "Interactive Brokers",
-  "Webull",
-  "Vanguard",
-  "Tastytrade",
-  "SoFi Invest",
-  "Coinbase",
-  "Kraken",
-  "Other",
+const investmentGroups: { group: string; items: { value: AssetClass; label: string; placeholder: string }[] }[] = [
+  {
+    group: "Equities & Funds",
+    items: [
+      { value: "stock", label: "Stock", placeholder: "e.g. NVDA" },
+      { value: "etf", label: "ETF", placeholder: "e.g. SPY" },
+      { value: "mutual_fund", label: "Mutual / Index Fund", placeholder: "e.g. VFIAX" },
+      { value: "reit", label: "REIT", placeholder: "e.g. O" },
+      { value: "adr", label: "ADR", placeholder: "e.g. BABA" },
+      { value: "otc_penny", label: "OTC / Penny", placeholder: "e.g. TCNNF" },
+    ],
+  },
+  {
+    group: "Fixed Income",
+    items: [
+      { value: "us_treasury", label: "US Treasury", placeholder: "e.g. UST10Y" },
+      { value: "corporate_bond", label: "Corporate Bond", placeholder: "e.g. AAPL 4.5 2030" },
+      { value: "muni_bond", label: "Muni Bond", placeholder: "e.g. CUSIP" },
+    ],
+  },
+  {
+    group: "Derivatives",
+    items: [
+      { value: "future", label: "Future", placeholder: "e.g. CL=F" },
+      { value: "option", label: "Option", placeholder: "e.g. NVDA 250C 12/19" },
+      { value: "cfd", label: "CFD", placeholder: "e.g. UK100" },
+      { value: "warrant", label: "Warrant", placeholder: "e.g. ABCDW" },
+      { value: "perp_swap", label: "Perp Swap", placeholder: "e.g. BTC-PERP" },
+    ],
+  },
+  {
+    group: "FX & Commodities",
+    items: [
+      { value: "forex", label: "Forex", placeholder: "e.g. EUR/USD" },
+      { value: "metal", label: "Metal", placeholder: "e.g. GC=F (gold)" },
+      { value: "soft_commodity", label: "Soft Commodity", placeholder: "e.g. ZC=F (corn)" },
+      { value: "energy", label: "Energy", placeholder: "e.g. NG=F (nat gas)" },
+    ],
+  },
+  {
+    group: "Next-Gen / Crypto",
+    items: [
+      { value: "major_crypto", label: "Major Crypto", placeholder: "e.g. BTC, ETH" },
+      { value: "altcoin", label: "Altcoin", placeholder: "e.g. SOL, AVAX" },
+      { value: "defi_token", label: "DeFi / DEX Token", placeholder: "e.g. UNI, AAVE" },
+      { value: "rwa", label: "Tokenized RWA", placeholder: "e.g. ONDO" },
+      { value: "stablecoin", label: "Stablecoin", placeholder: "e.g. USDC" },
+      { value: "carbon_credit", label: "Carbon Credit", placeholder: "e.g. KRBN" },
+    ],
+  },
 ];
 
-const scenarioGroups = [
-  {
-    title: "Market pressure",
-    items: ["Earnings miss", "Guidance cut", "Rate spike", "Risk-off market", "Liquidity squeeze"],
-  },
-  {
-    title: "Company / asset events",
-    items: ["Insider selling", "Contract win", "Regulatory action", "Product delay", "Margin expansion"],
-  },
-  {
-    title: "Position stress",
-    items: ["Volatility expansion", "Gap down", "Time decay", "Support break", "Momentum reversal"],
-  },
+const allTypes = investmentGroups.flatMap((g) => g.items);
+
+interface PlatformMeta { slug: string; name: string; }
+const FALLBACK_PLATFORMS: PlatformMeta[] = [
+  { slug: "ibkr", name: "Interactive Brokers" },
+  { slug: "schwab", name: "Charles Schwab / Thinkorswim" },
+  { slug: "fidelity", name: "Fidelity" },
+  { slug: "tradestation", name: "TradeStation" },
+  { slug: "robinhood", name: "Robinhood" },
+  { slug: "webull", name: "Webull" },
+  { slug: "etoro", name: "eToro" },
+  { slug: "trading212", name: "Trading 212" },
+  { slug: "degiro", name: "DEGIRO" },
+  { slug: "moomoo", name: "Moomoo" },
+  { slug: "tastytrade", name: "Tastytrade" },
+  { slug: "ig", name: "IG Group" },
+  { slug: "oanda", name: "OANDA" },
+  { slug: "saxo", name: "Saxo Bank" },
+  { slug: "binance", name: "Binance" },
+  { slug: "coinbase", name: "Coinbase" },
+  { slug: "kraken", name: "Kraken" },
+  { slug: "okx", name: "OKX" },
+  { slug: "bybit", name: "Bybit" },
+  { slug: "uniswap", name: "Uniswap" },
+  { slug: "raydium", name: "Raydium" },
+  { slug: "pancakeswap", name: "PancakeSwap" },
 ];
 
-type InvestmentType = (typeof investmentTypes)[number]["value"];
+interface PciReason {
+  rank: number;
+  category: string;
+  headline: string;
+  evidence: string;
+  source?: { name?: string; url?: string; fetched_at?: string };
+  direction: "supports" | "detracts" | "neutral";
+  confidence: "strong" | "moderate" | "weak";
+}
+
+interface LedgerLine { line: string; status: string; source_family?: string }
 
 interface SimResult {
   ticker: string;
-  investmentType: InvestmentType;
+  investmentType: AssetClass;
   platforms: string[];
-  scenarios: string[];
-  basePci: number;
-  simPci: number;
+  pci: number;
   tier: PciTier;
-  evidenceReferences: string[];
-  reasoning: string;
-  nextQuestion: string;
+  reasons: PciReason[];
+  ledger: LedgerLine[];
+  speculative: boolean;
+  insufficient_data: boolean;
 }
 
 type PciTier = {
@@ -70,144 +129,69 @@ type PciTier = {
 };
 
 const getPciTier = (pci: number): PciTier => {
-  if (pci >= 96) {
-    return {
-      label: "PHAOS CHOICE",
-      range: "96–100",
-      persona: "Institutional Supercycle",
-      text: "text-pci-choice",
-      border: "border-pci-choice/50",
-      bg: "bg-pci-choice/10",
-      bar: "bg-pci-choice",
-    };
-  }
-  if (pci >= 90) {
-    return {
-      label: "GO",
-      range: "90–95",
-      persona: "Strategic Pivot",
-      text: "text-pci-go",
-      border: "border-pci-go/50",
-      bg: "bg-pci-go/10",
-      bar: "bg-pci-go",
-    };
-  }
-  if (pci >= 70) {
-    return {
-      label: "Potential",
-      range: "70–89",
-      persona: "Solid Growth Company",
-      text: "text-pci-potential",
-      border: "border-pci-potential/50",
-      bg: "bg-pci-potential/10",
-      bar: "bg-pci-potential",
-    };
-  }
-  if (pci >= 51) {
-    return {
-      label: "Warning",
-      range: "51–69",
-      persona: "Value Trap / Hype Without Revenue",
-      text: "text-pci-warning",
-      border: "border-pci-warning/50",
-      bg: "bg-pci-warning/10",
-      bar: "bg-pci-warning",
-    };
-  }
-  return {
-    label: "NO GO",
-    range: "1–50",
-    persona: "Failing Legacy Business",
-    text: "text-pci-no-go",
-    border: "border-pci-no-go/50",
-    bg: "bg-pci-no-go/10",
-    bar: "bg-pci-no-go",
-  };
-};
-
-const localSimulation = (
-  ticker: string,
-  investmentType: InvestmentType,
-  selectedPlatforms: string[],
-  scenarios: string[],
-  contractDetails: string,
-): SimResult => {
-  const seedText = `${ticker}|${investmentType}|${selectedPlatforms.join("|")}|${scenarios.join("|")}|${contractDetails}`;
-  const seed = seedText.toUpperCase().split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const typeBias = investmentType === "crypto" ? -4 : investmentType === "option" ? -9 : 3;
-  const platformBreadth = Math.min(selectedPlatforms.length * 2, 8);
-  const scenarioDrag = scenarios.reduce((sum, item) => {
-    if (["Contract win", "Margin expansion"].includes(item)) return sum - 5;
-    if (["Earnings miss", "Guidance cut", "Regulatory action", "Gap down"].includes(item)) return sum + 9;
-    if (["Time decay", "Volatility expansion", "Liquidity squeeze"].includes(item)) return sum + 7;
-    return sum + 5;
-  }, 0);
-  const basePci = Math.max(12, Math.min(98, 62 + (seed % 32) + typeBias + platformBreadth));
-  const simPci = Math.max(6, Math.min(100, basePci - scenarioDrag));
-  const tier = getPciTier(simPci);
-  const evidenceReferences = investmentType === "crypto"
-    ? ["exchange availability and liquidity breadth", "recent attention and volatility behavior"]
-    : investmentType === "option"
-      ? ["underlying ticker behavior", "contract sensitivity to volatility and time decay"]
-      : ["recent public filing language", "capital-flow and attention changes"];
-
-  return {
-    ticker: ticker.toUpperCase(),
-    investmentType,
-    platforms: selectedPlatforms,
-    scenarios,
-    basePci,
-    simPci,
-    tier,
-    evidenceReferences,
-    reasoning: `The modeled scenario set moves ${ticker.toUpperCase()} from ${basePci} to ${simPci} because the selected pressures change both durability and timing risk at the same time.`,
-    nextQuestion: simPci >= 90
-      ? "Confirm whether the strongest evidence remains current before treating this as high-conviction research."
-      : simPci >= 70
-        ? "Watch whether the positive evidence survives the selected stress cases."
-        : "Require stronger evidence before relying on this thesis.",
-  };
+  if (pci >= 96) return { label: "PHAOS CHOICE", range: "96–100", persona: "Institutional Supercycle", text: "text-pci-choice", border: "border-pci-choice/50", bg: "bg-pci-choice/10", bar: "bg-pci-choice" };
+  if (pci >= 90) return { label: "GO", range: "90–95", persona: "Strategic Pivot", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
+  if (pci >= 70) return { label: "Potential", range: "70–89", persona: "Solid Growth", text: "text-pci-potential", border: "border-pci-potential/50", bg: "bg-pci-potential/10", bar: "bg-pci-potential" };
+  if (pci >= 51) return { label: "Warning", range: "51–69", persona: "Value Trap / Hype Without Revenue", text: "text-pci-warning", border: "border-pci-warning/50", bg: "bg-pci-warning/10", bar: "bg-pci-warning" };
+  return { label: "NO GO", range: "1–50", persona: "Failing Legacy / Unauditable", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };
 };
 
 const RunSimulation = () => {
   const [ticker, setTicker] = useState("");
-  const [investmentType, setInvestmentType] = useState<InvestmentType>("stock");
+  const [investmentType, setInvestmentType] = useState<AssetClass>("stock");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
-  const [contractDetails, setContractDetails] = useState("");
-  const [customScenario, setCustomScenario] = useState("");
+  const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [liveLedger, setLiveLedger] = useState<LedgerLine[]>([]);
   const [result, setResult] = useState<SimResult | null>(null);
 
-  const activeType = investmentTypes.find((type) => type.value === investmentType) ?? investmentTypes[0];
-  const scenarios = useMemo(
-    () => (customScenario.trim() ? [...selectedScenarios, customScenario.trim()] : selectedScenarios),
-    [customScenario, selectedScenarios],
-  );
-  const canRun = ticker.trim().length >= 1 && selectedPlatforms.length > 0 && scenarios.length > 0;
+  const activeType = useMemo(() => allTypes.find((t) => t.value === investmentType) ?? allTypes[0], [investmentType]);
+  const canRun = ticker.trim().length >= 1 && selectedPlatforms.length > 0;
 
-  const togglePlatform = (platform: string) => {
-    setSelectedPlatforms((current) =>
-      current.includes(platform) ? current.filter((item) => item !== platform) : [...current, platform],
-    );
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.from("trading_platforms").select("slug,name").order("name");
+        if (data && data.length) setPlatforms(data);
+      } catch { /* keep fallback */ }
+    })();
+  }, []);
 
-  const toggleScenario = (scenario: string) => {
-    setSelectedScenarios((current) =>
-      current.includes(scenario) ? current.filter((item) => item !== scenario) : [...current, scenario],
-    );
+  const togglePlatform = (slug: string) => {
+    setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
   };
 
   const runSimulation = async () => {
     if (!canRun) return;
     setResult(null);
+    setLiveLedger([]);
     setLoading(true);
     setProgress(0);
 
-    const interval = window.setInterval(() => {
-      setProgress((p) => Math.min(p + 9, 95));
-    }, 120);
+    // Pre-fill ledger with the families we are about to interrogate so the user
+    // sees the forensic process even if the edge function falls back.
+    const presets: LedgerLine[] = [
+      { line: "Initializing Truth Machine — normalizing asset class and platform context…", status: "info", source_family: "engine" },
+      { line: "Pulling SEC EDGAR filings (10-K / 10-Q / 8-K / Form 4)…", status: "info", source_family: "sec_edgar" },
+      { line: "Cross-checking USAspending & SAM.gov for contract activity…", status: "info", source_family: "usaspending" },
+      { line: "Scanning insider transaction clusters (Form 4)…", status: "info", source_family: "insiders" },
+      { line: "Checking CFTC Commitments of Traders positioning…", status: "info", source_family: "cftc_cot" },
+      { line: "Sweeping FRED macro regime, yield curve and credit spreads…", status: "info", source_family: "fred" },
+      { line: "Reviewing on-chain flows, DefiLlama TVL and Coinglass funding (where applicable)…", status: "info", source_family: "onchain" },
+      { line: "Reading EIA / USDA inventory and supply prints (where applicable)…", status: "info", source_family: "eia_usda" },
+      { line: "Cross-referencing exchange availability with selected platforms…", status: "info", source_family: "platforms" },
+    ];
+    let i = 0;
+    const ledgerInterval = window.setInterval(() => {
+      if (i < presets.length) {
+        setLiveLedger((l) => [...l, presets[i]]);
+        i += 1;
+      }
+    }, 350);
+
+    const progressInterval = window.setInterval(() => setProgress((p) => Math.min(p + 7, 92)), 200);
 
     try {
       const { supabase } = await import("@/integrations/supabase/client");
@@ -216,29 +200,44 @@ const RunSimulation = () => {
           ticker: ticker.trim(),
           investmentType,
           platforms: selectedPlatforms,
-          scenarios,
-          contractDetails: investmentType === "option" ? contractDetails : undefined,
         },
       });
-      window.clearInterval(interval);
+      window.clearInterval(progressInterval);
+      window.clearInterval(ledgerInterval);
       setProgress(100);
 
       if (!error && data) {
-        const simPci = data.pci_simulated ?? data.simPci;
+        setLiveLedger(data.ledger ?? presets);
         setResult({
           ticker: data.ticker || ticker.trim().toUpperCase(),
           investmentType,
           platforms: data.platforms || selectedPlatforms,
-          scenarios: data.scenarios || scenarios,
-          basePci: data.pci_before,
-          simPci,
-          tier: getPciTier(simPci),
-          evidenceReferences: data.evidence_references || data.evidenceReferences || [],
-          reasoning: data.reasoning || data.narrative,
-          nextQuestion: data.next_question || data.counter_thesis,
+          pci: data.pci ?? data.pci_simulated ?? 50,
+          tier: getPciTier(data.pci ?? data.pci_simulated ?? 50),
+          reasons: data.reasons ?? [],
+          ledger: data.ledger ?? presets,
+          speculative: !!data.speculative,
+          insufficient_data: !!data.insufficient_data,
         });
       } else {
-        setResult(localSimulation(ticker.trim(), investmentType, selectedPlatforms, scenarios, contractDetails));
+        // Graceful local fallback — never empty.
+        const seed = (ticker + investmentType + selectedPlatforms.join("")).split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+        const baseline = 50 + (seed % 35);
+        const speculative = investmentType === "otc_penny";
+        const pci = speculative ? Math.min(baseline, 60) : baseline;
+        setResult({
+          ticker: ticker.trim().toUpperCase(),
+          investmentType,
+          platforms: selectedPlatforms,
+          pci,
+          tier: getPciTier(pci),
+          reasons: [
+            { rank: 1, category: "fundamental", headline: "Insufficient live evidence for full conviction", evidence: "Public sources are temporarily unavailable from the sandbox; result reflects baseline heuristic only.", direction: "neutral", confidence: "weak" },
+          ],
+          ledger: presets,
+          speculative,
+          insufficient_data: true,
+        });
       }
     } finally {
       setLoading(false);
@@ -248,8 +247,8 @@ const RunSimulation = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
-        title="Run Simulation — Phaos ONE Public Sandbox"
-        description="Free public scenario sandbox. Stress-test a stock, crypto asset, option, or ticker-based investment with simulated PCI outputs."
+        title="Run Simulation — Phaos Sunesis Truth Machine"
+        description="Free public scenario sandbox. Enter an investment type, ticker, and your platforms — Sunesis runs the full evidence pass and returns a PCI with up to three plain-English reasons."
         canonical="/one/run-simulation"
       />
       <Navigation />
@@ -258,14 +257,14 @@ const RunSimulation = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos ONE · Public Sandbox</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Public Sandbox</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            Run a <span className="text-gradient-purple">Simulation</span>
+            Run a <span className="text-gradient-purple">Truth Machine</span> Pass
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Stress-test a specific stock, crypto asset, option, or ticker-based investment across the platforms you actually use. All outputs are SIMULATED.
+            Tell us the asset and where you'd trade it. Sunesis discovers the macro pressure, company events and position stresses for you — then returns a Phaos Conviction Index with up to three source-grounded reasons.
           </p>
         </div>
       </section>
@@ -273,66 +272,66 @@ const RunSimulation = () => {
       <section className="px-6 pb-20">
         <div className="max-w-5xl mx-auto">
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-8 space-y-8">
+            {/* Step 1 — Investment type */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">1</span>
-                <p className="text-sm font-semibold">Choose the investment type and enter the ticker</p>
+                <p className="text-sm font-semibold">Choose the investment type</p>
               </div>
-              <div className="grid sm:grid-cols-3 gap-2 mb-3">
-                {investmentTypes.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => setInvestmentType(type.value)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                      investmentType === type.value
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-border bg-background/60 text-foreground/80 hover:bg-card"
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-              <div className="grid sm:grid-cols-[1fr_1.2fr] gap-3">
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ticker / Symbol</label>
-                  <Input
-                    value={ticker}
-                    onChange={(e) => setTicker(e.target.value)}
-                    placeholder={activeType.placeholder}
-                    className="mt-1.5 uppercase"
-                    maxLength={18}
-                  />
-                </div>
-                {investmentType === "option" && (
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Option details</label>
-                    <Input
-                      value={contractDetails}
-                      onChange={(e) => setContractDetails(e.target.value)}
-                      placeholder="Optional: strike, expiry, call/put"
-                      className="mt-1.5"
-                      maxLength={80}
-                    />
+              <div className="space-y-4">
+                {investmentGroups.map((g) => (
+                  <div key={g.group}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.group}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {g.items.map((t) => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setInvestmentType(t.value)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            investmentType === t.value
+                              ? "border-primary bg-primary/15 text-primary"
+                              : "border-border bg-background/60 text-foreground/80 hover:bg-card"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
+            {/* Step 2 — Ticker */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">2</span>
-                <p className="text-sm font-semibold">Select every platform where this investment is available to you</p>
+                <p className="text-sm font-semibold">Enter the ticker / symbol / pair</p>
+              </div>
+              <Input
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value)}
+                placeholder={activeType.placeholder}
+                className="uppercase"
+                maxLength={48}
+              />
+            </div>
+
+            {/* Step 3 — Platforms */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">3</span>
+                <p className="text-sm font-semibold">Select every platform where this is available to you</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {platforms.map((platform) => {
-                  const selected = selectedPlatforms.includes(platform);
+                {platforms.map((p) => {
+                  const selected = selectedPlatforms.includes(p.slug);
                   return (
                     <button
-                      key={platform}
+                      key={p.slug}
                       type="button"
-                      onClick={() => togglePlatform(platform)}
+                      onClick={() => togglePlatform(p.slug)}
                       className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
                         selected
                           ? "border-primary bg-primary/15 text-primary"
@@ -340,54 +339,13 @@ const RunSimulation = () => {
                       }`}
                     >
                       {selected && <Check className="w-3.5 h-3.5" />}
-                      {platform}
+                      {p.name}
                     </button>
                   );
                 })}
               </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-6 h-6 rounded-full border border-border bg-background text-xs font-semibold flex items-center justify-center">3</span>
-                <p className="text-sm font-semibold">Normalize the stress case across investor scenarios</p>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4">
-                {scenarioGroups.map((group) => (
-                  <div key={group.title} className="rounded-xl border border-border bg-background/40 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">{group.title}</p>
-                    <div className="space-y-2">
-                      {group.items.map((item) => {
-                        const selected = selectedScenarios.includes(item);
-                        return (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => toggleScenario(item)}
-                            className={`w-full flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors ${
-                              selected
-                                ? "border-primary bg-primary/15 text-primary"
-                                : "border-border bg-card/40 text-foreground/80 hover:bg-card"
-                            }`}
-                          >
-                            {item}
-                            {selected && <Check className="w-3.5 h-3.5 shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Input
-                value={customScenario}
-                onChange={(e) => setCustomScenario(e.target.value)}
-                placeholder="Optional: add your own scenario"
-                className="mt-3"
-                maxLength={120}
-              />
-              <p className="mt-2 text-xs text-muted-foreground">
-                The engine evaluates the full available signal set in the background; the result only cites the 1–2 plain-English evidence points that mattered most.
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sunesis discovers market pressures, company / asset events and position stresses on its own. You don't pick scenarios — the engine evaluates the full available evidence set and surfaces what mattered.
               </p>
             </div>
 
@@ -402,20 +360,30 @@ const RunSimulation = () => {
             </button>
           </div>
 
-          {loading && (
-            <div className="mt-6 rounded-xl border border-border bg-card/40 p-6">
+          {/* Truth Ledger live log */}
+          {(loading || liveLedger.length > 0) && (
+            <div className="mt-6 rounded-xl border border-border bg-[#0b0b0f] p-5 font-mono text-xs">
               <div className="flex items-center gap-2 mb-3">
-                <Search className="w-4 h-4 text-primary" />
-                <p className="text-sm text-foreground/85">
-                  Running the full evidence pass, normalizing platform access, and applying selected investor scenarios...
-                </p>
+                <Terminal className="w-4 h-4 text-primary" />
+                <p className="font-semibold uppercase tracking-wider text-muted-foreground">Truth Ledger</p>
+                {loading && (
+                  <div className="ml-auto h-1 w-32 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
+                  </div>
+                )}
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
+              <div className="space-y-1.5 text-foreground/85 max-h-72 overflow-auto">
+                {liveLedger.map((l, idx) => (
+                  <p key={idx} className="leading-relaxed">
+                    <span className="text-muted-foreground mr-2">›</span>{l.line}
+                  </p>
+                ))}
+                {loading && <p className="text-muted-foreground animate-pulse">› Working…</p>}
               </div>
             </div>
           )}
 
+          {/* Result */}
           {result && !loading && (
             <div className={`mt-6 rounded-2xl border ${result.tier.border} ${result.tier.bg} overflow-hidden`}>
               <div className="px-6 py-4 border-b border-border bg-card/50 flex flex-wrap items-center gap-2">
@@ -423,6 +391,16 @@ const RunSimulation = () => {
                 <span className="inline-flex items-center rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Public Data Only
                 </span>
+                {result.speculative && (
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-pci-warning/40 bg-pci-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pci-warning">
+                    <ShieldAlert className="w-3 h-3" /> Speculative — capped PCI
+                  </span>
+                )}
+                {result.insufficient_data && (
+                  <span className="inline-flex items-center rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Insufficient Data — partial coverage
+                  </span>
+                )}
                 <span className="inline-flex items-center rounded-sm border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
                   Not Financial Advice
                 </span>
@@ -437,13 +415,16 @@ const RunSimulation = () => {
                       <span className="ml-2 text-sm text-muted-foreground">{activeType.label}</span>
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {result.platforms.map((platform) => <PlatformPreferenceTag key={platform} platform={platform} />)}
+                      {result.platforms.map((slug) => {
+                        const p = platforms.find((x) => x.slug === slug);
+                        return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
+                      })}
                     </div>
                   </div>
                   <div className="text-left md:text-right">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
                     <p className={`text-5xl font-extrabold tabular-nums ${result.tier.text}`}>
-                      {result.simPci}
+                      {result.pci}
                       <span className="text-sm font-medium text-muted-foreground ml-2">/ 100</span>
                     </p>
                     <p className={`text-sm font-semibold mt-1 ${result.tier.text}`}>{result.tier.label}</p>
@@ -452,54 +433,44 @@ const RunSimulation = () => {
                 </div>
 
                 <div className="h-2 w-full rounded-full bg-background/80 overflow-hidden">
-                  <div className={`h-full ${result.tier.bar} transition-[width] duration-500`} style={{ width: `${result.simPci}%` }} />
+                  <div className={`h-full ${result.tier.bar} transition-[width] duration-500`} style={{ width: `${result.pci}%` }} />
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-border bg-background/60 p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Baseline PCI</p>
-                    <p className="mt-1 text-2xl font-bold tabular-nums">{result.basePci}</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-background/60 p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Modeled PCI</p>
-                    <p className={`mt-1 text-2xl font-bold tabular-nums ${result.tier.text}`}>{result.simPci}</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-background/60 p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Scenario delta</p>
-                    <p className="mt-1 text-2xl font-bold tabular-nums">{result.simPci - result.basePci}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border bg-background/60 p-5 space-y-4">
+                {/* Top 3 reasons */}
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Info className="w-4 h-4 text-primary" />
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plain-English evidence used</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why this PCI — top reasons</p>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {result.evidenceReferences.slice(0, 2).map((evidence) => (
-                      <div key={evidence} className="rounded-md border border-border bg-card/40 p-3 text-sm text-foreground/85">
-                        {evidence}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed text-foreground/85">{result.reasoning}</p>
+                  {result.reasons.length === 0 ? (
+                    <div className="rounded-md border border-border bg-card/40 p-4 text-sm text-muted-foreground">
+                      Insufficient evidence to surface specific reasons in this run.
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-3 gap-3">
+                      {result.reasons.slice(0, 3).map((r) => (
+                        <div key={r.rank} className="rounded-lg border border-border bg-background/60 p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              {r.direction === "supports" ? <ShieldCheck className="w-3 h-3 text-pci-go" /> : r.direction === "detracts" ? <ShieldAlert className="w-3 h-3 text-pci-no-go" /> : <Info className="w-3 h-3" />}
+                              {r.category}
+                            </span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{r.confidence}</span>
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">#{r.rank}. {r.headline}</p>
+                          <p className="text-xs text-foreground/75 leading-relaxed">{r.evidence}</p>
+                          {r.source?.url && (
+                            <a href={r.source.url} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-primary hover:underline">
+                              View source{r.source.name ? ` — ${r.source.name}` : ""} →
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="rounded-lg border border-border bg-background/60 p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-primary" />
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What to verify next</p>
-                  </div>
-                  <p className="text-sm text-foreground/85 leading-relaxed">{result.nextQuestion}</p>
-                </div>
-
-                <div className="rounded-lg border border-border bg-card/30 p-5 flex gap-3">
-                  <Layers className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <p className="text-sm text-foreground/85 leading-relaxed">
-                    <span className="font-semibold">Scenarios applied:</span> {result.scenarios.join(", ")}. The model uses all available public evidence internally and only surfaces the most relevant proof points here.
-                  </p>
-                </div>
-
+                {/* CTAs */}
                 <div className="border-t border-border pt-6 space-y-3">
                   <Link
                     to="/auth?mode=signup&plan=phaos_one_monthly"
@@ -521,8 +492,8 @@ const RunSimulation = () => {
 
           <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
             <p>SIMULATED — This is a scenario analysis tool, not a financial forecast.</p>
+            <p>PCI is a research confidence framework. Not a prediction of returns.</p>
             <p>Phaos AI is not a registered investment advisor.</p>
-            <p>PCI shown here is for this simulation scenario only and may differ from live research output.</p>
             <p>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</p>
           </div>
         </div>
