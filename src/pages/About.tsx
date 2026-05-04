@@ -66,7 +66,7 @@ const About = () => {
             </div>
             <h2 className="text-2xl font-bold mb-4 text-foreground">Our Mission</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To develop and deploy cutting-edge conversational AI that sets new benchmarks for natural interaction, deep contextual understanding, and self-improving intelligence — enabling businesses to scale customer satisfaction, optimize resource allocation, and unlock unprecedented growth.
+              Phaos AI began as an AI-powered voice and workflow automation company serving B2B businesses. We have expanded that same commitment to operational intelligence into a full financial research environment—because the same discipline that improves how a business handles inbound calls also improves how an investor handles inbound signals. We don't just process information; we architect conviction.
             </p>
           </motion.div>
         </div>
