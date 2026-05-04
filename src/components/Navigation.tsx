@@ -37,6 +37,7 @@ const NAV: NavItem[] = [
 ];
 
 const Navigation = () => {
+  const { isAdmin } = useIsAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
