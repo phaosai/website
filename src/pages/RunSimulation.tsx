@@ -8,20 +8,6 @@ import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 import PciCommandCenter from "@/components/phaos/PciCommandCenter";
 import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
-import { useEntitlements, type Tier } from "@/hooks/useEntitlements";
-import type { QuantumPlan } from "@/lib/quantumAudit";
-
-const tierToQuantumPlan = (tier: Tier): QuantumPlan | null => {
-  switch (tier) {
-    case "sunesis": return "core";
-    case "aion": return "pro";
-    case "kyrios":
-    case "phaos_one":
-    case "pantheon":
-      return "elite";
-    default: return null;
-  }
-};
 
 type AssetClass =
   | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
