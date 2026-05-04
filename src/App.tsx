@@ -151,6 +151,7 @@ const AppInner = () => {
             <Route path="/solutions/:industry" element={<SolutionsPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             <Route path="/one" element={<PhaosOne />} />
             <Route path="/one/aion" element={<PhaosAion />} />
