@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useErrorReporter } from "@/hooks/useErrorReporter";
+import { useLoginTracker } from "@/hooks/useLoginTracker";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "@/contexts/AuthContext";
