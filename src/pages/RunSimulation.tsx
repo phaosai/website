@@ -400,8 +400,6 @@ const RunSimulation = () => {
           <QuantumAuditModal
             open={quantumOpen}
             onOpenChange={setQuantumOpen}
-            plan={quantumPlan}
-            usedThisMonth={0}
             ticker={ticker}
             investmentType={activeType.label}
             platforms={selectedPlatforms}
