@@ -127,8 +127,6 @@ const BrowserRouterAuthWrapper = () => (
 
 const AppInner = () => {
   useErrorReporter();
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useLoginTracker } = require("@/hooks/useLoginTracker");
   useLoginTracker();
   return (
     <>
