@@ -396,9 +396,8 @@ const RunSimulation = () => {
           {result && !loading && (
             <div className={`mt-6 rounded-2xl border ${result.tier.border} ${result.tier.bg} overflow-hidden`}>
               <div className="px-6 py-4 border-b border-border bg-card/50 flex flex-wrap items-center gap-2">
-                <FeatureStatusBadge status="SIMULATED" />
-                <span className="inline-flex items-center rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Public Data Only
+                <span className="inline-flex items-center rounded-sm border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                  Simulated — Not Actual Live Results — Sample Product Execution
                 </span>
                 {result.speculative && (
                   <span className="inline-flex items-center gap-1 rounded-sm border border-pci-warning/40 bg-pci-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pci-warning">
@@ -410,9 +409,6 @@ const RunSimulation = () => {
                     Insufficient Data — partial coverage
                   </span>
                 )}
-                <span className="inline-flex items-center rounded-sm border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
-                  Not Financial Advice
-                </span>
               </div>
 
               <div className="p-6 space-y-6">
