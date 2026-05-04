@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
+import PciCommandCenter from "@/components/phaos/PciCommandCenter";
 
 type AssetClass =
   | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
@@ -412,33 +413,13 @@ const RunSimulation = () => {
               </div>
 
               <div className="p-6 space-y-6">
-                <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-6 items-end">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Subject</p>
-                    <p className="text-2xl font-semibold mt-1">
-                      <span className="font-mono">{result.ticker}</span>
-                      <span className="ml-2 text-sm text-muted-foreground">{activeType.label}</span>
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {result.platforms.map((slug) => {
-                        const p = platforms.find((x) => x.slug === slug);
-                        return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
-                      })}
-                    </div>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
-                    <p className={`text-5xl font-extrabold tabular-nums ${result.tier.text}`}>
-                      {result.pci}
-                      <span className="text-sm font-medium text-muted-foreground ml-2">/ 100</span>
-                    </p>
-                    <p className={`text-sm font-semibold mt-1 ${result.tier.text}`}>{result.tier.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{result.tier.range} · {result.tier.persona}</p>
-                  </div>
-                </div>
+                <PciCommandCenter score={result.pci} ticker={result.ticker} assetType={activeType.label} />
 
-                <div className="h-2 w-full rounded-full bg-background/80 overflow-hidden">
-                  <div className={`h-full ${result.tier.bar} transition-[width] duration-500`} style={{ width: `${result.pci}%` }} />
+                <div className="flex flex-wrap gap-2">
+                  {result.platforms.map((slug) => {
+                    const p = platforms.find((x) => x.slug === slug);
+                    return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
+                  })}
                 </div>
 
                 {/* Top 3 reasons */}
