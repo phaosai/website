@@ -739,6 +739,102 @@ export type Database = {
         }
         Relationships: []
       }
+      quantum_audit_credits: {
+        Row: {
+          created_at: string
+          execution_credits: number
+          id: string
+          report_credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          execution_credits?: number
+          id?: string
+          report_credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          execution_credits?: number
+          id?: string
+          report_credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quantum_audits: {
+        Row: {
+          completed_at: string | null
+          compliance_note: string
+          created_at: string
+          error_message: string | null
+          ibm_backend: string | null
+          ibm_workload_id: string | null
+          id: string
+          plan_name: string
+          raw_result_metadata: Json | null
+          result_summary: string | null
+          selected_asset_type: string | null
+          selected_platforms: Json
+          selected_symbol: string | null
+          simulation_input_snapshot: Json
+          status: string
+          updated_at: string
+          usage_month: string
+          used_addon: boolean
+          user_id: string
+          validation_mode: string
+        }
+        Insert: {
+          completed_at?: string | null
+          compliance_note?: string
+          created_at?: string
+          error_message?: string | null
+          ibm_backend?: string | null
+          ibm_workload_id?: string | null
+          id?: string
+          plan_name: string
+          raw_result_metadata?: Json | null
+          result_summary?: string | null
+          selected_asset_type?: string | null
+          selected_platforms?: Json
+          selected_symbol?: string | null
+          simulation_input_snapshot?: Json
+          status?: string
+          updated_at?: string
+          usage_month?: string
+          used_addon?: boolean
+          user_id: string
+          validation_mode?: string
+        }
+        Update: {
+          completed_at?: string | null
+          compliance_note?: string
+          created_at?: string
+          error_message?: string | null
+          ibm_backend?: string | null
+          ibm_workload_id?: string | null
+          id?: string
+          plan_name?: string
+          raw_result_metadata?: Json | null
+          result_summary?: string | null
+          selected_asset_type?: string | null
+          selected_platforms?: Json
+          selected_symbol?: string | null
+          simulation_input_snapshot?: Json
+          status?: string
+          updated_at?: string
+          usage_month?: string
+          used_addon?: boolean
+          user_id?: string
+          validation_mode?: string
+        }
+        Relationships: []
+      }
       research_items: {
         Row: {
           client_entity_id: string | null

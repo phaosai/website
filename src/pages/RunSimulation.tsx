@@ -8,20 +8,6 @@ import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 import PciCommandCenter from "@/components/phaos/PciCommandCenter";
 import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
-import { useEntitlements, type Tier } from "@/hooks/useEntitlements";
-import type { QuantumPlan } from "@/lib/quantumAudit";
-
-const tierToQuantumPlan = (tier: Tier): QuantumPlan | null => {
-  switch (tier) {
-    case "sunesis": return "core";
-    case "aion": return "pro";
-    case "kyrios":
-    case "phaos_one":
-    case "pantheon":
-      return "elite";
-    default: return null;
-  }
-};
 
 type AssetClass =
   | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
@@ -162,8 +148,6 @@ const RunSimulation = () => {
   const [liveLedger, setLiveLedger] = useState<LedgerLine[]>([]);
   const [result, setResult] = useState<SimResult | null>(null);
   const [quantumOpen, setQuantumOpen] = useState(false);
-  const entitlements = useEntitlements();
-  const quantumPlan = tierToQuantumPlan(entitlements.tier);
 
   const activeType = useMemo(() => allTypes.find((t) => t.value === investmentType) ?? allTypes[0], [investmentType]);
   const canRun = ticker.trim().length >= 1 && selectedPlatforms.length > 0;
@@ -416,8 +400,6 @@ const RunSimulation = () => {
           <QuantumAuditModal
             open={quantumOpen}
             onOpenChange={setQuantumOpen}
-            plan={quantumPlan}
-            usedThisMonth={0}
             ticker={ticker}
             investmentType={activeType.label}
             platforms={selectedPlatforms}
