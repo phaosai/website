@@ -386,16 +386,43 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={runSimulation}
-              disabled={!canRun || loading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <Sparkles className="w-5 h-5" />
-              Run Normalized Simulation
-            </button>
+            <div className="grid sm:grid-cols-[1fr_auto] gap-3">
+              <button
+                type="button"
+                onClick={runSimulation}
+                disabled={!canRun || loading}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <Sparkles className="w-5 h-5" />
+                Run Normalized Simulation
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuantumOpen(true)}
+                className="relative inline-flex items-center justify-center gap-2 rounded-full border border-purple-deep/50 bg-purple-deep/10 text-foreground text-base font-semibold px-6 py-4 hover:bg-purple-deep/20 transition-all shadow-[0_0_30px_-10px_hsl(var(--primary)/0.5)]"
+              >
+                <Cpu className="w-5 h-5 text-primary" />
+                Run Quantum Audit
+                <span className="absolute -top-2 -right-2 text-[9px] font-bold tracking-wider uppercase text-primary border border-primary/50 bg-background px-1.5 py-0.5 rounded-full">
+                  Premium
+                </span>
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground -mt-4">
+              For premium users who want an advanced-compute validation pass on select Sunesis simulations.
+            </p>
           </div>
+
+          <QuantumAuditModal
+            open={quantumOpen}
+            onOpenChange={setQuantumOpen}
+            plan={quantumPlan}
+            usedThisMonth={0}
+            ticker={ticker}
+            investmentType={activeType.label}
+            platforms={selectedPlatforms}
+            simulationMode="Normalized Simulation"
+          />
 
           {/* Working indicator — never expose the underlying source families */}
           {loading && (
