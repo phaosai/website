@@ -452,8 +452,8 @@ const RunSimulation = () => {
                       Insufficient evidence to surface specific reasons in this run.
                     </div>
                   ) : (
-                    <div className="grid md:grid-cols-3 gap-3">
-                      {result.reasons.slice(0, 3).map((r) => (
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {result.reasons.slice(0, 2).map((r) => (
                         <div key={r.rank} className="rounded-lg border border-border bg-background/60 p-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
