@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useErrorReporter } from "@/hooks/useErrorReporter";
+import { useLoginTracker } from "@/hooks/useLoginTracker";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -36,6 +37,7 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
 const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
 const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
@@ -126,6 +128,7 @@ const BrowserRouterAuthWrapper = () => (
 
 const AppInner = () => {
   useErrorReporter();
+  useLoginTracker();
   return (
     <>
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
@@ -150,6 +153,7 @@ const AppInner = () => {
             <Route path="/solutions/:industry" element={<SolutionsPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             <Route path="/one" element={<PhaosOne />} />
             <Route path="/one/aion" element={<PhaosAion />} />

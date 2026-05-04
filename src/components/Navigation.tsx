@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react";
 import PhaosLogo from "@/components/PhaosLogo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 type NavChild = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavChild[] };
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
 ];
 
 const Navigation = () => {
+  const { isAdmin } = useIsAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -203,6 +205,15 @@ const Navigation = () => {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="hidden md:inline-flex items-center gap-1.5 border border-pci-choice/40 bg-pci-choice/10 text-pci-choice text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full hover:bg-pci-choice/20 transition-colors"
+              aria-label="Admin dashboard"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Admin
+            </Link>
+          )}
           <Link
             to="/contact"
             className="hidden md:inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

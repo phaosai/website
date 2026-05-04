@@ -57,6 +57,13 @@ export type Database = {
             foreignKeyName: "audit_events_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "audit_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -340,6 +347,33 @@ export type Database = {
           },
         ]
       }
+      login_events: {
+        Row: {
+          id: string
+          ip_hash: string | null
+          occurred_at: string
+          product_context: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          product_context?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          product_context?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       logos_settings: {
         Row: {
           accent_color: string | null
@@ -415,6 +449,13 @@ export type Database = {
             foreignKeyName: "memberships_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -466,6 +507,13 @@ export type Database = {
             foreignKeyName: "one_time_purchases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "one_time_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -497,6 +545,13 @@ export type Database = {
           stripe_customer_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "organizations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "organizations_owner_id_fkey"
             columns: ["owner_id"]
@@ -564,6 +619,13 @@ export type Database = {
             foreignKeyName: "platform_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "platform_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -618,6 +680,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "truth_memos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_artifacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "published_artifacts_user_id_fkey"
@@ -729,6 +798,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "research_items_user_id_fkey"
@@ -913,6 +989,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "investment_themes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulation_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "simulation_runs_user_id_fkey"
@@ -1180,6 +1263,13 @@ export type Database = {
             foreignKeyName: "truth_memos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "truth_memos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1336,6 +1426,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          tier: string
           updated_at: string
         }
         Insert: {
@@ -1344,6 +1435,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          tier?: string
           updated_at?: string
         }
         Update: {
@@ -1352,6 +1444,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          tier?: string
           updated_at?: string
         }
         Relationships: []
@@ -1417,6 +1510,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "watchlists_user_id_fkey"
@@ -1535,6 +1635,13 @@ export type Database = {
             foreignKeyName: "workflow_items_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "workflow_items_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1558,6 +1665,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "truth_memos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_metrics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "workflow_items_user_id_fkey"
@@ -1597,7 +1711,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_user_metrics: {
+        Row: {
+          audit_event_count: number | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          is_admin: boolean | null
+          last_login_at: string | null
+          login_count: number | null
+          memo_count: number | null
+          research_count: number | null
+          simulation_count: number | null
+          tier: string | null
+          user_id: string | null
+          watchlist_count: number | null
+          workflow_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
