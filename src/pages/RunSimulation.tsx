@@ -1,12 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Check, Info, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, Check, Info, ShieldAlert, ShieldCheck, Cpu } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 import PciCommandCenter from "@/components/phaos/PciCommandCenter";
+import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
+import { useEntitlements, type Tier } from "@/hooks/useEntitlements";
+import type { QuantumPlan } from "@/lib/quantumAudit";
+
+const tierToQuantumPlan = (tier: Tier): QuantumPlan | null => {
+  switch (tier) {
+    case "sunesis": return "core";
+    case "aion": return "pro";
+    case "kyrios":
+    case "phaos_one":
+    case "pantheon":
+      return "elite";
+    default: return null;
+  }
+};
 
 type AssetClass =
   | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
