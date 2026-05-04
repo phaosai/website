@@ -148,8 +148,6 @@ const RunSimulation = () => {
   const [liveLedger, setLiveLedger] = useState<LedgerLine[]>([]);
   const [result, setResult] = useState<SimResult | null>(null);
   const [quantumOpen, setQuantumOpen] = useState(false);
-  const entitlements = useEntitlements();
-  const quantumPlan = tierToQuantumPlan(entitlements.tier);
 
   const activeType = useMemo(() => allTypes.find((t) => t.value === investmentType) ?? allTypes[0], [investmentType]);
   const canRun = ticker.trim().length >= 1 && selectedPlatforms.length > 0;
