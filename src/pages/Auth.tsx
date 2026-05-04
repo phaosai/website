@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/SEOHead";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import phaosCrown from "@/assets/phaos-crown-transparent.png";
+import phaosFullLogo from "@/assets/phaos-full-logo.png";
 
 type Mode = "signup" | "signin";
 
