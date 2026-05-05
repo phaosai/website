@@ -324,11 +324,28 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Foundry admin bypass: brain-forge runs are not consumer audits and
+      // must not be gated by subscription tier or monthly allowance.
+      const isFoundryScope = ["subbrain", "synthesis", "year-audit"].includes(String(investmentType));
+      let isAdmin = false;
+      if (isFoundryScope) {
+        const { data: roleRow } = await svc
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        isAdmin = !!roleRow;
+      }
+      const bypass = isFoundryScope && isAdmin;
+
       const ent = await buildEntitlement(svc, user.id);
-      if (!ent.eligible) return json(403, { error: "Plan does not include Quantum Audit", entitlement: ent });
+      if (!bypass && !ent.eligible) {
+        return json(403, { error: "Plan does not include Quantum Audit", entitlement: ent });
+      }
 
       let usedAddon = false;
-      if (ent.remaining <= 0) {
+      if (!bypass && ent.remaining <= 0) {
         const ok = await consumeAddonCredit(svc, user.id);
         if (!ok) return json(402, { error: "No remaining runs or add-on credits", entitlement: ent });
         usedAddon = true;

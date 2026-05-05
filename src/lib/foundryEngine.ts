@@ -124,6 +124,7 @@ export async function runQuantumStage(args: {
       },
     });
     if (error) throw error;
+    if (data?.error) throw new Error(data.error);
     const sim = String(data?.backend ?? "").includes("simulator");
     return {
       ran: true,
