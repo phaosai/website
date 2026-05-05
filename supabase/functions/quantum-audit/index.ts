@@ -191,12 +191,35 @@ async function ibmGetIamToken(): Promise<string | null> {
         apikey: IBM_API_KEY,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`IBM IAM token exchange failed (${res.status})${body ? `: ${body.slice(0, 240)}` : ""}`);
+    }
     const json = await res.json();
     return json.access_token ?? null;
-  } catch {
+  } catch (err) {
+    console.error("ibmGetIamToken", err);
     return null;
   }
+}
+
+async function ibmChooseBackend(token: string): Promise<string> {
+  const preferred = Deno.env.get("IBM_QUANTUM_BACKEND")?.trim();
+  if (preferred) return preferred;
+
+  const res = await ibmRuntimeRequest(token, "/backends");
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`IBM backend discovery failed (${res.status})${body ? `: ${body.slice(0, 240)}` : ""}`);
+  }
+  const json = await res.json();
+  const backends = Array.isArray(json) ? json : Array.isArray(json?.backends) ? json.backends : [];
+  const names = backends
+    .map((b: any) => typeof b === "string" ? b : b?.name ?? b?.backend_name)
+    .filter((name: unknown): name is string => typeof name === "string" && name.length > 0);
+  const qpu = names.find((name) => name.startsWith("ibm_"));
+  if (!qpu) throw new Error("IBM returned no accessible QPU backend for this CRN");
+  return qpu;
 }
 
 async function ibmSubmitWorkload(payload: Record<string, unknown>): Promise<IbmSubmitResult> {
