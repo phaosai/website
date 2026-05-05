@@ -86,10 +86,11 @@ export default function FoundryAdmin() {
     let qMessage: string | undefined;
     let qUsed = false;
     if (quantumToggles[id]) {
+      announceQuantum(`Sub-brain vetting · ${ASSET_CLASSES.find((c) => c.id === id)?.label}`);
       const out = await runQuantumStage({ scope: "subbrain", label: id });
       qMessage = out.message;
       qUsed = out.ran;
-      toast({ title: `Quantum vetting · ${ASSET_CLASSES.find((c) => c.id === id)?.label}`, description: out.message });
+      toast({ title: `⚛︎ Quantum result · ${ASSET_CLASSES.find((c) => c.id === id)?.label}`, description: out.message });
     } else {
       qMessage = "Quantum vetting skipped (toggle off) — sub-brain trained classically only.";
       toast({ title: "Quantum vetting skipped", description: qMessage });
