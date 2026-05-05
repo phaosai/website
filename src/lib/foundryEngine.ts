@@ -249,6 +249,8 @@ export function runYearForBrain(args: {
 }
 
 
+// ---------- Quantum helpers (reuses quantum-audit edge fn) ----------
+
 export interface QuantumReport {
   id: string;
   scope: "subbrain" | "synthesis" | "year-audit";
