@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { PageShell, PCITierBadge, EmptyCard, Disclaimer } from "@/components/app/PageShell";
-import { SunesisModuleNav } from "@/components/phaos";
+import { SunesisModuleNav, SunesisMoatStrip } from "@/components/phaos";
 
 interface Row {
   id: string;
@@ -91,6 +91,7 @@ export default function SunesisResearch() {
       minTier="sunesis"
     >
       <SunesisModuleNav />
+      <SunesisMoatStrip />
       <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -129,7 +130,20 @@ export default function SunesisResearch() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="rounded-xl border border-border overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 p-3 border-b border-border last:border-0 animate-pulse"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="h-3 w-14 rounded bg-muted/40" />
+              <div className="h-3 flex-1 rounded bg-muted/30" />
+              <div className="h-3 w-16 rounded bg-muted/30" />
+              <div className="h-3 w-10 rounded bg-muted/40" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <EmptyCard>
           No research items in your organization yet. Search a ticker above or run a simulation to seed a record.
