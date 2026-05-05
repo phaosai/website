@@ -861,6 +861,7 @@ export type Database = {
           ibm_backend: string | null
           ibm_workload_id: string | null
           id: string
+          idempotency_key: string | null
           plan_name: string
           raw_result_metadata: Json | null
           result_summary: string | null
@@ -883,6 +884,7 @@ export type Database = {
           ibm_backend?: string | null
           ibm_workload_id?: string | null
           id?: string
+          idempotency_key?: string | null
           plan_name: string
           raw_result_metadata?: Json | null
           result_summary?: string | null
@@ -905,6 +907,7 @@ export type Database = {
           ibm_backend?: string | null
           ibm_workload_id?: string | null
           id?: string
+          idempotency_key?: string | null
           plan_name?: string
           raw_result_metadata?: Json | null
           result_summary?: string | null
