@@ -77,6 +77,7 @@ const PantheonTeam = lazy(() => import("./pages/app/pantheon/PantheonTeam.tsx"))
 const PantheonLogos = lazy(() => import("./pages/app/pantheon/PantheonLogos.tsx"));
 const PantheonAudit = lazy(() => import("./pages/app/pantheon/PantheonAudit.tsx"));
 const PantheonEntities = lazy(() => import("./pages/app/pantheon/PantheonEntities.tsx"));
+const FoundryAdmin = lazy(() => import("./pages/app/foundry/FoundryAdmin.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -183,7 +184,7 @@ const AppInner = () => {
               <Route path="sunesis/workflow" element={<SunesisWorkflow />} />
               <Route path="sunesis/compliance" element={<SunesisCompliance />} />
               <Route path="sunesis/ledger" element={<SunesisLedger />} />
-              <Route path="foundry" element={<AppSection title="Foundry" description="Build and organize Phaos operating assets." minTier="free" emptyState="The Foundry workspace is ready." />} />
+              <Route path="foundry" element={<FoundryAdmin />} />
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
