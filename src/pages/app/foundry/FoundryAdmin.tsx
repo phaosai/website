@@ -61,6 +61,17 @@ export default function FoundryAdmin() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [promoteName, setPromoteName] = useState("");
   const [promoteConfirm, setPromoteConfirm] = useState("");
+  const [reports, setReports] = useState<QuantumReport[]>(() => loadReports());
+  const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
+
+  function recordReport(r: QuantumReport) {
+    setReports((prev) => {
+      const next = [r, ...prev].slice(0, 100);
+      saveReports(next);
+      return next;
+    });
+    setOpenReport(r);
+  }
 
   // Persist forge state on every change.
   useEffect(() => { saveForgeState(state); }, [state]);
