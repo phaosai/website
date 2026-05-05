@@ -106,6 +106,10 @@ export const FormulaMethodologyPanel = ({
         for public data. This is not a direct implementation of the full academic formulas, which
         require institutional data infrastructure.
       </p>
+      <p className="mt-2 text-[11px] text-foreground/70 border-l-2 border-purple-deep/50 pl-3 leading-relaxed">
+        Powered by the same families of quantitative thinking that sit behind institutional
+        research — distilled from public data and presented with uncommon transparency.
+      </p>
     </>
   );
 
