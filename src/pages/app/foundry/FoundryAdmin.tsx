@@ -120,9 +120,18 @@ export default function FoundryAdmin() {
     toast({ title: "Regime classifier locked", description: "5-state regime labels for 2006–2010 generated." });
   }
 
+  // Honest, prominent alert before any quantum invocation.
+  function announceQuantum(label: string) {
+    toast({
+      title: "⚛︎ Quantum computing engaged",
+      description: `${label} — submitting workload to IBM Quantum (with internal-simulator fallback if credentials are not detected). You'll be notified of the exact backend used.`,
+    });
+  }
+
   // ---------- Stage 3: unified quantum synthesis ----------
   async function runSynthesis() {
     setState((prev) => ({ ...prev, synthesis: { status: "running" } }));
+    announceQuantum("Stage 3 unified synthesis (Original Brain + 6 sub-brains + regime layer)");
     const out = await runQuantumStage({ scope: "synthesis", label: "unified-2006-2010" });
     await new Promise((r) => setTimeout(r, 1000));
     setState((prev) => recomputeGates({
@@ -133,7 +142,7 @@ export default function FoundryAdmin() {
         methodology: `Combined brain weights derived via quantum-assisted regression over ${ASSET_CLASSES.length} sub-brains × 5 regime states. ${out.message}`,
       },
     }));
-    toast({ title: "Unified synthesis complete", description: out.message });
+    toast({ title: "⚛︎ Quantum result · Unified synthesis", description: out.message });
   }
 
   // ---------- Stage 4: validate a year ----------
@@ -144,8 +153,9 @@ export default function FoundryAdmin() {
     }));
     await new Promise((r) => setTimeout(r, 1200));
     if (withQuantum) {
+      announceQuantum(`Year ${year} annual audit`);
       const out = await runQuantumStage({ scope: "year-audit", label: `audit-${year}` });
-      toast({ title: `Quantum audit · ${year}`, description: out.message });
+      toast({ title: `⚛︎ Quantum result · ${year} audit`, description: out.message });
     }
     const baseOriginal = 78 + Math.random() * 6;
     const baseAdditive = 88 + Math.random() * 5;
