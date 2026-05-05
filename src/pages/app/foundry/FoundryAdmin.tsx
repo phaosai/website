@@ -109,6 +109,10 @@ export default function FoundryAdmin() {
       toast({ title: "Quantum vetting skipped", description: qMessage });
     }
 
+    // PCI tier-match accuracy = how often this sub-brain's predicted PCI
+    // lands in the same designation tier as the canonical pciData score.
+    const acc = pciTierMatchAccuracy({ samples: 800, noise: qUsed ? 4 : 7 });
+
     setState((prev) => recomputeGates({
       ...prev,
       subBrains: {
@@ -119,7 +123,7 @@ export default function FoundryAdmin() {
           quantumUsed: qUsed,
           quantumMessage: qMessage,
           completedAt: new Date().toISOString(),
-          accuracy: 92 + Math.random() * 4,
+          accuracy: acc.tierMatchPct,
         },
       },
     }));
