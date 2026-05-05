@@ -90,15 +90,43 @@ export interface SubBrainState {
   accuracy?: number;       // simulated in-sample 2006–2010
 }
 
+export type BrainKey = "original" | "additive" | "combined";
+
+export interface BrainPrediction {
+  // PCI assigned on Jan 1 — strictly using only information available on that date.
+  jan1Pci: number;
+  // What actually happened across the year (price/return PCI realized at Dec 31).
+  dec31RealizedPci: number;
+  // Per-asset accuracy = 100 − |jan1Pci − dec31RealizedPci|. 100 = perfect.
+  accuracy: number;
+}
+
+export interface BrainYearResult {
+  brain: BrainKey;
+  // Average accuracy across all asset-class predictions for the year.
+  brainScore: number;
+  meanAbsError: number;
+  // Sample of per-asset predictions used in the post-mortem table.
+  predictions: { assetClass: AssetClassId; symbol: string; jan1Pci: number; dec31RealizedPci: number; accuracy: number }[];
+  // Misses the brain learned from this year (drives next-year noise reduction).
+  postMortem: string[];
+}
+
 export interface YearScore {
   year: number;
   status: "locked" | "ready" | "running" | "scored";
+  // Phase tracker so the UI can prove integrity (no peeking forward).
+  phase?: "idle" | "jan1_blind" | "year_unfolding" | "dec31_scoring" | "post_mortem" | "complete";
+  // Final brain scores (0–100). Same numbers used in the year buttons.
   original?: number;
   additive?: number;
   combined?: number;
+  // Full per-brain breakdown captured during the run.
+  results?: BrainYearResult[];
   quantumAudited?: boolean;
   notes?: string;
 }
+
 
 export interface ForgeState {
   subBrains: Record<AssetClassId, SubBrainState>;
