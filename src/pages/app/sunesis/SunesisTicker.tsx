@@ -248,6 +248,25 @@ export default function SunesisTicker() {
             </div>
           </section>
 
+          {/* Linked research — cross-module glue */}
+          <section className="rounded-md border border-border bg-card/40 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Linked research</p>
+            <div className="flex gap-2 flex-wrap">
+              <Link to={linkToLedger({ ticker: item.ticker })} className="text-xs text-purple-deep hover:underline">
+                Open in Truth Ledger →
+              </Link>
+              <Link to={linkToSandbox({ mode: "earnings-gap", ticker: item.ticker })} className="text-xs text-purple-deep hover:underline">
+                Earnings gap sandbox →
+              </Link>
+              <Link to={linkToSandbox({ mode: "vol-regime", ticker: item.ticker })} className="text-xs text-purple-deep hover:underline">
+                Vol regime sandbox →
+              </Link>
+              <Link to={linkToSandbox({ mode: "macro-shock", ticker: item.ticker })} className="text-xs text-purple-deep hover:underline">
+                Macro shock sandbox →
+              </Link>
+            </div>
+          </section>
+
           {/* Truth Ledger — replaces shallow result description */}
           <TruthLedgerPanel
             entries={ledgerEntries}
