@@ -47,14 +47,17 @@ export function TruthLedgerPanel({
   const density = DENSITY_META[evidenceDensity];
 
   return (
-    <section className="rounded-xl border border-border bg-card/50 overflow-hidden">
-      <header className="flex items-center justify-between gap-3 flex-wrap p-4 border-b border-border bg-muted/20">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-purple-deep/15 flex items-center justify-center">
+    <section className="rounded-xl border border-border bg-card/50 overflow-hidden shadow-[0_1px_0_0_hsl(var(--border))_inset,0_30px_60px_-30px_hsl(var(--primary)/0.15)]">
+      <header className="flex items-center justify-between gap-3 flex-wrap p-4 border-b border-border bg-gradient-to-r from-muted/30 via-muted/10 to-transparent">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-purple-deep/15 flex items-center justify-center ring-1 ring-purple-deep/20">
             <FileText className="w-4 h-4 text-purple-deep" />
           </div>
           <div>
-            <p className="text-sm font-semibold">Truth Ledger</p>
+            <p className="text-sm font-semibold flex items-center gap-2">
+              Truth Ledger
+              <span className="text-[9px] uppercase tracking-[0.18em] text-purple-deep/80 font-mono">append-only</span>
+            </p>
             <p className="text-[11px] text-muted-foreground">
               Forensic record of every signal, source, and contradiction reviewed.
             </p>
@@ -75,22 +78,27 @@ export function TruthLedgerPanel({
         </ol>
       )}
 
-      <footer className="flex items-center justify-end gap-2 flex-wrap p-3 border-t border-border bg-muted/10">
-        {onSaveWorkflow && (
-          <Button size="sm" variant="ghost" onClick={onSaveWorkflow}>
-            <Save className="w-3.5 h-3.5 mr-1" /> Save to Workflow
-          </Button>
-        )}
-        {onGenerateMemo && (
-          <Button size="sm" variant="outline" onClick={onGenerateMemo}>
-            <FileText className="w-3.5 h-3.5 mr-1" /> Generate Truth Memo
-          </Button>
-        )}
-        {onGenerateReceipt && (
-          <Button size="sm" onClick={onGenerateReceipt} disabled={!receiptEnabled}>
-            <FileCheck2 className="w-3.5 h-3.5 mr-1" /> Generate Audit Receipt
-          </Button>
-        )}
+      <footer className="flex items-center justify-between gap-2 flex-wrap p-3 border-t border-border bg-muted/10">
+        <p className="text-[10px] text-muted-foreground/70 font-mono uppercase tracking-wider">
+          {entries.length} entries · session sealed
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {onSaveWorkflow && (
+            <Button size="sm" variant="ghost" onClick={onSaveWorkflow}>
+              <Save className="w-3.5 h-3.5 mr-1" /> Save to Workflow
+            </Button>
+          )}
+          {onGenerateMemo && (
+            <Button size="sm" variant="outline" onClick={onGenerateMemo}>
+              <FileText className="w-3.5 h-3.5 mr-1" /> Generate Truth Memo
+            </Button>
+          )}
+          {onGenerateReceipt && (
+            <Button size="sm" onClick={onGenerateReceipt} disabled={!receiptEnabled}>
+              <FileCheck2 className="w-3.5 h-3.5 mr-1" /> Generate Audit Receipt
+            </Button>
+          )}
+        </div>
       </footer>
     </section>
   );
@@ -102,7 +110,10 @@ function LedgerRow({ entry, index }: { entry: LedgerEntry; index: number }) {
   const { Icon, color } = meta;
 
   return (
-    <li className="hover:bg-muted/20 transition-colors">
+    <li
+      className="hover:bg-muted/20 transition-colors animate-ledger-reveal"
+      style={{ animationDelay: `${Math.min(index * 60, 600)}ms` }}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full text-left flex items-start gap-3 p-3"
@@ -130,7 +141,7 @@ function LedgerRow({ entry, index }: { entry: LedgerEntry; index: number }) {
         )}
       </button>
       {open && entry.detail && (
-        <div className="px-3 pb-3 pl-[60px] text-[11px] text-muted-foreground border-l-2 border-purple-deep/20 ml-[34px]">
+        <div className="px-3 pb-3 pl-[60px] text-[11px] text-muted-foreground border-l-2 border-purple-deep/20 ml-[34px] animate-fade-in">
           {entry.detail}
         </div>
       )}
