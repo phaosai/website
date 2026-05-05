@@ -77,6 +77,7 @@ const PantheonTeam = lazy(() => import("./pages/app/pantheon/PantheonTeam.tsx"))
 const PantheonLogos = lazy(() => import("./pages/app/pantheon/PantheonLogos.tsx"));
 const PantheonAudit = lazy(() => import("./pages/app/pantheon/PantheonAudit.tsx"));
 const PantheonEntities = lazy(() => import("./pages/app/pantheon/PantheonEntities.tsx"));
+const FoundryAdmin = lazy(() => import("./pages/app/foundry/FoundryAdmin.tsx"));
 
 const queryClient = new QueryClient();
 
