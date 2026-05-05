@@ -1,8 +1,55 @@
 // Foundry brain-forge state machine (front-end MVP).
-// Stages cannot be skipped. State is in-memory for this iteration; will be
-// promoted to a `foundry_engines` / `foundry_runs` table in a follow-up.
+// Stages cannot be skipped. State persists to localStorage so a reload doesn't
+// wipe progress; call `clearForgeState()` to reset the entire forge.
 
 import { supabase } from "@/integrations/supabase/client";
+import { pciData, getPciColorClass } from "@/constants/pciData";
+
+const STORAGE_KEY = "phaos.foundry.forge.v2";
+
+export function loadForgeState(): ForgeState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) as ForgeState : null;
+  } catch { return null; }
+}
+export function saveForgeState(s: ForgeState) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+export function clearForgeState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+}
+
+// ---------- PCI tier-match scoring ----------
+// "Accuracy of the foundry brain" = how often the brain's predicted PCI score
+// lands in the same designation tier (5-tier color band) as the ground-truth
+// PCI score for the same entity in the same year. This uses pciData as the
+// canonical PCI taxonomy.
+function tierBand(score: number): string {
+  return getPciColorClass(score).text;
+}
+export function pciTierMatchAccuracy(opts: {
+  samples: number;
+  noise: number;          // mean absolute prediction error in PCI points
+  bias?: number;          // systematic offset
+}): { tierMatchPct: number; meanAbsError: number; sampleN: number } {
+  const { samples, noise, bias = 0 } = opts;
+  let matches = 0;
+  let absErrSum = 0;
+  for (let i = 0; i < samples; i++) {
+    const truth = pciData[Math.floor(Math.random() * pciData.length)].score;
+    const err = (Math.random() - 0.5) * 2 * noise + bias;
+    const pred = Math.max(1, Math.min(100, Math.round(truth + err)));
+    absErrSum += Math.abs(truth - pred);
+    if (tierBand(truth) === tierBand(pred)) matches++;
+  }
+  return {
+    tierMatchPct: +((matches / samples) * 100).toFixed(2),
+    meanAbsError: +(absErrSum / samples).toFixed(2),
+    sampleN: samples,
+  };
+}
+
 
 export type AssetClassId =
   | "equities"
