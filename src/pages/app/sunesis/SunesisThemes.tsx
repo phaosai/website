@@ -1,17 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ArrowRight, AlertCircle } from "lucide-react";
+import { ChevronDown, ArrowRight, AlertCircle, Wand2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageShell, Disclaimer, EmptyCard } from "@/components/app/PageShell";
-import { FeatureStatusBadge, SignalCategoryBadge } from "@/components/phaos";
+import {
+  FeatureStatusBadge,
+  SignalCategoryBadge,
+  ThemeLifecycleBadge,
+  ThemePCIRangeBar,
+  ThemeBreakConditions,
+  HistoricalAnalogChips,
+} from "@/components/phaos";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SEED_THEMES, type SeedTheme } from "@/data/themes";
+import { SEED_THEMES, type SeedTheme, type ThemeFreshness } from "@/data/themes";
 import { fetchTickerPCIs, type TickerPCI } from "@/lib/themes";
 
 function pciColor(score: number | null) {
