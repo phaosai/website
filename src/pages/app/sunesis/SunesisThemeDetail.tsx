@@ -237,9 +237,17 @@ export default function SunesisThemeDetail() {
           </section>
         )}
 
-        <section className="rounded-xl border border-border bg-card/50 p-5">
-          <h2 className="text-sm font-semibold mb-2">What Could Break This Theme</h2>
+        <section className="rounded-xl border border-border bg-card/50 p-5 space-y-3">
+          <h2 className="text-sm font-semibold">What Could Break This Theme</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{theme.counter_thesis}</p>
+          <div className="flex gap-2 flex-wrap pt-1">
+            <Link to={`/app/sunesis/sandbox?mode=theme-breakage&theme=${theme.id}`} className="text-xs text-purple-deep hover:underline">
+              Run in Scenario Sandbox →
+            </Link>
+            <Link to={`/app/sunesis/ledger?theme=${theme.id}`} className="text-xs text-purple-deep hover:underline">
+              Open in Truth Ledger →
+            </Link>
+          </div>
         </section>
 
         <FormulaMethodologyPanel

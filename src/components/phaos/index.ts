@@ -21,3 +21,19 @@ export { LockedFeatureTile } from "./LockedFeatureTile";
 export { ScenarioControlPanel } from "./ScenarioControlPanel";
 export { TruthLedgerEntry } from "./TruthLedgerEntry";
 export { SunesisMoatStrip } from "./SunesisMoatStrip";
+
+// Themes layer
+export { ThemeLifecycleBadge } from "./themes/ThemeLifecycleBadge";
+export { ThemePCIRangeBar } from "./themes/ThemePCIRangeBar";
+export { ThemeBreakConditions } from "./themes/ThemeBreakConditions";
+export { HistoricalAnalogChips } from "./themes/HistoricalAnalogChips";
+
+// Scenario sandbox
+export { RangeOutput } from "./sandbox/RangeOutput";
+export { MethodologyNote } from "./sandbox/MethodologyNote";
+export { PCIContextStrip } from "./sandbox/PCIContextStrip";
+export { EarningsGapPanel } from "./sandbox/EarningsGapPanel";
+export { VolRegimePanel } from "./sandbox/VolRegimePanel";
+export { MacroShockPanel } from "./sandbox/MacroShockPanel";
+export { ThemeBreakageSimulator } from "./sandbox/ThemeBreakageSimulator";
+export { HistoricalAnalogMapper } from "./sandbox/HistoricalAnalogMapper";
