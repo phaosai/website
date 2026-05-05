@@ -172,6 +172,7 @@ export default function FoundryAdmin() {
     setState((prev) => ({ ...prev, synthesis: { status: "running" } }));
     announceQuantum("Stage 3 unified synthesis (Original Brain + 6 sub-brains + regime layer)");
     const out = await runQuantumStage({ scope: "synthesis", label: "unified-2006-2010" });
+    recordReport(out.report);
     await new Promise((r) => setTimeout(r, 1000));
     // Combined brain absorbs all sub-brains → tighter PCI tier matching.
     const acc = pciTierMatchAccuracy({ samples: 1500, noise: out.ran && !out.simulator ? 1.6 : 2.4 });
