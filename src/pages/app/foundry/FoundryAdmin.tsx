@@ -21,7 +21,8 @@ import {
   ASSET_CLASSES, AssetClassId, PIPELINE_STEPS, VALIDATION_YEARS,
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
-  type QuantumReport,
+  runYearForBrain, ASSET_SAMPLE_COUNT,
+  type QuantumReport, type BrainKey,
 } from "@/lib/foundryEngine";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
