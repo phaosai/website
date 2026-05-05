@@ -218,9 +218,30 @@ export default function FoundryAdmin() {
               <p className="text-sm text-muted-foreground">Build, validate, name, version, and promote the engine that runs Phaos Sunesis.</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Live engine:</span>
-            <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">Sunesis Brain v0.9 "Origin"</Badge>
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Live engine:</span>
+              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">Sunesis Brain v0.9 "Origin"</Badge>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <RotateCcw className="size-3" /> Reset Foundry
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset the entire Foundry?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Clears every sub-brain, the regime classifier, the unified synthesis, and all annual validation scores. The live Sunesis engine is NOT affected. You'll start over from Stage 1.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetForge}>Reset everything</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
