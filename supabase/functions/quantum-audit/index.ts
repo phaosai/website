@@ -28,10 +28,32 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 // Credential names — support both standardized and project-existing names.
-const IBM_API_KEY =
-  Deno.env.get("IBM_QUANTUM_API_KEY") || Deno.env.get("IBM_Quantum_API") || "";
-const IBM_CRN =
-  Deno.env.get("IBM_QUANTUM_INSTANCE_CRN") || Deno.env.get("IBM_Quantum_CRN") || "";
+const IBM_API_KEY = (
+  Deno.env.get("IBM_QUANTUM_API_KEY") || Deno.env.get("IBM_Quantum_API") || ""
+).trim();
+const IBM_CRN = (
+  Deno.env.get("IBM_QUANTUM_INSTANCE_CRN") || Deno.env.get("IBM_Quantum_CRN") || ""
+).trim();
+const IBM_API_VERSION = "2026-03-15";
+
+function quantumApiBaseFromCrn(crn: string): string {
+  const region = crn.split(":")[5] ?? "";
+  return region === "eu-de" ? "https://eu-de.quantum.cloud.ibm.com/api/v1" : "https://quantum.cloud.ibm.com/api/v1";
+}
+
+async function ibmRuntimeRequest(token: string, path: string, init: RequestInit = {}) {
+  return fetch(`${quantumApiBaseFromCrn(IBM_CRN)}${path}`, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+      "Service-CRN": IBM_CRN,
+      "IBM-API-Version": IBM_API_VERSION,
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+}
 
 // =====================================================================
 // quantumUsageService
