@@ -45,13 +45,25 @@ function StagePill({ n, label, active, done }: { n: number; label: string; activ
 }
 
 export default function FoundryAdmin() {
-  const [state, setState] = useState<ForgeState>(() => recomputeGates(initialForgeState()));
+  const [state, setState] = useState<ForgeState>(() => recomputeGates(loadForgeState() ?? initialForgeState()));
   const [quantumToggles, setQuantumToggles] = useState<Record<AssetClassId, boolean>>(
     () => ASSET_CLASSES.reduce((a, c) => ({ ...a, [c.id]: true }), {} as Record<AssetClassId, boolean>),
   );
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [promoteName, setPromoteName] = useState("");
   const [promoteConfirm, setPromoteConfirm] = useState("");
+
+  // Persist forge state on every change.
+  useEffect(() => { saveForgeState(state); }, [state]);
+
+  function resetForge() {
+    clearForgeState();
+    setState(recomputeGates(initialForgeState()));
+    setSelectedYear(null);
+    setPromoteName("");
+    setPromoteConfirm("");
+    toast({ title: "Foundry reset", description: "All sub-brains, regime, synthesis, and annual scores cleared. Start over from Stage 1." });
+  }
 
   const lockedCount = useMemo(
     () => ASSET_CLASSES.filter((c) => state.subBrains[c.id].status === "locked").length,
