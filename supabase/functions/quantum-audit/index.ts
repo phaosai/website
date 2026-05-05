@@ -296,9 +296,32 @@ Deno.serve(async (req) => {
 
     // -------- CREATE --------
     if (action === "create") {
-      const { ticker, investmentType, platforms, simulationMode } = body ?? {};
+      const { ticker, investmentType, platforms, simulationMode, idempotencyKey } = body ?? {};
       if (!ticker || !investmentType || !Array.isArray(platforms) || platforms.length === 0) {
         return json(400, { error: "Missing required fields" });
+      }
+
+      // Idempotency: short-circuit on duplicate submissions for the same key.
+      const idemKey = typeof idempotencyKey === "string" && idempotencyKey.length > 0
+        ? idempotencyKey.slice(0, 80)
+        : null;
+      if (idemKey) {
+        const { data: existing } = await svc
+          .from("quantum_audits")
+          .select("id, ibm_workload_id, ibm_backend, status, used_addon")
+          .eq("user_id", user.id)
+          .eq("idempotency_key", idemKey)
+          .maybeSingle();
+        if (existing) {
+          return json(200, {
+            auditId: (existing as any).id,
+            workloadId: (existing as any).ibm_workload_id,
+            backend: (existing as any).ibm_backend,
+            status: (existing as any).status,
+            usedAddon: !!(existing as any).used_addon,
+            idempotent: true,
+          });
+        }
       }
 
       const ent = await buildEntitlement(svc, user.id);
@@ -323,9 +346,31 @@ Deno.serve(async (req) => {
           simulation_input_snapshot: { simulationMode: simulationMode ?? "Normalized Simulation" },
           status: "queued",
           used_addon: usedAddon,
+          idempotency_key: idemKey,
         })
         .select()
         .single();
+
+      // If idempotency unique violation occurred (race), return existing
+      if (insertErr && idemKey && (insertErr as any).code === "23505") {
+        if (usedAddon) await restoreAddonCredit(svc, user.id);
+        const { data: existing } = await svc
+          .from("quantum_audits")
+          .select("id, ibm_workload_id, ibm_backend, status, used_addon")
+          .eq("user_id", user.id)
+          .eq("idempotency_key", idemKey)
+          .maybeSingle();
+        if (existing) {
+          return json(200, {
+            auditId: (existing as any).id,
+            workloadId: (existing as any).ibm_workload_id,
+            backend: (existing as any).ibm_backend,
+            status: (existing as any).status,
+            usedAddon: !!(existing as any).used_addon,
+            idempotent: true,
+          });
+        }
+      }
 
       if (insertErr || !inserted) {
         if (usedAddon) await restoreAddonCredit(svc, user.id);
