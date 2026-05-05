@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Microscope, Sparkles, ListChecks, FlaskConical, Workflow,
-  Users, ShieldAlert, Receipt, Settings, Lock, Crown,
+  Users, ShieldAlert, Receipt, Settings, Lock, Crown, Hammer,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -19,6 +19,7 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { title: "Command Center", url: "/app", icon: Home, min: "free" },
+  { title: "Foundry", url: "/app/foundry", icon: Hammer, min: "free" },
   { title: "Sunesis", url: "/app/sunesis", icon: Microscope, min: "sunesis" },
   { title: "Investment Themes", url: "/app/themes", icon: Sparkles, min: "sunesis" },
   { title: "Watchlists", url: "/app/watchlists", icon: ListChecks, min: "free" },
