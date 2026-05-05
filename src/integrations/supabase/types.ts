@@ -930,6 +930,7 @@ export type Database = {
           ibm_backend: string | null
           ibm_workload_id: string | null
           id: string
+          idempotency_key: string | null
           raw_result_metadata: Json | null
           result_summary: string | null
           selected_asset_type: string | null
@@ -951,6 +952,7 @@ export type Database = {
           ibm_backend?: string | null
           ibm_workload_id?: string | null
           id?: string
+          idempotency_key?: string | null
           raw_result_metadata?: Json | null
           result_summary?: string | null
           selected_asset_type?: string | null
@@ -972,6 +974,7 @@ export type Database = {
           ibm_backend?: string | null
           ibm_workload_id?: string | null
           id?: string
+          idempotency_key?: string | null
           raw_result_metadata?: Json | null
           result_summary?: string | null
           selected_asset_type?: string | null
@@ -2226,6 +2229,7 @@ export type Database = {
           ibm_backend: string | null
           ibm_workload_id: string | null
           id: string
+          idempotency_key: string | null
           raw_result_metadata: Json | null
           result_summary: string | null
           selected_asset_type: string | null
@@ -2365,6 +2369,7 @@ export type Database = {
           ibm_backend: string | null
           ibm_workload_id: string | null
           id: string
+          idempotency_key: string | null
           raw_result_metadata: Json | null
           result_summary: string | null
           selected_asset_type: string | null
