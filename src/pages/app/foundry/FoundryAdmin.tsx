@@ -21,7 +21,16 @@ import {
   ASSET_CLASSES, AssetClassId, PIPELINE_STEPS, VALIDATION_YEARS,
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
+  type QuantumReport,
 } from "@/lib/foundryEngine";
+
+const REPORTS_KEY = "phaos.foundry.qreports.v1";
+function loadReports(): QuantumReport[] {
+  try { return JSON.parse(localStorage.getItem(REPORTS_KEY) ?? "[]"); } catch { return []; }
+}
+function saveReports(r: QuantumReport[]) {
+  try { localStorage.setItem(REPORTS_KEY, JSON.stringify(r.slice(0, 100))); } catch { /* ignore */ }
+}
 
 const SIMULATED = (
   <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-400 text-[10px] uppercase tracking-wider">
