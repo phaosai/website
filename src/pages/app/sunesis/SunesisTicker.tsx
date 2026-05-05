@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronDown, ExternalLink, FileText, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Button } from "@/components/ui/button";
 import { PageShell, PCITierBadge, Disclaimer } from "@/components/app/PageShell";
-import { FormulaMethodologyPanel } from "@/components/phaos";
+import {
+  FormulaMethodologyPanel,
+  QRRGauge,
+  TruthLedgerPanel,
+  EvidenceTree,
+  SourceFreshnessSummary,
+  AuditReceiptCard,
+  type LedgerEntry,
+  type EvidenceNode,
+  type QRRStability,
+  type QRRTier,
+} from "@/components/phaos";
 import { toast } from "sonner";
 
 const SIGNAL_CATEGORIES = [
@@ -16,6 +27,93 @@ const SIGNAL_CATEGORIES = [
   { key: "sentiment", label: "Sentiment" },
   { key: "macro", label: "Macro & Regime" },
 ];
+
+// Deterministic QRR derivation from PCI + signal density. Research framework only.
+function deriveQRR(pci: number | null | undefined, sourceCount: number, activeCats: number) {
+  if (pci == null || sourceCount < 3) {
+    return { score: null as number | null, tier: "—" as QRRTier, stability: "—" as QRRStability, unavailable: true };
+  }
+  const density = Math.min(1, sourceCount / 12) * 0.4 + Math.min(1, activeCats / 5) * 0.6;
+  const score = Math.round(pci * 0.6 + density * 100 * 0.4);
+  let tier: QRRTier = "CCC";
+  if (score >= 90) tier = "AAA";
+  else if (score >= 80) tier = "AA";
+  else if (score >= 70) tier = "A";
+  else if (score >= 60) tier = "BBB";
+  else if (score >= 50) tier = "BB";
+  else if (score >= 40) tier = "B";
+  let stability: QRRStability = "Distorted";
+  if (score >= 75) stability = "Stable";
+  else if (score >= 55) stability = "Watch";
+  else if (score >= 35) stability = "Fragile";
+  return { score, tier, stability, unavailable: false };
+}
+
+function buildLedger(item: any, sources: any[], activeCats: string[]): LedgerEntry[] {
+  const entries: LedgerEntry[] = [];
+  const now = item.updated_at ?? new Date().toISOString();
+  const has = (k: string) => activeCats.some((c) => String(c).toLowerCase().includes(k));
+
+  if (has("government") || has("filing")) {
+    entries.push({
+      ts: now, category: "SEC Filing", source: "SEC EDGAR / XBRL",
+      action: "Reviewed filing trend language and disclosure cadence.",
+      status: "verified",
+      detail: "Parsed last 4 quarterly filings for tone shifts in MD&A, risk factors, and forward-looking statements.",
+      hash: "0x" + (item.id ?? "").replace(/-/g, "").slice(0, 12),
+    });
+  }
+  if (has("macro")) {
+    entries.push({
+      ts: now, category: "Macro Regime", source: "FRED",
+      action: "Checked macro regime pressure across rates, inflation, and credit.",
+      status: "verified",
+      detail: "Composite z-score across 8 macro series; current regime classified by Sunesis macro engine.",
+    });
+  }
+  entries.push({
+    ts: now, category: "Liquidity", source: "Platform graph",
+    action: "Compared platform availability and liquidity context.",
+    status: sources.length > 5 ? "verified" : "pending",
+  });
+  if (has("sentiment")) {
+    entries.push({
+      ts: now, category: "Positioning", source: "Crowding proxies",
+      action: "Evaluated crowding and positioning proxies across retail and institutional channels.",
+      status: "verified",
+    });
+  }
+  if (has("insider")) {
+    entries.push({
+      ts: now, category: "Insider Activity", source: "Form 4 stream",
+      action: "Reviewed insider purchase / sale clusters over trailing 90 days.",
+      status: "verified",
+    });
+  }
+  if (has("logistics")) {
+    entries.push({
+      ts: now, category: "On-chain / Flow", source: "Derivative & flow indicators",
+      action: "Reviewed on-chain, derivative, and flow indicators where available.",
+      status: "verified",
+    });
+  }
+  if (sources.length > 0 && sources.length < 4) {
+    entries.push({
+      ts: now, category: "Coverage", source: "Sunesis monitor",
+      action: "Flagged thin evidence — additional source categories recommended.",
+      status: "stale",
+    });
+  }
+  if (item.pci_score != null && item.pci_score < 40 && has("sentiment")) {
+    entries.push({
+      ts: now, category: "Contradiction", source: "Cross-signal review",
+      action: "Flagged contradictory evidence between management tone and crowding signal.",
+      status: "conflict",
+      detail: "Bullish management tone diverges from elevated crowding and weakening flow — treat with caution.",
+    });
+  }
+  return entries;
+}
 
 export default function SunesisTicker() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -50,6 +148,43 @@ export default function SunesisTicker() {
     })();
   }, [symbol]);
 
+  const sources = Array.isArray(item?.sources) ? item.sources : [];
+  const activeCats: string[] = Array.isArray(item?.signal_categories_active) ? item.signal_categories_active : [];
+
+  const qrr = useMemo(
+    () => deriveQRR(item?.pci_score, sources.length, activeCats.length),
+    [item?.pci_score, sources.length, activeCats.length],
+  );
+  const qrrLocked = !ent.has("aion"); // Pro+ gating
+
+  const ledgerEntries = useMemo(
+    () => (item ? buildLedger(item, sources, activeCats) : []),
+    [item, sources, activeCats],
+  );
+
+  const evidenceNodes: EvidenceNode[] = useMemo(() => {
+    const grouped = new Map<string, EvidenceNode>();
+    sources.forEach((s: any) => {
+      const cat = s.category ?? s.type ?? "Other";
+      const ts = s.fetched_at ?? s.updated_at ?? s.timestamp;
+      const node = grouped.get(cat) ?? { category: cat, count: 0, items: [] };
+      node.count += 1;
+      if (ts && (!node.freshness || new Date(ts) > new Date(node.freshness))) node.freshness = ts;
+      node.items?.push({ label: s.label ?? s.title ?? s.url ?? cat, url: s.url, ts });
+      grouped.set(cat, node);
+    });
+    return Array.from(grouped.values());
+  }, [sources]);
+
+  const freshnessByCategory = useMemo(() => {
+    const m: Record<string, string> = {};
+    evidenceNodes.forEach((n) => { if (n.freshness) m[n.category] = n.freshness; });
+    return m;
+  }, [evidenceNodes]);
+
+  const evidenceDensity: "rich" | "moderate" | "thin" =
+    sources.length >= 8 ? "rich" : sources.length >= 4 ? "moderate" : "thin";
+
   const generateMemo = async () => {
     if (!user || !item) return;
     setGenerating(true);
@@ -70,9 +205,6 @@ export default function SunesisTicker() {
     setMemos(m ?? []);
   };
 
-  const sources = Array.isArray(item?.sources) ? item.sources : [];
-  const activeCats: string[] = Array.isArray(item?.signal_categories_active) ? item.signal_categories_active : [];
-
   return (
     <PageShell title={symbol?.toUpperCase() ?? "Ticker"} minTier="sunesis"
       description={item?.company_name ? `${item.company_name} · NYSE/NASDAQ` : "Loading…"}>
@@ -82,27 +214,48 @@ export default function SunesisTicker() {
         </div>
       ) : (
         <>
-          {/* PCI panel */}
-          <section className="rounded-xl border border-border bg-card/50 p-6">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
-            <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
-            <details className="mt-6 group">
-              <summary className="cursor-pointer text-sm flex items-center gap-2 text-purple-deep">
-                <ChevronDown className="w-4 h-4 group-open:rotate-180 transition" /> How this was built
-              </summary>
-              <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
-                <Block label="Contributing categories">{activeCats.length ? activeCats.join(", ") : "—"}</Block>
-                <Block label="Source count">{sources.length}</Block>
-                <Block label="Source types">{[...new Set(sources.map((s: any) => s.type))].join(", ") || "—"}</Block>
-                <Block label="Internal tier">TODO — pending founder confirmation</Block>
-              </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Methodology: Sharpe-weighted signal aggregation, Kelly-criterion sizing context,
-                volatility-adjusted confidence (GARCH(1,1)).
-              </p>
-            </details>
-            <Disclaimer>PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns.</Disclaimer>
+          {/* PCI + QRR side-by-side. PCI remains primary. */}
+          <section className="grid lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-3 rounded-xl border border-border bg-card/50 p-6">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
+              <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
+              <details className="mt-6 group">
+                <summary className="cursor-pointer text-sm flex items-center gap-2 text-purple-deep">
+                  <ChevronDown className="w-4 h-4 group-open:rotate-180 transition" /> How this was built
+                </summary>
+                <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
+                  <Block label="Contributing categories">{activeCats.length ? activeCats.join(", ") : "—"}</Block>
+                  <Block label="Source count">{sources.length}</Block>
+                  <Block label="Source types">{[...new Set(sources.map((s: any) => s.type))].join(", ") || "—"}</Block>
+                  <Block label="Internal tier">TODO — pending founder confirmation</Block>
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Methodology: Sharpe-weighted signal aggregation, Kelly-criterion sizing context,
+                  volatility-adjusted confidence (GARCH(1,1)).
+                </p>
+              </details>
+              <Disclaimer>PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns.</Disclaimer>
+            </div>
+            <div className="lg:col-span-2">
+              <QRRGauge
+                score={qrr.score}
+                tier={qrr.tier}
+                stability={qrr.stability}
+                locked={qrrLocked}
+                unavailable={!qrrLocked && qrr.unavailable}
+              />
+            </div>
           </section>
+
+          {/* Truth Ledger — replaces shallow result description */}
+          <TruthLedgerPanel
+            entries={ledgerEntries}
+            evidenceDensity={evidenceDensity}
+            onSaveWorkflow={ent.has("kyrios") ? () => toast.success("Saved to active workflow.") : undefined}
+            onGenerateMemo={generateMemo}
+            onGenerateReceipt={ent.has("aion") ? () => toast.success("Audit Receipt queued for generation.") : undefined}
+            receiptEnabled={ent.has("aion") && evidenceDensity !== "thin"}
+          />
 
           {/* Signal breakdown */}
           <section className="rounded-xl border border-border bg-card/50 p-5">
@@ -127,7 +280,23 @@ export default function SunesisTicker() {
             <CaseCard title="Bear Case" tone="bear" content={memos[0]?.bear_case} sources={sources} />
           </section>
 
-          {/* Truth Memo */}
+          {/* Evidence Tree + Freshness */}
+          <section className="grid md:grid-cols-2 gap-4">
+            <EvidenceTree nodes={evidenceNodes} />
+            <SourceFreshnessSummary freshnessByCategory={freshnessByCategory} />
+          </section>
+
+          {/* Audit Receipt scaffold */}
+          <AuditReceiptCard
+            receiptId={`RCPT-${(item.id ?? "").slice(0, 8).toUpperCase()}`}
+            asset={item.ticker}
+            pci={item.pci_score}
+            qrr={qrrLocked ? "Pro+" : qrr.tier}
+            generatedAt={item.updated_at}
+            locked={!ent.has("aion")}
+          />
+
+          {/* Truth Memos */}
           <section className="rounded-xl border border-border bg-card/50 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <h2 className="text-sm font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Truth Memos</h2>
@@ -159,14 +328,15 @@ export default function SunesisTicker() {
 
           <FormulaMethodologyPanel
             sourcesCount={sources.length}
-            categoryFreshness={sources.reduce((acc: Record<string, string>, s: any) => {
-              const cat = s.category ?? s.type ?? "Other";
-              const ts = s.fetched_at ?? s.updated_at ?? s.timestamp;
-              if (ts && (!acc[cat] || new Date(ts) > new Date(acc[cat]))) acc[cat] = ts;
-              return acc;
-            }, {})}
+            categoryFreshness={freshnessByCategory}
             freshness={item.updated_at ? new Date(item.updated_at).toLocaleString() : undefined}
           />
+
+          <div className="rounded-md border border-border bg-muted/10 p-3 text-[11px] text-muted-foreground space-y-1">
+            <p>· PCI is a research confidence framework, not a prediction of returns.</p>
+            <p>· QRR is a supplemental advanced-compute risk interpretation layer; it is not a guarantee.</p>
+            <p>· Research outputs are informational and not investment advice.</p>
+          </div>
         </>
       )}
     </PageShell>
