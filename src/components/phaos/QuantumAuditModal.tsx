@@ -298,16 +298,27 @@ const QuantumAuditModal = ({
                   <div>
                     <p className="text-sm font-semibold">Included with Pro and Elite</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Upgrade to unlock advanced-compute audit workflows.
+                      Upgrade to unlock real advanced-compute audit workflows — or run a hypothetical preview now.
                     </p>
                   </div>
-                  <a
-                    href="/pricing"
-                    className="inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
-                  >
-                    Upgrade to access Quantum Audit
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={handleHypotheticalPreview}
+                      disabled={!ticker || platforms.length === 0}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-purple-deep/50 bg-purple-deep/10 text-foreground text-sm font-semibold px-5 py-2.5 hover:bg-purple-deep/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      <Cpu className="w-4 h-4 text-primary" />
+                      Run Hypothetical Quantum Preview
+                    </button>
+                    <a
+                      href="/pricing"
+                      className="inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
+                    >
+                      Upgrade for real audits
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                  </div>
                 </div>
               )}
 
