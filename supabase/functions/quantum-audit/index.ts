@@ -236,23 +236,36 @@ async function ibmSubmitWorkload(payload: Record<string, unknown>): Promise<IbmS
 
   const token = await ibmGetIamToken();
   if (!token) {
-    // Auth failed → graceful simulator fallback (do not leak details).
-    return {
-      workloadId: `qa_sim_${crypto.randomUUID()}`,
-      backend: "phaos_internal_simulator",
-      initialStatus: "queued",
-      simulated: true,
-    };
+    throw new Error("IBM IAM token exchange failed; verify IBM_Quantum_API is the exact IBM Cloud API key and has quantum-computing.job.create access");
   }
 
-  // NOTE: Real Qiskit Runtime program submission requires a serialized
-  // primitive program (Sampler/Estimator) which is not synthesized in this
-  // edge function. We acknowledge auth, register the audit, and use a
-  // hybrid validation pass on our side. This isolates IBM-specific
-  // execution so it can be swapped cleanly when Qiskit Runtime is wired.
+  const backend = await ibmChooseBackend(token);
+  const circuit = 'OPENQASM 3.0; include "stdgates.inc"; bit[1] c; h $0; c[0] = measure $0;';
+  const res = await ibmRuntimeRequest(token, "/jobs", {
+    method: "POST",
+    body: JSON.stringify({
+      program_id: "sampler",
+      backend,
+      tags: ["phaos-foundry", String(payload.investmentType ?? "quantum-audit")],
+      cost: 30,
+      private: true,
+      params: {
+        pubs: [[circuit]],
+        version: 2,
+        shots: 128,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`IBM Qiskit Runtime job submission failed (${res.status})${body ? `: ${body.slice(0, 300)}` : ""}`);
+  }
+  const job = await res.json();
+  if (!job?.id) throw new Error("IBM Qiskit Runtime did not return a job id");
+
   return {
-    workloadId: `qa_${crypto.randomUUID()}`,
-    backend: "ibm_quantum_runtime",
+    workloadId: job.id,
+    backend: job.backend ?? backend,
     initialStatus: "queued",
     simulated: false,
   };
