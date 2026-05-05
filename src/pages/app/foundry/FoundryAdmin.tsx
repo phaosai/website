@@ -197,8 +197,10 @@ export default function FoundryAdmin() {
     let qOut: { ran: boolean; simulator: boolean; message: string } | null = null;
     if (withQuantum) {
       announceQuantum(`Year ${year} annual audit`);
-      qOut = await runQuantumStage({ scope: "year-audit", label: `audit-${year}` });
-      toast({ title: `⚛︎ Quantum result · ${year} audit`, description: qOut.message });
+      const out = await runQuantumStage({ scope: "year-audit", label: `audit-${year}` });
+      qOut = out;
+      recordReport(out.report);
+      toast({ title: `⚛︎ Quantum result · ${year} audit`, description: out.message });
     }
     // Three brains scored independently against the canonical PCI taxonomy.
     const original = pciTierMatchAccuracy({ samples: 500, noise: 12, bias: -1 });
