@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { PageShell, PCITierBadge, EmptyCard, Disclaimer } from "@/components/app/PageShell";
+import { SunesisModuleNav } from "@/components/phaos";
 
 interface Row {
   id: string;
@@ -89,6 +90,7 @@ export default function SunesisResearch() {
       description="Source-grounded research across 60+ publicly accessible signal categories."
       minTier="sunesis"
     >
+      <SunesisModuleNav />
       <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

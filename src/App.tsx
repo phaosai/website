@@ -59,6 +59,11 @@ const SunesisResearch = lazy(() => import("./pages/app/sunesis/SunesisResearch.t
 const SunesisTicker = lazy(() => import("./pages/app/sunesis/SunesisTicker.tsx"));
 const SunesisThemes = lazy(() => import("./pages/app/sunesis/SunesisThemes.tsx"));
 const SunesisThemeDetail = lazy(() => import("./pages/app/sunesis/SunesisThemeDetail.tsx"));
+const SunesisSandbox = lazy(() => import("./pages/app/sunesis/SunesisSandbox.tsx"));
+const SunesisLanguage = lazy(() => import("./pages/app/sunesis/SunesisLanguage.tsx"));
+const SunesisWorkflow = lazy(() => import("./pages/app/sunesis/SunesisWorkflow.tsx"));
+const SunesisCompliance = lazy(() => import("./pages/app/sunesis/SunesisCompliance.tsx"));
+const SunesisLedger = lazy(() => import("./pages/app/sunesis/SunesisLedger.tsx"));
 const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
 const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
 const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
@@ -173,6 +178,11 @@ const AppInner = () => {
               <Route path="sunesis/ticker/:symbol" element={<SunesisTicker />} />
               <Route path="sunesis/themes" element={<SunesisThemes />} />
               <Route path="sunesis/themes/:themeId" element={<SunesisThemeDetail />} />
+              <Route path="sunesis/sandbox" element={<SunesisSandbox />} />
+              <Route path="sunesis/language" element={<SunesisLanguage />} />
+              <Route path="sunesis/workflow" element={<SunesisWorkflow />} />
+              <Route path="sunesis/compliance" element={<SunesisCompliance />} />
+              <Route path="sunesis/ledger" element={<SunesisLedger />} />
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
