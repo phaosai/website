@@ -80,8 +80,9 @@ const QuantumAuditModal = ({
   const [backend, setBackend] = useState<string | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
+  const idemKeyRef = useRef<string | null>(null);
 
-  // Reset on close
+  // Reset on close, and mint a new idempotency key on every open.
   useEffect(() => {
     if (!open) {
       setPhase("idle");
@@ -92,10 +93,13 @@ const QuantumAuditModal = ({
       setAuditId(null);
       setBackend(null);
       setSubmittedAt(null);
+      idemKeyRef.current = null;
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
         pollRef.current = null;
       }
+    } else {
+      idemKeyRef.current = `qa_${crypto.randomUUID()}`;
     }
   }, [open]);
 
