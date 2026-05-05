@@ -1,4 +1,5 @@
-import { Check, ArrowRight, Star, X } from "lucide-react";
+import { useState } from "react";
+import { Check, ArrowRight, Star, X, Sparkles, Zap, Shield, Crown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -7,158 +8,151 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 
-type Tier = {
+type Cadence = "monthly" | "annual";
+
+interface Tier {
+  id: "sovereign" | "pro" | "elite";
   name: string;
-  price: string;
-  cadence: string;
+  tagline: string;
+  monthly: number;
+  annual: number; // total annual = monthly * 10 (2 months free)
+  quantumAudits: string;
   perfectFor: string;
   features: string[];
-  cta: { label: string; href?: string; priceId?: string };
-  flagship?: boolean;
-  highlight?: string;
-  reserved?: string;
-};
+  cta: { label: string; priceIdMonthly?: string; priceIdAnnual?: string; href?: string };
+  badge?: string;
+  variant: "flagship" | "popular" | "entry";
+}
 
-const tiers: Tier[] = [
+const TIERS: Tier[] = [
   {
-    name: "Free",
-    price: "$0",
-    cadence: "/month",
+    id: "sovereign",
+    name: "Sovereign",
+    tagline: "The full research operating system for institutional-grade operators.",
+    monthly: 1499,
+    annual: 14990,
+    quantumAudits: "8 Quantum Audits / month",
     perfectFor:
-      "First-look explorers who want to experience the Phaos lens before committing.",
+      "RIAs, family offices, boutique funds, and serious operators who need depth without institutional procurement friction.",
     features: [
-      "A starter watchlist to track a handful of names that matter most to you",
-      "A small batch of concise ticker briefs each month, giving you a feel for how Sunesis sees the world",
-      "A streamlined preview of the Phaos Conviction Index — a topline score that hints at conviction, without the full deep dive",
+      "Full Sunesis research environment with all signal categories unlocked",
+      "8 Quantum Audits / month — advanced-compute validation for highest-conviction theses",
+      "Unlimited Truth Memos and audit-ready research receipts",
+      "Continuous monitoring with conviction-drift alerts and regime-shift simulations",
+      "Workflow governance: roles, approvals, sign-offs, and append-only audit trails",
+      "Branded client portals for sharing research without exposing the workspace",
+      "Multi-entity / multi-book separation for households, mandates, and strategies",
+      "Compliance-ready treasury & RWA monitoring scaffolds",
+      "Priority research queue and dedicated implementation support",
+      "First access to new modules across the Phaos ecosystem",
     ],
-    reserved:
-      "The free tier does not unlock full Truth Memos, simulations, thematic discovery, alerts, or client-facing portals — those live in the core Phaos subscriptions designed for serious, ongoing work.",
-    cta: { label: "Start free", href: "/contact" },
+    cta: {
+      label: "Start with Sovereign",
+      priceIdMonthly: "pantheon_monthly",
+      priceIdAnnual: "pantheon_yearly",
+    },
+    variant: "flagship",
   },
   {
-    name: "Phaos Sunesis",
-    price: "$149",
-    cadence: "/month",
+    id: "pro",
+    name: "Pro",
+    tagline: "Deeper workflow, richer scenarios, and recurring audit depth.",
+    monthly: 299,
+    annual: 2990,
+    quantumAudits: "4 Quantum Audits / month",
     perfectFor:
-      "Independent researchers, serious operators, and insight-driven investors who want sharper signal quality without enterprise complexity.",
+      "Active investors, advisors, and small research teams who need to move from raw signal to defensible conviction every week.",
     features: [
-      "Full access to the Sunesis research environment, built to turn scattered noise into structured conviction",
-      "Deep, source-linked intelligence briefs designed to help you move from raw information to usable insight faster",
-      "A transparent confidence framework that shows not just what stands out, but why it stands out",
-      "Evidence trails, logic visibility, and research context that make every signal easier to evaluate and trust",
-      "Dynamic market theme discovery to surface where narratives, momentum, and underlying shifts are beginning to converge",
-      "Balanced decision framing so every opportunity is viewed through both upside potential and downside risk",
-      "Institutional-style methodology context that adds depth, rigor, and perspective to the research experience",
-      "Ongoing watchlist visibility so priority names and themes stay on your radar as the landscape changes",
+      "Everything in Elite, plus:",
+      "4 Quantum Audits / month — stress-test your highest-conviction theses",
+      "Expanded Truth Memo allowance with full bull / bear case generation",
+      "Scenario sandbox: macro stress, rates, vol, FX, and commodity shifts",
+      "What-Changed insights and conviction-drift monitoring",
+      "Workflow governance with approvals and version history",
+      "Audit Receipt exports (PDF + share links) for every research artifact",
+      "Save and monitor your highest-conviction ideas across the workspace",
+      "Priority email support",
     ],
-    cta: { label: "Start with Sunesis", priceId: "sunesis_monthly" },
+    cta: {
+      label: "Start with Pro",
+      priceIdMonthly: "kyrios_monthly",
+      priceIdAnnual: "kyrios_yearly",
+    },
+    badge: "Most Popular",
+    variant: "popular",
   },
   {
-    name: "Phaos Aion",
+    id: "elite",
+    name: "Elite",
+    tagline: "Truth-first foundational research with premium audit access.",
+    monthly: 99,
+    annual: 990,
+    quantumAudits: "1 Quantum Audit / month",
+    perfectFor:
+      "Independent researchers and serious operators who want sharper signal quality without enterprise complexity.",
+    features: [
+      "Full access to the Sunesis research environment",
+      "1 Quantum Audit / month — entry-level advanced-compute validation",
+      "Source-grounded Truth Memos with bull / bear framing",
+      "Phaos Conviction Index across 60+ publicly accessible signal categories",
+      "Evidence trail and methodology transparency on every result",
+      "Watchlist with conviction monitoring",
+      "Standard Truth Machine simulations",
+      "Email support",
+    ],
+    cta: {
+      label: "Start with Elite",
+      priceIdMonthly: "sunesis_monthly",
+      priceIdAnnual: "sunesis_yearly",
+    },
+    variant: "entry",
+  },
+];
+
+const ADD_ON_PACKS = [
+  {
+    name: "Quantum Burst Pack",
+    icon: Zap,
     price: "$199",
-    cadence: "/month",
-    perfectFor:
-      "Active investors and operators who want their research to stay alive after the first read.",
-    highlight: "Includes everything in Sunesis, plus:",
-    features: [
-      "Continuous confidence monitoring that surfaces when conviction quietly drifts instead of forcing you to re-underwrite from scratch",
-      "Clear \u201cWhat Changed?\u201d insights so you can see, at a glance, why a name feels different this week than it did last month",
-      "An interactive scenario sandbox to explore what-ifs, stress tests, and \u201chow would this look under a different backdrop?\u201d questions",
-      "Private controls for protecting sensitive work, so not every experiment becomes part of the shared surface area",
-      "Freshness indicators that show which views are current and which ones are running on stale assumptions",
-      "Pre-event and regime-shift simulations to help you think ahead instead of reacting after the fact",
-    ],
-    cta: { label: "Start with Aion", priceId: "aion_monthly" },
+    description: "5 additional Quantum Audit executions. Use any time within the next 90 days.",
+    priceId: "quantum_burst_pack",
+    featured: true,
   },
   {
-    name: "Phaos Kyrios",
-    price: "$299",
-    cadence: "/month",
-    perfectFor:
-      "Advisors, research teams, and anyone whose work needs to be shared, reviewed, and relied on.",
-    highlight: "Includes everything in Aion, plus:",
-    features: [
-      "Workflow governance and approval flows that bring structure to how research moves from draft to \u201cready to ship\u201d",
-      "Team controls and role-based permissions so the right people can explore, edit, approve, or just consume — nothing more, nothing less",
-      "Branded client spaces where you can share views, updates, and curated intel without exposing your entire internal workspace",
-      "Publishing and delivery controls that let you decide what goes out, to whom, and on what cadence",
-      "A full, navigable audit history so you can always answer: \u201cWho signed off on this, and what changed along the way?\u201d",
-    ],
-    cta: { label: "Start with Kyrios", priceId: "kyrios_monthly" },
+    name: "Premium Report Pack",
+    icon: Sparkles,
+    price: "$99",
+    description: "10 additional generated audit-ready research memos with PDF export.",
+    priceId: "premium_report_pack",
   },
   {
-    name: "Phaos ONE",
-    price: "$599",
-    cadence: "/month",
-    perfectFor:
-      "Serious investors and operators who want a single, always-on research and decision environment instead of a pile of disconnected tools.",
-    highlight:
-      "Everything in Sunesis, Aion, and Kyrios, brought together into one cohesive operating system, plus:",
-    features: [
-      "Full access to a high-fidelity Simulation Sandbox for exploring what-ifs before you act",
-      "Advanced scenario modeling that helps you see how ideas behave across different conditions and regimes",
-      "Integration pathways into your existing investment platform or brokerage workflow, so insights don\u2019t die in a dashboard",
-      "Priority access in the research pipeline so your questions, names, and themes are never sitting at the bottom of the stack",
-      "A unified command center that puts conviction, risk context, open questions, and upcoming events on a single, glanceable screen",
-    ],
-    flagship: true,
-    cta: { label: "Get Phaos ONE", priceId: "phaos_one_monthly" },
-  },
-  {
-    name: "Pantheon",
-    price: "$999",
-    cadence: "/month",
-    perfectFor:
-      "RIAs, family offices, boutiques, and institutional pods that need a professional-grade surface for both internal work and client-facing delivery.",
-    highlight: "Everything in Phaos ONE, plus (for up to 5 seats):",
-    features: [
-      "Brand-forward presentation via logo and visual customization options, so what clients see feels like your firm, not a vendor portal",
-      "Compliance-ready audit logging built for teams that must be able to show \u201cwho knew what, and when\u201d",
-      "Multi-entity and multi-book management to keep households, mandates, and strategies cleanly separated but centrally supervised",
-      "A dedicated support tier that treats your workflows as mission-critical, not just another ticket",
-      "Priority implementation help to get you from \u201cwe should try this\u201d to \u201cwe\u2019re running on this\u201d without burning internal bandwidth",
-    ],
-    cta: { label: "Schedule a Call", href: "/contact" },
+    name: "Monitoring Pack",
+    icon: Shield,
+    price: "$79",
+    description: "Add 25 monitored tickers with conviction-drift alerts for the billing period.",
+    priceId: "monitoring_pack",
   },
 ];
 
-const aLaCarte = [
-  {
-    name: "Single \u201cTruth Memo\u201d",
-    price: "$29",
-    priceId: "truth_memo_single_price",
-    description:
-      "A focused, filing-backed research brief on one name. Includes a conviction signal, balanced upside/downside framing, and a clear evidence trail so you can see how the view was formed.",
-  },
-  {
-    name: "Weekly Conviction Pack",
-    price: "$49",
-    priceId: "weekly_conviction_pack_price",
-    description:
-      "A curated short list of the week\u2019s standout ideas, filtered to what you can actually access on your existing platform. Designed for people who want a concentrated set of candidates, not a firehose.",
-  },
-  {
-    name: "\u201cSecond Opinion\u201d Audit",
-    price: "$19",
-    priceId: "second_opinion_audit_price",
-    description:
-      "Run your current thesis through the Phaos lens to pressure-test the logic. Highlights blind spots, missing signals, and counter-arguments so you can refine, reinforce, or reconsider with more confidence.",
-  },
-  {
-    name: "Earnings Simulation Run",
-    price: "$39",
-    priceId: "earnings_simulation_run_price",
-    description:
-      "A pre-earnings scenario pass on one name that maps possible paths and how they could affect conviction. Clearly labeled as simulated context — a thinking aid, not a forecast or guarantee.",
-  },
-];
+function formatPrice(n: number) {
+  return n.toLocaleString("en-US");
+}
 
 const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
 
-  const handleBuy = (priceId: string) => {
+  // Annual is the default selection per institutional positioning.
+  const [cadence, setCadence] = useState<Cadence>("annual");
+  const [zeroAuditOpen, setZeroAuditOpen] = useState(false);
+
+  const handleBuy = (tier: Tier) => {
+    const priceId = cadence === "annual" ? tier.cta.priceIdAnnual : tier.cta.priceIdMonthly;
+    if (!priceId) {
+      navigate("/contact");
+      return;
+    }
     if (!user) {
       navigate(`/auth?mode=signup&plan=${priceId}`);
       return;
@@ -175,274 +169,178 @@ const Pricing = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Pricing — Phaos AI"
-        description="Transparent pricing for Phaos AI. Free tier, Sunesis ($149), Aion ($199), Kyrios ($299), Phaos ONE ($599), and Pantheon ($999). Plus one-time deliverables from $19."
+        description="Premium research operating systems. Elite $99, Pro $299, Sovereign $1,499. Institutional-grade conviction without institutional lock-in."
         canonical="/pricing"
       />
       <PaymentTestModeBanner />
       <Navigation />
 
       {/* HERO */}
-      <section className="relative pt-32 pb-16 px-6">
+      <section className="relative pt-32 pb-12 px-6">
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
             Pricing
           </span>
           <h1 className="mt-6 text-4xl md:text-6xl font-semibold tracking-tight text-foreground">
-            Honest pricing for serious research.
+            Institutional-grade conviction,
+            <br />
+            without institutional lock-in.
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            No fake discounts. No countdown timers. No psychological tricks.
-            Pick the tier that matches the depth of work you actually do.
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Billing powered by Stripe. Credit card and ACH supported.
+          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            From truth-first research to advanced-compute audit workflows — premium research
+            operating systems built for serious operators, not terminal-era procurement cycles.
           </p>
         </div>
       </section>
 
-      {/* TIERS */}
-      <section className="px-6 pb-20" aria-label="Subscription tiers">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tiers.map((tier) => (
-            <div
-              key={tier.name}
-              className={`relative rounded-2xl border p-8 flex flex-col ${
-                tier.flagship
-                  ? "border-purple-deep/60 bg-purple-deep/5 shadow-[0_0_40px_-12px_hsl(var(--purple-deep)/0.4)]"
-                  : "border-border/60 bg-card/40"
+      {/* COMPARISON CALLOUT */}
+      <section className="px-6 pb-10" aria-label="Market comparison">
+        <div className="max-w-5xl mx-auto rounded-2xl border border-border/60 bg-card/40 p-6 md:p-8">
+          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground text-center">
+            Market positioning
+          </p>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Benchmark name="Bloomberg Terminal" price="$2,665" sub="per user / month" muted />
+            <Benchmark name="FactSet" price="~$1,500" sub="per user / month" muted />
+            <Benchmark name="Phaos Sovereign" price="$1,499" sub="per user / month" highlight />
+          </div>
+          <p className="mt-5 text-xs text-muted-foreground text-center max-w-2xl mx-auto">
+            Premium research depth with modern SaaS flexibility. No multi-year contracts,
+            no procurement gauntlet, no terminal-era lock-in. Public benchmarks shown for
+            positioning context.
+          </p>
+        </div>
+      </section>
+
+      {/* BILLING TOGGLE */}
+      <section className="px-6 pb-10" aria-label="Billing cadence">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div role="tablist" aria-label="Billing cadence" className="inline-flex items-center p-1 rounded-full border border-border/70 bg-card/40">
+            <button
+              role="tab"
+              aria-selected={cadence === "monthly"}
+              onClick={() => setCadence("monthly")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                cadence === "monthly" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tier.flagship && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-deep text-white text-[10px] font-semibold tracking-[0.15em] uppercase">
-                  <Star className="w-3 h-3 fill-current" /> Flagship
-                </div>
-              )}
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">{tier.name}</h2>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold text-foreground">{tier.price}</span>
-                  <span className="text-sm text-muted-foreground">{tier.cadence}</span>
-                </div>
-                <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                  <span className="text-foreground/80 font-medium">Perfect for: </span>
-                  {tier.perfectFor}
-                </p>
-              </div>
+              Monthly
+            </button>
+            <button
+              role="tab"
+              aria-selected={cadence === "annual"}
+              onClick={() => setCadence("annual")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                cadence === "annual" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Annual
+            </button>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase border border-purple-deep/40 text-purple-deep bg-purple-deep/5">
+            <Sparkles className="w-3 h-3" /> 2 Months Free
+          </span>
+        </div>
+      </section>
 
-              <div className="mt-6 pt-6 border-t border-border/50 flex-1">
-                {tier.highlight && (
-                  <p className="text-sm font-medium text-foreground mb-4">{tier.highlight}</p>
-                )}
-                <ul className="space-y-3">
-                  {tier.features.map((feature, i) => (
-                    <li key={i} className="flex gap-3 text-sm text-muted-foreground leading-relaxed">
-                      <Check className="w-4 h-4 text-purple-deep flex-shrink-0 mt-0.5" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                {tier.reserved && (
-                  <p className="mt-6 text-xs text-muted-foreground/80 italic leading-relaxed border-l-2 border-border/60 pl-3">
-                    {tier.reserved}
-                  </p>
-                )}
-              </div>
-
-              {tier.cta.priceId ? (
-                <button
-                  onClick={() => handleBuy(tier.cta.priceId!)}
-                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    tier.flagship
-                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
-                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
-                  }`}
-                >
-                  {tier.cta.label}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <Link
-                  to={tier.cta.href!}
-                  className={`mt-8 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    tier.flagship
-                      ? "bg-purple-deep text-white hover:bg-purple-deep/90"
-                      : "bg-foreground/10 text-foreground hover:bg-foreground/15"
-                  }`}
-                >
-                  {tier.cta.label}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
-            </div>
+      {/* TIERS — Sovereign · Pro · Elite (intentional order, preserved on mobile) */}
+      <section className="px-6 pb-20" aria-label="Subscription tiers">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          {TIERS.map((tier) => (
+            <PricingCard
+              key={tier.id}
+              tier={tier}
+              cadence={cadence}
+              onBuy={() => handleBuy(tier)}
+            />
           ))}
         </div>
-
-        {/* Phaos ONE — math note */}
-        <div className="max-w-4xl mx-auto mt-12 p-6 rounded-xl border border-border/50 bg-card/30">
-          <p className="text-sm font-medium text-foreground mb-2">The math, on purpose:</p>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            If you assembled the stack piece by piece, you\u2019d be paying more.
-            Instead, Phaos ONE bundles the full environment at a lower combined
-            rate — a reflection of shared infrastructure efficiencies, not a
-            pricing trick.
-          </p>
-        </div>
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          All plans include the Phaos Conviction Index, Truth Ledger, and the source-grounded
+          Sunesis research environment. Cancel any time.
+        </p>
       </section>
 
-      {/* A-LA-CARTE */}
-      <section className="px-6 py-20 border-t border-border/40" aria-label="One-time deliverables">
-        <div className="max-w-7xl mx-auto">
-          <div className="max-w-3xl mb-12">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-              A-la-carte
-            </span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              One-time deliverables
-            </h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">
-              Need a targeted verdict, not another tool to manage? These
-              one-time deliverables give you Phaos-quality perspective on a
-              single question, name, or event.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {aLaCarte.map((item) => (
-              <div
-                key={item.name}
-                className="rounded-xl border border-border/60 bg-card/40 p-6 flex flex-col"
+      {/* QUANTUM BURST PACK BANNER */}
+      <section className="px-6 pb-12" aria-label="Quantum Burst Pack">
+        <div className="max-w-6xl mx-auto rounded-2xl border border-purple-deep/40 bg-gradient-to-br from-purple-deep/15 via-purple-deep/5 to-transparent p-8 md:p-10">
+          <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-purple-deep" />
+                <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-purple-deep">
+                  Add-on
+                </span>
+              </div>
+              <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+                Quantum Burst Pack
+              </h2>
+              <p className="mt-3 text-muted-foreground max-w-2xl leading-relaxed">
+                Burned through your included Quantum Audits? Add execution credits without
+                committing to a higher tier. Stress-test the next high-conviction idea the
+                moment it lands — not next billing cycle.
+              </p>
+            </div>
+            <div className="flex flex-col items-stretch md:items-end gap-3">
+              <div className="text-right">
+                <span className="text-3xl font-semibold text-foreground">$199</span>
+                <span className="text-sm text-muted-foreground"> / 5 audits</span>
+              </div>
+              <button
+                onClick={() => setZeroAuditOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-lg font-semibold text-foreground">{item.name}</h3>
-                  <span className="text-2xl font-semibold text-foreground whitespace-nowrap">
-                    {item.price}
-                  </span>
+                Add Quantum Burst <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Other add-on packs */}
+          <div className="mt-8 pt-8 border-t border-border/50 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {ADD_ON_PACKS.filter((p) => !p.featured).map((p) => (
+              <div key={p.name} className="rounded-xl border border-border/60 bg-card/40 p-5">
+                <div className="flex items-center gap-2">
+                  <p.icon className="w-4 h-4 text-purple-deep" />
+                  <p className="text-sm font-semibold text-foreground">{p.name}</p>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed flex-1">
-                  {item.description}
-                </p>
-                <button
-                  onClick={() => handleBuy(item.priceId)}
-                  className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-foreground/10 text-foreground hover:bg-foreground/15 transition-colors"
-                >
-                  Buy for {item.price}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{p.description}</p>
+                <p className="mt-3 text-lg font-semibold text-foreground">{p.price}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* HOW PRICING WORKS */}
-      <section className="px-6 py-20 border-t border-border/40" aria-label="How pricing works">
-        <div className="max-w-4xl mx-auto">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-            How pricing works
-          </span>
-          <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-            The model, explained.
-          </h2>
-          <div className="mt-10 space-y-8">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Why the additive ladder
-              </h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">
-                Each tier above Sunesis includes everything in the tier below
-                it. You\u2019re never paying twice for the same capability — you\u2019re
-                paying for the additional surface area you actually use. Aion
-                adds monitoring and simulation on top of Sunesis. Kyrios adds
-                governance and delivery on top of Aion. Pricing reflects the
-                stack, not a menu of disconnected modules.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Why Phaos ONE costs less than the parts
-              </h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">
-                Sunesis ($149) + Aion ($199) + Kyrios ($299) priced separately
-                would be $647/month. Phaos ONE is $599/month because running
-                them as a unified environment removes redundant infrastructure,
-                duplicate ingestion, and overlapping compute. The savings are
-                real efficiencies passed through — not a marketing discount.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Fair-use limits on Truth Memos
-              </h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">
-                Subscription tiers include generous monthly Truth Memo
-                allowances scaled to the tier. \u201cFair use\u201d means the volume
-                supports normal individual or team research workflows, not bulk
-                automated extraction. If you ever approach a soft limit we\u2019ll
-                tell you directly — no silent throttling, no surprise overage
-                charges.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Billing</h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">
-                Billing powered by Stripe. Credit card and ACH supported.
-                Cancel any time from your account. No setup fees, no hidden
-                charges.
+            <div className="rounded-xl border border-dashed border-border/60 bg-transparent p-5 flex items-center">
+              <p className="text-xs text-muted-foreground italic">
+                Compliance & treasury packs — coming soon for Sovereign customers.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* METHODOLOGY */}
-      <section className="px-6 py-20 border-t border-border/40" aria-label="Methodology">
-        <div className="max-w-4xl mx-auto">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-            Methodology
-          </span>
-          <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-            Built on the same families of quantitative thinking that sit behind institutional research.
-          </h2>
-          <p className="mt-6 text-muted-foreground leading-relaxed">
-            Phaos Sunesis is powered by risk-adjusted performance lenses, conviction-based sizing
-            logic, multi-factor perspectives, and volatility-aware confidence modeling. Distilled
-            from public data and presented with uncommon transparency.
-          </p>
-          <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
-            {[
-              ["Sharpe Ratio-inspired", "Risk-adjusted signal strength"],
-              ["Kelly Criterion-inspired", "Optimal signal weighting"],
-              ["DCF / WACC-inspired", "Intrinsic value context"],
-              ["CAPM-inspired", "Risk-adjusted market relative baseline"],
-              ["GARCH(1,1)-inspired", "Time-varying confidence weighting"],
-              ["Fama-French-inspired", "Quality / value / momentum factors"],
-            ].map(([k, v]) => (
-              <li key={k} className="rounded-md border border-border/60 bg-card/40 p-3">
-                <p className="text-foreground font-medium">{k}</p>
-                <p className="text-muted-foreground">{v}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-xs text-muted-foreground italic leading-relaxed">
-            These frameworks inform our scoring architecture using simplified factor models
-            optimized for public data. Not a direct implementation of the full academic formulas,
-            which require institutional data infrastructure.
-          </p>
-        </div>
+      {/* DEMO TRIGGER for the zero-audit modal */}
+      <section className="px-6 pb-20 text-center">
+        <button
+          onClick={() => setZeroAuditOpen(true)}
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+        >
+          Preview the in-app exhaustion experience →
+        </button>
       </section>
 
       {/* DISCLAIMER */}
       <section className="px-6 py-12 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-muted-foreground leading-relaxed text-center italic">
-            All plans provide access to research and workflow intelligence tools. Phaos AI does
-            not provide investment advice.
+            PCI is a research confidence framework, not a prediction of returns. QRR is a
+            supplemental advanced-compute risk interpretation layer; it is not a guarantee.
+            Research outputs are informational and not investment advice.
           </p>
         </div>
       </section>
 
       <Footer />
 
+      {/* Embedded checkout overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
@@ -461,8 +359,176 @@ const Pricing = () => {
           </div>
         </div>
       )}
+
+      {/* ZERO-AUDIT MODAL (preview / scaffold) */}
+      <ZeroAuditModal open={zeroAuditOpen} onClose={() => setZeroAuditOpen(false)} onUpgrade={() => { setZeroAuditOpen(false); navigate("/pricing"); }} />
     </div>
   );
 };
+
+function Benchmark({ name, price, sub, muted, highlight }: { name: string; price: string; sub: string; muted?: boolean; highlight?: boolean }) {
+  return (
+    <div
+      className={`rounded-xl border p-5 text-center ${
+        highlight
+          ? "border-purple-deep/50 bg-purple-deep/5"
+          : "border-border/60 bg-background/40"
+      }`}
+    >
+      <p className={`text-xs font-semibold tracking-wider uppercase ${muted ? "text-muted-foreground" : "text-purple-deep"}`}>
+        {name}
+      </p>
+      <p className={`mt-2 text-3xl font-semibold ${highlight ? "text-foreground" : "text-foreground/80"}`}>
+        {price}
+      </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{sub}</p>
+    </div>
+  );
+}
+
+function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; onBuy: () => void }) {
+  const isAnnual = cadence === "annual";
+  const monthlyEquivalent = isAnnual ? Math.round(tier.annual / 12) : tier.monthly;
+  const cadenceLabel = isAnnual ? "/month, billed annually" : "/month";
+
+  const variantClasses =
+    tier.variant === "flagship"
+      ? "border-purple-deep/60 bg-gradient-to-b from-purple-deep/15 via-purple-deep/5 to-transparent shadow-[0_0_60px_-12px_hsl(var(--purple-deep)/0.55)] lg:scale-[1.04] lg:-translate-y-1 animate-pulse-glow"
+      : tier.variant === "popular"
+      ? "border-purple-deep/30 bg-card/60"
+      : "border-border/60 bg-card/30";
+
+  const Icon = tier.variant === "flagship" ? Crown : tier.variant === "popular" ? Star : Shield;
+
+  return (
+    <div className={`relative rounded-2xl border p-7 md:p-8 flex flex-col ${variantClasses}`}>
+      {tier.variant === "flagship" && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-deep text-white text-[10px] font-semibold tracking-[0.15em] uppercase shadow-lg">
+          <Crown className="w-3 h-3 fill-current" /> Flagship
+        </div>
+      )}
+      {tier.badge && tier.variant !== "flagship" && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-foreground text-background text-[10px] font-semibold tracking-[0.15em] uppercase">
+          <Star className="w-3 h-3 fill-current" /> {tier.badge}
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${tier.variant === "flagship" ? "text-purple-deep" : "text-muted-foreground"}`} />
+          <h2 className="text-xl font-semibold text-foreground">{tier.name}</h2>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
+
+        <div className="mt-5 flex items-baseline gap-1.5">
+          <span className="text-4xl md:text-5xl font-semibold text-foreground">${formatPrice(monthlyEquivalent)}</span>
+          <span className="text-sm text-muted-foreground">{cadenceLabel}</span>
+        </div>
+        {isAnnual && (
+          <p className="mt-1 text-xs text-purple-deep">
+            ${formatPrice(tier.annual)}/yr · 2 months free vs. monthly
+          </p>
+        )}
+
+        <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-purple-deep/30 bg-purple-deep/5 text-xs font-medium text-purple-deep">
+          <Zap className="w-3 h-3" />
+          {tier.quantumAudits}
+        </div>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-border/50 flex-1">
+        <p className="text-xs text-muted-foreground/80 mb-4">
+          <span className="text-foreground/80 font-medium">Perfect for: </span>
+          {tier.perfectFor}
+        </p>
+        <ul className="space-y-2.5">
+          {tier.features.map((feature, i) => (
+            <li key={i} className="flex gap-2.5 text-sm text-muted-foreground leading-relaxed">
+              <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${tier.variant === "flagship" ? "text-purple-deep" : "text-foreground/70"}`} />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <button
+        onClick={onBuy}
+        className={`mt-7 inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-lg text-sm font-semibold transition-colors ${
+          tier.variant === "flagship"
+            ? "bg-purple-deep text-white hover:bg-purple-deep/90"
+            : tier.variant === "popular"
+            ? "bg-foreground text-background hover:bg-foreground/90"
+            : "bg-foreground/10 text-foreground hover:bg-foreground/15"
+        }`}
+      >
+        {tier.cta.label}
+        <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+function ZeroAuditModal({ open, onClose, onUpgrade }: { open: boolean; onClose: () => void; onUpgrade: () => void }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zero-audit-title"
+    >
+      <div className="relative bg-background rounded-2xl shadow-2xl w-full max-w-lg border border-purple-deep/40 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-deep via-purple-deep/60 to-purple-deep" />
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <div className="p-7 pt-9">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-deep/40 bg-purple-deep/10 text-[10px] font-semibold tracking-[0.15em] uppercase text-purple-deep">
+            <Zap className="w-3 h-3" /> Quantum Audits
+          </div>
+          <h2 id="zero-audit-title" className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+            You've used all included Quantum Audits for this period.
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+            Keep the workflow moving with a Quantum Burst Pack, upgrade for deeper recurring
+            audit capacity, or continue with standard Truth Machine mode.
+          </p>
+
+          <div className="mt-6 space-y-2.5">
+            <button
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold"><Zap className="w-4 h-4" /> Buy Quantum Burst Pack</span>
+              <span className="text-xs opacity-80">$199 · 5 audits</span>
+            </button>
+            <button
+              onClick={onUpgrade}
+              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-purple-deep/40 bg-purple-deep/5 text-foreground hover:bg-purple-deep/10 transition-colors"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="w-4 h-4 text-purple-deep" /> Upgrade Plan</span>
+              <span className="text-xs text-muted-foreground">More audits, more workflow</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border/60 text-foreground hover:bg-foreground/5 transition-colors text-sm"
+            >
+              Continue with standard Truth Machine
+            </button>
+          </div>
+
+          <p className="mt-5 text-[11px] text-muted-foreground italic">
+            Quantum Audit is a supplemental advanced-compute validation layer. It is not a
+            prediction of returns or investment advice.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Pricing;
