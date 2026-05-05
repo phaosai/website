@@ -559,6 +559,100 @@ export default function FoundryAdmin() {
           </CardContent>
         </Card>
       </section>
+
+      {/* ---------- Quantum Reports ---------- */}
+      <section className="space-y-3">
+        <header className="flex items-end justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Quantum Reports</h2>
+            <p className="text-sm text-muted-foreground">Every Foundry quantum invocation is logged here — backend used, runtime, workload id, and an honest report when it didn't run.</p>
+          </div>
+          {reports.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => { setReports([]); saveReports([]); }}>Clear log</Button>
+          )}
+        </header>
+        {reports.length === 0 ? (
+          <div className="rounded border border-border/40 bg-card/40 p-6 text-center text-xs text-muted-foreground">
+            No quantum invocations yet. Run any sub-brain, the synthesis, or a year audit with quantum enabled.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded border border-border/40 bg-card/40">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2">When</th>
+                  <th className="px-3 py-2">Scope</th>
+                  <th className="px-3 py-2">Label</th>
+                  <th className="px-3 py-2">Result</th>
+                  <th className="px-3 py-2">Backend</th>
+                  <th className="px-3 py-2 text-right">Compute (s)</th>
+                  <th className="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((r) => (
+                  <tr key={r.id} className="border-t border-border/30">
+                    <td className="px-3 py-2 font-mono text-muted-foreground">{new Date(r.startedAt).toLocaleString()}</td>
+                    <td className="px-3 py-2">{r.scope}</td>
+                    <td className="px-3 py-2">{r.label}</td>
+                    <td className="px-3 py-2">
+                      {r.result === "success"
+                        ? <Badge variant="outline" className={cn("border-emerald-500/40 bg-emerald-500/10 text-emerald-400", r.simulator && "border-amber-500/40 bg-amber-500/10 text-amber-400")}>{r.simulator ? "Simulator" : "IBM Quantum"}</Badge>
+                        : <Badge variant="outline" className="border-red-500/40 bg-red-500/10 text-red-400">Failed</Badge>}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-muted-foreground">{r.backend ?? "—"}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">{r.elapsedSeconds.toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Button size="sm" variant="ghost" onClick={() => setOpenReport(r)}>View</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <AlertDialog open={!!openReport} onOpenChange={(o) => !o && setOpenReport(null)}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              ⚛︎ Quantum Report · {openReport?.scope} · {openReport?.label}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-xs text-foreground">
+                <div className="grid grid-cols-2 gap-2 rounded border border-border/40 bg-background/40 p-3 font-mono">
+                  <div>Started: <span className="text-muted-foreground">{openReport && new Date(openReport.startedAt).toLocaleString()}</span></div>
+                  <div>Finished: <span className="text-muted-foreground">{openReport && new Date(openReport.finishedAt).toLocaleString()}</span></div>
+                  <div>Compute time: <span className="text-muted-foreground">{openReport?.elapsedSeconds.toFixed(2)} s</span></div>
+                  <div>Result: <span className={openReport?.result === "success" ? "text-emerald-400" : "text-red-400"}>{openReport?.result}</span></div>
+                  <div>Backend: <span className="text-muted-foreground">{openReport?.backend ?? "—"}</span></div>
+                  <div>Workload id: <span className="text-muted-foreground">{openReport?.workloadId ?? "—"}</span></div>
+                  <div>Ran on quantum: <span className="text-muted-foreground">{openReport?.ran ? "yes" : "no"}</span></div>
+                  <div>Simulator fallback: <span className="text-muted-foreground">{openReport?.simulator ? "yes" : "no"}</span></div>
+                </div>
+                <div className="rounded border border-primary/30 bg-primary/5 p-3">
+                  <div className="mb-1 font-medium text-primary">Why this happened</div>
+                  <div className="text-muted-foreground">{openReport?.why}</div>
+                </div>
+                {openReport?.rawError && (
+                  <div className="rounded border border-red-500/30 bg-red-500/5 p-3">
+                    <div className="mb-1 font-medium text-red-400">Raw error</div>
+                    <pre className="whitespace-pre-wrap font-mono text-[10px] text-muted-foreground">{openReport.rawError}</pre>
+                  </div>
+                )}
+                <div className="rounded border border-border/40 bg-background/40 p-3">
+                  <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Payload submitted</div>
+                  <pre className="whitespace-pre-wrap font-mono text-[10px] text-muted-foreground">{openReport && JSON.stringify(openReport.payloadSummary, null, 2)}</pre>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setOpenReport(null)}>Close</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
