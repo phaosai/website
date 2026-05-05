@@ -475,14 +475,15 @@ Deno.serve(async (req) => {
           status: submit.initialStatus,
           usedAddon,
         });
-      } catch (_err) {
+      } catch (err) {
         // Rollback: restore credit if used, mark failed
+        const detail = err instanceof Error ? err.message : "IBM submission failed";
         if (usedAddon) await restoreAddonCredit(svc, user.id);
         await svc
           .from("quantum_audits")
-          .update({ status: "failed", error_message: "IBM submission failed" })
+          .update({ status: "failed", error_message: detail.slice(0, 1000) })
           .eq("id", inserted.id);
-        return json(502, { error: "Advanced-compute submission failed. Please retry." });
+        return json(502, { error: detail });
       }
     }
 
