@@ -18,6 +18,7 @@ import {
   type QRRStability,
   type QRRTier,
 } from "@/components/phaos";
+import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import { toast } from "sonner";
 
 const SIGNAL_CATEGORIES = [
