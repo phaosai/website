@@ -123,6 +123,7 @@ export default function FoundryAdmin() {
       const out = await runQuantumStage({ scope: "subbrain", label: id });
       qMessage = out.message;
       qUsed = out.ran;
+      recordReport(out.report);
       toast({ title: `⚛︎ Quantum result · ${ASSET_CLASSES.find((c) => c.id === id)?.label}`, description: out.message });
     } else {
       qMessage = "Quantum vetting skipped (toggle off) — sub-brain trained classically only.";
