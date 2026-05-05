@@ -167,7 +167,7 @@ export default function SunesisTicker() {
     sources.forEach((s: any) => {
       const cat = s.category ?? s.type ?? "Other";
       const ts = s.fetched_at ?? s.updated_at ?? s.timestamp;
-      const node = grouped.get(cat) ?? { category: cat, count: 0, items: [] };
+      const node: EvidenceNode = grouped.get(cat) ?? { category: cat, count: 0, items: [] };
       node.count += 1;
       if (ts && (!node.freshness || new Date(ts) > new Date(node.freshness))) node.freshness = ts;
       node.items?.push({ label: s.label ?? s.title ?? s.url ?? cat, url: s.url, ts });
