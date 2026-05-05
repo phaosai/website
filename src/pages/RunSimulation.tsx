@@ -383,7 +383,8 @@ const RunSimulation = () => {
               <button
                 type="button"
                 onClick={() => setQuantumOpen(true)}
-                className="relative inline-flex items-center justify-center gap-2 rounded-full border border-purple-deep/50 bg-purple-deep/10 text-foreground text-base font-semibold px-6 py-4 hover:bg-purple-deep/20 transition-all shadow-[0_0_30px_-10px_hsl(var(--primary)/0.5)]"
+                disabled={!canRun}
+                className="relative inline-flex items-center justify-center gap-2 rounded-full border border-purple-deep/50 bg-purple-deep/10 text-foreground text-base font-semibold px-6 py-4 hover:bg-purple-deep/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_30px_-10px_hsl(var(--primary)/0.5)]"
               >
                 <Cpu className="w-5 h-5 text-primary" />
                 Run Quantum Audit
@@ -393,7 +394,7 @@ const RunSimulation = () => {
               </button>
             </div>
             <p className="text-sm text-muted-foreground -mt-4">
-              For premium users who want an advanced-compute validation pass on select Sunesis simulations.
+              Premium advanced-compute validation. Free and entry-tier users see a hypothetical preview of how the Quantum pass would have shaped this PCI.
             </p>
           </div>
 
