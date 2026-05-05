@@ -28,10 +28,32 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 // Credential names — support both standardized and project-existing names.
-const IBM_API_KEY =
-  Deno.env.get("IBM_QUANTUM_API_KEY") || Deno.env.get("IBM_Quantum_API") || "";
-const IBM_CRN =
-  Deno.env.get("IBM_QUANTUM_INSTANCE_CRN") || Deno.env.get("IBM_Quantum_CRN") || "";
+const IBM_API_KEY = (
+  Deno.env.get("IBM_QUANTUM_API_KEY") || Deno.env.get("IBM_Quantum_API") || ""
+).trim();
+const IBM_CRN = (
+  Deno.env.get("IBM_QUANTUM_INSTANCE_CRN") || Deno.env.get("IBM_Quantum_CRN") || ""
+).trim();
+const IBM_API_VERSION = "2026-03-15";
+
+function quantumApiBaseFromCrn(crn: string): string {
+  const region = crn.split(":")[5] ?? "";
+  return region === "eu-de" ? "https://eu-de.quantum.cloud.ibm.com/api/v1" : "https://quantum.cloud.ibm.com/api/v1";
+}
+
+async function ibmRuntimeRequest(token: string, path: string, init: RequestInit = {}) {
+  return fetch(`${quantumApiBaseFromCrn(IBM_CRN)}${path}`, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+      "Service-CRN": IBM_CRN,
+      "IBM-API-Version": IBM_API_VERSION,
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+}
 
 // =====================================================================
 // quantumUsageService
@@ -169,12 +191,35 @@ async function ibmGetIamToken(): Promise<string | null> {
         apikey: IBM_API_KEY,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`IBM IAM token exchange failed (${res.status})${body ? `: ${body.slice(0, 240)}` : ""}`);
+    }
     const json = await res.json();
     return json.access_token ?? null;
-  } catch {
+  } catch (err) {
+    console.error("ibmGetIamToken", err);
     return null;
   }
+}
+
+async function ibmChooseBackend(token: string): Promise<string> {
+  const preferred = Deno.env.get("IBM_QUANTUM_BACKEND")?.trim();
+  if (preferred) return preferred;
+
+  const res = await ibmRuntimeRequest(token, "/backends");
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`IBM backend discovery failed (${res.status})${body ? `: ${body.slice(0, 240)}` : ""}`);
+  }
+  const json = await res.json();
+  const backends = Array.isArray(json) ? json : Array.isArray(json?.backends) ? json.backends : [];
+  const names = backends
+    .map((b: any) => typeof b === "string" ? b : b?.name ?? b?.backend_name)
+    .filter((name: unknown): name is string => typeof name === "string" && name.length > 0);
+  const qpu = names.find((name) => name.startsWith("ibm_"));
+  if (!qpu) throw new Error("IBM returned no accessible QPU backend for this CRN");
+  return qpu;
 }
 
 async function ibmSubmitWorkload(payload: Record<string, unknown>): Promise<IbmSubmitResult> {
@@ -191,23 +236,36 @@ async function ibmSubmitWorkload(payload: Record<string, unknown>): Promise<IbmS
 
   const token = await ibmGetIamToken();
   if (!token) {
-    // Auth failed → graceful simulator fallback (do not leak details).
-    return {
-      workloadId: `qa_sim_${crypto.randomUUID()}`,
-      backend: "phaos_internal_simulator",
-      initialStatus: "queued",
-      simulated: true,
-    };
+    throw new Error("IBM IAM token exchange failed; verify IBM_Quantum_API is the exact IBM Cloud API key and has quantum-computing.job.create access");
   }
 
-  // NOTE: Real Qiskit Runtime program submission requires a serialized
-  // primitive program (Sampler/Estimator) which is not synthesized in this
-  // edge function. We acknowledge auth, register the audit, and use a
-  // hybrid validation pass on our side. This isolates IBM-specific
-  // execution so it can be swapped cleanly when Qiskit Runtime is wired.
+  const backend = await ibmChooseBackend(token);
+  const circuit = 'OPENQASM 3.0; include "stdgates.inc"; bit[1] c; h $0; c[0] = measure $0;';
+  const res = await ibmRuntimeRequest(token, "/jobs", {
+    method: "POST",
+    body: JSON.stringify({
+      program_id: "sampler",
+      backend,
+      tags: ["phaos-foundry", String(payload.investmentType ?? "quantum-audit")],
+      cost: 30,
+      private: true,
+      params: {
+        pubs: [[circuit]],
+        version: 2,
+        shots: 128,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`IBM Qiskit Runtime job submission failed (${res.status})${body ? `: ${body.slice(0, 300)}` : ""}`);
+  }
+  const job = await res.json();
+  if (!job?.id) throw new Error("IBM Qiskit Runtime did not return a job id");
+
   return {
-    workloadId: `qa_${crypto.randomUUID()}`,
-    backend: "ibm_quantum_runtime",
+    workloadId: job.id,
+    backend: job.backend ?? backend,
     initialStatus: "queued",
     simulated: false,
   };
@@ -417,14 +475,15 @@ Deno.serve(async (req) => {
           status: submit.initialStatus,
           usedAddon,
         });
-      } catch (_err) {
+      } catch (err) {
         // Rollback: restore credit if used, mark failed
+        const detail = err instanceof Error ? err.message : "IBM submission failed";
         if (usedAddon) await restoreAddonCredit(svc, user.id);
         await svc
           .from("quantum_audits")
-          .update({ status: "failed", error_message: "IBM submission failed" })
+          .update({ status: "failed", error_message: detail.slice(0, 1000) })
           .eq("id", inserted.id);
-        return json(502, { error: "Advanced-compute submission failed. Please retry." });
+        return json(502, { error: detail });
       }
     }
 

@@ -311,7 +311,15 @@ export async function runQuantumStage(args: {
     const { data, error } = await supabase.functions.invoke("quantum-audit", {
       body: { ...payloadSummary, idempotencyKey: `foundry-${args.scope}-${args.label}-${Date.now()}` },
     });
-    if (error) throw error;
+    if (error) {
+      const context = (error as { context?: unknown }).context;
+      if (context instanceof Response) {
+        const body = await context.clone().json().catch(async () => ({ error: await context.clone().text().catch(() => "") }));
+        const detail = typeof body?.error === "string" && body.error ? body.error : error.message;
+        throw new Error(detail);
+      }
+      throw error;
+    }
     if (data?.error) throw new Error(data.error);
     const sim = String(data?.backend ?? "").includes("simulator");
     const message = sim
@@ -330,7 +338,7 @@ export async function runQuantumStage(args: {
     };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "unknown error";
-    const why = `The quantum-audit edge function rejected the request before submitting any circuit to IBM. Raw reason: "${msg}". Likely causes: (1) the caller is not signed in with an admin role (Foundry scopes require admin bypass), (2) the edge function has not been redeployed after the most recent code change, or (3) IBM_Quantum_API / IBM_Quantum_CRN secrets are unset. No quantum compute time was consumed.`;
+    const why = `The quantum-audit backend rejected the request or IBM rejected the live Qiskit Runtime job. Raw reason: "${msg}". Likely causes: (1) the caller is not signed in with an admin role, (2) IBM_Quantum_API / IBM_Quantum_CRN are unset or were changed without redeploying, (3) the IBM key lacks quantum-computing.job.create access, (4) the CRN has no accessible QPU backend or runtime minutes, or (5) IBM rejected/rate-limited the Runtime payload. No live quantum result is credited unless IBM returns a workload id.`;
     return {
       ran: false,
       simulator: false,
