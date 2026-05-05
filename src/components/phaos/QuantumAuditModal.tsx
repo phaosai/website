@@ -181,6 +181,7 @@ const QuantumAuditModal = ({
         investmentType,
         platforms,
         simulationMode,
+        idempotencyKey: idemKeyRef.current,
       },
     });
 
@@ -195,6 +196,50 @@ const QuantumAuditModal = ({
     setSubmittedAt(new Date().toISOString());
     setPhase("polling");
     startPolling(data.auditId);
+  };
+
+  // Hypothetical preview path — no credit, no real backend, no entitlement required.
+  const handleHypotheticalPreview = () => {
+    if (!ticker || platforms.length === 0) return;
+    setErrorMsg(null);
+    setPhase("submitting");
+    setCompletedSteps([]);
+    const previewSteps = [
+      PROGRESS_STEPS[0],
+      "Simulating advanced-compute basket (preview mode)…",
+      "Running hypothetical constrained optimization…",
+      "Composing hypothetical research receipt…",
+      "Completed",
+    ];
+    let i = 0;
+    const interval = window.setInterval(() => {
+      setCompletedSteps((s) => [...s, previewSteps[i]]);
+      i += 1;
+      if (i >= previewSteps.length) {
+        window.clearInterval(interval);
+        const t = String(ticker).toUpperCase();
+        setReceipt({
+          auditId: `QA-PREVIEW-${(crypto.randomUUID().slice(0, 8)).toUpperCase()}`,
+          internalId: "preview",
+          timestamp: new Date().toISOString(),
+          investmentType,
+          ticker: t,
+          platforms,
+          validationLayer: "Hypothetical Preview (no credit consumed)",
+          backend: "phaos_preview_simulator",
+          workloadId: null,
+          basketScope: "Top filtered candidates (preview)",
+          status: "completed_preview",
+          summary:
+            `HYPOTHETICAL — If a Quantum Audit had run on ${t}, the advanced-compute pass would have re-weighted the top filtered candidates and ` +
+            `narrowed conviction to a single dominant signal cluster. Upgrade to run a real audit and consume one monthly run.`,
+          compliance:
+            "Hypothetical Quantum Audit preview. SIMULATED — does not predict returns or provide investment advice.",
+          usedAddon: false,
+        });
+        setPhase("complete");
+      }
+    }, 450);
   };
 
   const handleRetry = () => {
