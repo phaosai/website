@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/SEOHead";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import phaosCrown from "@/assets/phaos-crown-transparent.png";
 
@@ -103,8 +102,11 @@ const Auth = () => {
               : "Confirm your email to finish signing up.",
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+        if (!data.session) throw new Error("Sign in succeeded but the session was not restored. Please try again.");
+        toast({ title: "Signed in", description: "Opening your Phaos workspace." });
+        navigate(selectedPlan ? "/app/billing" : from, { replace: true });
       }
     } catch (err) {
       toast({ title: "Authentication failed", description: (err as Error).message, variant: "destructive" });
