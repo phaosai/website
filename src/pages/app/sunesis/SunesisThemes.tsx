@@ -272,3 +272,31 @@ export default function SunesisThemes() {
     </PageShell>
   );
 }
+
+function FreshnessRow({ rows }: { rows: ThemeFreshness[] }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Source freshness</p>
+      <ul className="grid sm:grid-cols-2 gap-1.5">
+        {rows.map((r) => {
+          const dot =
+            r.status === "fresh" ? "bg-emerald-500"
+            : r.status === "stale" ? "bg-amber-500"
+            : "bg-zinc-500";
+          const stamp =
+            r.status === "missing"
+              ? <span className="inline-flex items-center rounded-sm border border-zinc-500/40 bg-zinc-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-200">Missing</span>
+              : <span className="text-[10px] text-muted-foreground tabular-nums">{r.lastSeen ? new Date(r.lastSeen).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span>;
+          return (
+            <li key={r.sourceId} className="flex items-center justify-between gap-2 rounded-md border border-border bg-background/40 px-2.5 py-1.5">
+              <span className="flex items-center gap-2 text-[11px] text-foreground/85">
+                <span className={`w-1.5 h-1.5 rounded-full ${dot}`} /> {r.label}
+              </span>
+              {stamp}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
