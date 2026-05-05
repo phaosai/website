@@ -19,7 +19,7 @@ export default function SunesisLedger() {
 
       <div className="rounded-xl border border-border bg-card/50 p-5">
         <ul>
-          {SEED.map((e, i) => <TruthLedgerEntry key={i} {...e} />)}
+          {SEED.map((e, i) => <TruthLedgerEntry key={i} index={i} {...e} />)}
         </ul>
       </div>
 

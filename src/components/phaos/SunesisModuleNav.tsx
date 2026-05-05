@@ -20,25 +20,31 @@ const MODULES = [
  */
 export function SunesisModuleNav() {
   return (
-    <nav className="rounded-xl border border-border bg-card/40 backdrop-blur p-1.5 flex flex-wrap gap-1">
-      {MODULES.map((m) => (
-        <NavLink
-          key={m.to}
-          to={m.to}
-          end={m.end}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors",
-              isActive
-                ? "bg-purple-deep/15 text-purple-deep border border-purple-deep/30"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/40 border border-transparent"
-            )
-          }
-        >
-          <m.icon className="w-3.5 h-3.5" />
-          {m.label}
-        </NavLink>
-      ))}
-    </nav>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80 px-1">
+        <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
+        Sunesis · Research Operating System
+      </div>
+      <nav className="rounded-xl border border-border bg-card/40 backdrop-blur p-1.5 flex flex-wrap gap-1">
+        {MODULES.map((m) => (
+          <NavLink
+            key={m.to}
+            to={m.to}
+            end={m.end}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all duration-200",
+                isActive
+                  ? "bg-purple-deep/15 text-purple-deep border border-purple-deep/30 shadow-[0_0_0_1px_hsl(var(--primary)/0.1),0_4px_20px_-8px_hsl(var(--primary)/0.4)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/40 border border-transparent"
+              )
+            }
+          >
+            <m.icon className="w-3.5 h-3.5" />
+            {m.label}
+          </NavLink>
+        ))}
+      </nav>
+    </div>
   );
 }

@@ -34,6 +34,12 @@ export default function SunesisWorkflow() {
           title="Always-on monitoring"
           description="Pro+ unlocks recurring audits, no-repeat windows, and Slack/email alert routing."
           requiredPlan="Pro"
+          bullets={[
+            "Daily, weekly, or event-driven Truth Machine passes",
+            "Tier-change · QRR-downgrade · evidence-stale alerts",
+            "Slack and email routing with quiet windows",
+            "Auto-attached Audit Receipts on every monitored event",
+          ]}
         />
       )}
 

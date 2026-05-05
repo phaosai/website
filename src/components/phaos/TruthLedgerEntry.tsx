@@ -7,6 +7,7 @@ interface Props {
   source?: string;
   status?: "verified" | "pending" | "stale";
   hash?: string;
+  index?: number;
 }
 
 const ICONS = {
@@ -16,17 +17,19 @@ const ICONS = {
 };
 
 /**
- * Truth Ledger row — append-only audit line. Visual-only; backed by
- * usage_events + quantum_audits in production.
+ * Truth Ledger row — append-only audit line. Animated reveal for premium feel.
  */
-export function TruthLedgerEntry({ ts, asset, action, source, status = "verified", hash }: Props) {
+export function TruthLedgerEntry({ ts, asset, action, source, status = "verified", hash, index = 0 }: Props) {
   const { Icon, color } = ICONS[status];
   return (
-    <li className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+    <li
+      className="flex items-start gap-3 py-3 border-b border-border last:border-0 animate-ledger-reveal"
+      style={{ animationDelay: `${Math.min(index * 70, 500)}ms` }}
+    >
       <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${color}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 text-sm flex-wrap">
-          {asset && <span className="font-mono font-semibold">{asset}</span>}
+          {asset && <span className="font-mono font-semibold tracking-wide">{asset}</span>}
           <span className="text-muted-foreground">{action}</span>
         </div>
         <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">

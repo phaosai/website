@@ -20,3 +20,4 @@ export { AuditReceiptCard } from "./AuditReceiptCard";
 export { LockedFeatureTile } from "./LockedFeatureTile";
 export { ScenarioControlPanel } from "./ScenarioControlPanel";
 export { TruthLedgerEntry } from "./TruthLedgerEntry";
+export { SunesisMoatStrip } from "./SunesisMoatStrip";

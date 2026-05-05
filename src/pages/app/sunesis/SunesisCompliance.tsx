@@ -34,6 +34,12 @@ export default function SunesisCompliance() {
           title="Treasury Compliance Suite"
           description="Elite unlocks recurring DAO/stablecoin/RWA audits, public receipts, and embeddable verification badges."
           requiredPlan="Elite"
+          bullets={[
+            "Recurring stablecoin reserve attestations",
+            "RWA issuer concentration & custody-chain monitoring",
+            "DAO multisig hygiene + runway stress receipts",
+            "Public, shareable verification badges for transparency pages",
+          ]}
         />
       )}
 
