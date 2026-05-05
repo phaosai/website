@@ -1,59 +1,116 @@
-## Themes Layer + Scenario Sandbox + Cross-Module Glue
 
-Upgrade Themes with lifecycle, counter-thesis, and source/ledger backlinks; rebuild Scenario Sandbox into a 5-mode research surface (earnings gap · vol regime · macro shock · theme breakage · historical analog) with strictly range-based, uncertainty-labeled outputs; add cross-module glue so PCI, Truth Ledger, Themes, and Sandbox feel like one research system. UI + data scaffolding only — no live forecast engine.
+# Foundry Rebuild — Brain Forge for Sunesis
 
-### 1. Themes data extension
-Extend `SeedTheme` (non-breaking) with `lifecycle`, `data_freshness[]`, `break_conditions[]`, `historical_analogs[]`, `ledger_refs[]`, `narrative_clusters[]`. Add lifecycle/break-conditions/analogs to all 4 named themes plus a 5th `dynamic-cluster` theme labeled "Dynamically generated".
+The Foundry is **not** a sandbox. It is the build-pipeline for the brain that runs Phaos Sunesis. Every screen, gate, and button serves one purpose: forge → validate → promote a named engine version (e.g. `Sunesis Brain v1.0 "Aurora"`) into production.
 
-### 2. Themes page upgrade
-Always-visible top disclaimer: *"Investment themes are research frameworks, not buy recommendations. Historical examples do not predict future performance."*
-Card additions: lifecycle pill, PCI-range distribution bar, data-freshness row (missing visible), historical analog chips, expandable counter-thesis with severity-ranked break conditions, footer deeplinks `Open in Truth Ledger →` and `Run in Scenario Sandbox →`.
+## Architecture (per your point 7)
 
-New components: `ThemeLifecycleBadge`, `ThemePCIRangeBar`, `ThemeBreakConditions`, `HistoricalAnalogChips`.
+```text
+Layer 1  Asset-Class Sub-Brains      (Equities, Fixed Income, Derivatives,
+                                      FX & Commodities, Digital Assets, Alt)
+Layer 2  Regime Classifier           (expansion / late-cycle / contraction /
+                                      recovery / shock)
+Layer 3  Meta-Brain                  (combines sub-brains conditioned on regime)
+Layer 4  Quantum Challenger          (improves the combination layer + annual
+                                      edge cases — never replaces sub-brains)
+```
 
-### 3. Scenario Sandbox — 5 modes
-Tabbed surface across the 5 scenario types. Each panel uses shared `RangeOutput` (refuses point numbers, requires `UNCERTAINTY` chip), `ScenarioInputs`, `MethodologyNote` (formula-family framing), `ScenarioDisclaimer` (`SIMULATED`), and `PCIContextStrip`.
+## The Pipeline (top-to-bottom on /app/foundry)
 
-Panels in `src/components/phaos/sandbox/`:
-1. `EarningsGapPanel` — gap range, IV vs realized vol context, GARCH(1,1) note
-2. `VolRegimePanel` — Quiet ↔ Explosive toggle, compression/expansion behavior
-3. `MacroShockPanel` — 5 shock toggles + Asset & Theme Exposure Map
-4. `ThemeBreakageSimulator` — theme picker → ranked invalidation conditions
-5. `HistoricalAnalogMapper` — heuristic analog catalog with `HEURISTIC FRAMING — NOT A PREDICTION`
+```text
+STAGE 1  TRAIN SUB-BRAINS  (window: 2006–2010, the formative window)
+  For each of 6 asset classes:
+    Auto-pipeline runs end-to-end:
+      Source Discovery → Data Fetch → Normalize → Feature Eng →
+      Train Sub-Brain → Validation Prep → Brain Rating → Save Learning
+    Final step (optional): Quantum vetting of the sub-brain
+      → Post-run notification: "Quantum vetting ran on IBM ibm_brisbane
+         (job qx_8821) ✓"  OR  "Quantum vetting skipped"  OR
+         "Ran on internal simulator — IBM credentials not detected"
+    On success: card greys out and locks. Cannot re-run without explicit reset.
+  Progress: X / 6 sub-brains forged.
 
-### 4. Methodology framing
-Edit `FormulaMethodologyPanel` to ensure CAPM/Fama-French rows present and add the institutional-framing footer: *"Powered by the same families of quantitative thinking that sit behind institutional research — distilled from public data and presented with uncommon transparency."*
+STAGE 2  REGIME CLASSIFIER  (unlocks at 6/6 sub-brains)
+  Single automated run. Labels every month 2006–2010 with a regime.
+  Locks when complete.
 
-### 5. Cross-module glue
-New `src/lib/researchLinks.ts` URL builders for ledger/sandbox/ticker/theme. Wire into Theme cards, `SunesisTicker` ("Linked Research" strip), `SunesisLedger` (reads `?theme=`/`?category=`/`?ticker=` params and prefilters), and Sandbox panels.
+STAGE 3  QUANTUM SYSTEM ASSESSMENT  (unlocks after Stage 2)
+  Big "Run Unified Synthesis" button — dark until prerequisites met, then lit.
+  Quantum reads: Original Brain + all 6 sub-brains + regime layer.
+  Produces: Combined Quantum Brain — the optimized combination/methodology
+  that would have predicted 2006–2010 hypothetically had it existed Jan 1, 2006.
+  Outputs methodology card, in-sample accuracy, weight matrix.
 
-### 6. Routes
-`src/App.tsx` — confirm query-param-driven deeplinks; no new top-level routes.
+STAGE 4  ROLLING ANNUAL VALIDATION  (2011 → 2025, strictly sequential)
+  Each year is locked until the prior year is scored. For year Y:
+    1. Snapshot the Jan 1, Y world: fundamentals, news, world events,
+       major disasters, macro state — feeds the brains as "what was known"
+    2. Set PCI for every entity in every asset class as of Jan 1, Y
+    3. Watch year unfold to Dec 31, Y (HISTORICAL EXAMPLE label)
+    4. Score Original / Additive (sub-brains+meta) / Combined (quantum)
+       independently against actuals
+    5. Optional small-scale Quantum audit for that year
+    6. Miss-analysis: why each brain missed what it missed
+    7. All three brains self-heal, self-learn, and improve from the year
+  Year card shows three brain scores side-by-side + delta vs prior year.
+  A cumulative trend strip runs along the top: 2011 … current.
 
-### 7. Integrity guardrails
-`RangeOutput` enforces ranges only; missing freshness shown as "MISSING" pill; conflicting evidence visible as `Conflict visible` tag.
+STAGE 5  PROMOTE TO SUNESIS  (the final, executable step)
+  Eligibility checklist:
+    • All years 2011–2025 validated
+    • Combined brain ≥ user-set threshold (default 99.5%) on most recent year
+    • Methodology card signed off
+  When eligible, Promote card lights up:
+    [ Engine name: __________________ ] (e.g. "Aurora")
+    [ Version:     v1.0   (auto)      ]
+    [ Promote to Sunesis as live processing brain ]
+  Confirm modal restates: this replaces the current Sunesis processing
+  brain. Requires typing the engine name to confirm.
+  After promote: the engine appears in the Engines registry with its
+  series name + version, and Sunesis routes all searches through it.
+```
 
-### Files to be created
-- `src/components/phaos/themes/ThemeLifecycleBadge.tsx`
-- `src/components/phaos/themes/ThemePCIRangeBar.tsx`
-- `src/components/phaos/themes/ThemeBreakConditions.tsx`
-- `src/components/phaos/themes/HistoricalAnalogChips.tsx`
-- `src/components/phaos/sandbox/EarningsGapPanel.tsx`
-- `src/components/phaos/sandbox/VolRegimePanel.tsx`
-- `src/components/phaos/sandbox/MacroShockPanel.tsx`
-- `src/components/phaos/sandbox/ThemeBreakageSimulator.tsx`
-- `src/components/phaos/sandbox/HistoricalAnalogMapper.tsx`
-- `src/components/phaos/sandbox/RangeOutput.tsx`
-- `src/components/phaos/sandbox/MethodologyNote.tsx`
-- `src/components/phaos/sandbox/PCIContextStrip.tsx`
-- `src/lib/researchLinks.ts`
+## Engine Versioning
 
-### Files to be edited
-- `src/data/themes.ts`
-- `src/pages/app/sunesis/SunesisThemes.tsx`
-- `src/pages/app/sunesis/SunesisThemeDetail.tsx`
-- `src/pages/app/sunesis/SunesisSandbox.tsx`
-- `src/pages/app/sunesis/SunesisLedger.tsx`
-- `src/pages/app/sunesis/SunesisTicker.tsx`
-- `src/components/phaos/FormulaMethodologyPanel.tsx`
-- `src/components/phaos/index.ts`
+Naming convention `Sunesis Brain vMAJOR.MINOR "Series Name"` (e.g. `v1.0 "Aurora"`, `v1.1 "Aurora.1"`, `v2.0 "Borealis"`). Stored in a new `foundry_engines` table with: id, version, series_name, status (`forging` | `validated` | `live` | `archived`), forged_at, promoted_at, accuracy_summary, methodology_card, weights_ref. Only one row may have `status = 'live'` at a time; promoting a new engine moves the prior live row to `archived`.
+
+## UI Layout
+
+Single page, top-down so the staged nature is unmistakable:
+
+1. **Forge Header** — Current live engine (name + version), engine-in-progress, overall stage indicator (1/2/3/4/5)
+2. **Stage 1 Grid** — 6 asset-class cards. Each has: status, "Run automated pipeline" button, optional-quantum toggle, lock state, last-run summary, "view pipeline" side panel showing the live 8-step rail
+3. **Stage 2 Card** — Regime classifier, dimmed until eligible
+4. **Stage 3 Hero** — Lit/unlit unified-synthesis button + post-run methodology readout
+5. **Stage 4 Year Rail** — Horizontal chips 2011…2025; selected year expands into a full panel (Jan 1 world snapshot, PCI table, three brain score cards, miss-analysis, year actions)
+6. **Stage 5 Promote Card** — Eligibility checklist + name/version inputs + confirm
+7. **Engines Registry** — Table of all forged engines with status, accuracy, promote/rollback actions
+
+## Quantum Wiring
+
+Reuse existing `quantum-audit` edge function (already handles `IBM_Quantum_API` + `IBM_Quantum_CRN` with simulator fallback). Add a small `foundry-orchestrator` edge function that drives the multi-step automated pipelines server-side and emits status events the UI subscribes to. Quantum is invoked at three points only: per-class optional vetting, Stage 3 unified synthesis, per-year Stage 4 audit.
+
+## Files to Change
+
+- `src/pages/app/foundry/FoundryAdmin.tsx` — full rewrite into the staged forge
+- `src/components/phaos/foundry/` (new) — `EngineHeader.tsx`, `AssetClassCard.tsx`, `PipelineRail.tsx`, `RegimeCard.tsx`, `QuantumSynthesisCard.tsx`, `YearRail.tsx`, `YearValidationPanel.tsx`, `PromoteCard.tsx`, `EnginesRegistry.tsx`, `StageGate.tsx`
+- `src/lib/foundryEngine.ts` (new) — stage gating, scoring math, learning-note generator, quantum-call helpers
+- `supabase/functions/foundry-orchestrator/index.ts` (new) — drives sub-brain pipelines, regime training, validation runs; returns step-by-step status
+- DB migration: `foundry_engines`, `foundry_runs`, `foundry_year_scores` tables with RLS (admin-only writes, owner reads)
+
+## Honesty Rules (per project memory)
+
+- All 2006–2010 outputs labelled `HISTORICAL EXAMPLE` / `SIMULATED`
+- Accuracy figures always show in-sample vs out-of-sample
+- Promote modal restates that this replaces the live Sunesis brain
+- Quantum post-run notification states honestly whether real IBM hardware or simulator was used
+- No "guaranteed" / advisor language anywhere
+
+## Out of Scope (this pass)
+
+- Real ML training (sub-brain weights are simulated training curves driven by deterministic generators — the architecture and gating are real, the learned weights are placeholders until the data pipeline is wired)
+- Live Qiskit Runtime program submission (uses existing hybrid path in `quantum-audit`)
+
+## Outcome
+
+`/app/foundry` becomes the brain forge: a strict five-stage pipeline that builds, validates, names, versions, and promotes a Sunesis processing engine. Stages cannot be skipped. Asset classes lock after forging. The promote button is the single, final, executable action that swaps the live brain in Sunesis.
