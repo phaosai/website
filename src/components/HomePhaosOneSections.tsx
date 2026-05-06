@@ -26,7 +26,7 @@ const HomePhaosOneSections = () => {
             investors.
           </p>
           <p className="mt-4 text-base text-foreground/80 max-w-3xl leading-relaxed">
-            Phaos ONE is the natural next step: the discipline we apply to operations —
+            Phaos Phinance is the natural next step: the discipline we apply to operations —
             transparency, governance, evidence — applied to the markets. Same brand, same
             standards, expanded surface area.
           </p>
@@ -35,7 +35,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              Explore Phaos ONE →
+              Explore Phaos Phinance →
             </Link>
           </div>
         </div>
@@ -80,33 +80,23 @@ const HomePhaosOneSections = () => {
         </div>
       </section>
 
-      {/* SECTION C — Phaos ONE Ecosystem */}
+      {/* SECTION C — Phaos Phinance Ecosystem */}
       <section className="py-24 border-t border-border/40">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
-            One Environment. Three Powers. The Complete Research Operating System.
+            Evidence-First Research. One Conviction Score. Complete Transparency.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            Phaos ONE combines Sunesis (research), Kyrios (governance), and Aion (protection)
-            in a single unified environment for serious investors.
+            Phaos Phinance is built around Sunesis — filing-backed research and the Phaos
+            Conviction Index — for serious investors.
           </p>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-1">
             {[
               {
                 name: "Phaos Sunesis",
                 to: "/one/sunesis",
                 desc: "Evidence-first research with filing-backed synthesis and the Phaos Conviction Index.",
-              },
-              {
-                name: "Phaos Kyrios",
-                to: "/one/kyrios",
-                desc: "Governed workflows, approval stages, and structured action orchestration.",
-              },
-              {
-                name: "Phaos Aion",
-                to: "/one/aion",
-                desc: "Resilience, scenario simulation, and long-horizon protection.",
               },
             ].map((p) => (
               <Link
@@ -115,7 +105,7 @@ const HomePhaosOneSections = () => {
                 className="group rounded-xl border border-border bg-card/60 p-6 hover:bg-card transition-colors"
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                  Phaos ONE
+                  Phaos Phinance
                 </p>
                 <h3 className="text-xl font-semibold tracking-tight text-foreground">
                   {p.name}
@@ -133,7 +123,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos ONE
+              Explore Phaos Phinance
             </Link>
             <Link
               to="/one/run-simulation"
@@ -165,7 +155,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              See Live PCI Scores with Phaos ONE →
+              See Live PCI Scores with Phaos Phinance →
             </Link>
           </div>
 
@@ -238,10 +228,10 @@ const HomePhaosOneSections = () => {
                 desc: "Get oriented with the platform and explore methodology.",
               },
               {
-                tier: "Phaos ONE",
+                tier: "Phaos Phinance",
                 price: "$599",
                 cadence: "/mo",
-                desc: "The unified research environment — Sunesis, Kyrios, Aion.",
+                desc: "The evidence-first research environment powered by Sunesis.",
                 featured: true,
               },
               {
@@ -300,7 +290,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos ONE
+              Explore Phaos Phinance
             </Link>
             <Link
               to="/contact"
