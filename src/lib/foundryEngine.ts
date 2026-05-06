@@ -330,15 +330,101 @@ function classOf(symbol: string): AssetClassId {
   return ASSET_SAMPLES.find((a) => a.symbol === symbol)?.assetClass ?? "equities";
 }
 
-// Deterministic "truth" per (year, symbol). Anchored on canonical pciData,
-// then bent by the year's real macro shock scaled by asset-class beta.
+// Real anchors derived from foundry_year_corpus (OHLCV). Populated by
+// `loadRealizedAnchors` and consulted by realizedDec31Pci / realizedQuarterPci.
+// Map key: `${year}:${symbol}` → { dec31, q1, q2, q3 } in PCI points (1..100).
+type AnchorEntry = { dec31: number; q1?: number; q2?: number; q3?: number };
+let CORPUS_ANCHORS: Record<string, AnchorEntry> = {};
+
+export function setCorpusAnchors(map: Record<string, AnchorEntry>) {
+  CORPUS_ANCHORS = { ...map };
+}
+export function getCorpusAnchors(): Record<string, AnchorEntry> {
+  return CORPUS_ANCHORS;
+}
+
+/**
+ * Pull real OHLCV from public.foundry_year_corpus and convert annual returns
+ * into a realized PCI on the 1..100 scale. Q1/Q2/Q3 are derived from intra-year
+ * checkpoints when daily price arrays are present in the payload.
+ *
+ * Convention: realizedPCI = clamp( 50 + 250 * annualReturn ) so that a +20%
+ * year ≈ 100 and a -20% year ≈ 0. This is the same scale the synthetic
+ * realizedDec31Pci targets, so anchors slot in cleanly.
+ */
+export async function loadRealizedAnchors(years: number[] = VALIDATION_YEARS): Promise<Record<string, AnchorEntry>> {
+  const out: Record<string, AnchorEntry> = {};
+  try {
+    const { data, error } = await supabase
+      .from("foundry_year_corpus")
+      .select("year,source_id,payload,dimension")
+      .eq("dimension", "macro")
+      .in("year", years);
+    if (error || !data) return out;
+    for (const row of data as Array<{ year: number; source_id: string; payload: Record<string, unknown> }>) {
+      // source_id convention from foundry-ingest-prices: "<symbol>:<year>" or "<symbol>"
+      const symbol = String(row.source_id).split(":")[0].toUpperCase();
+      const p = row.payload ?? {};
+      const closes = (p.closes ?? p.daily_closes ?? p.prices) as number[] | undefined;
+      let dec31: number | undefined;
+      let q1: number | undefined, q2: number | undefined, q3: number | undefined;
+      if (Array.isArray(closes) && closes.length >= 4) {
+        const first = closes[0];
+        const last = closes[closes.length - 1];
+        const annualReturn = (last - first) / first;
+        dec31 = clampPci(50 + 250 * annualReturn);
+        const idx = (frac: number) => Math.floor((closes.length - 1) * frac);
+        const r = (i: number) => (closes[i] - first) / first;
+        q1 = clampPci(50 + 250 * r(idx(0.25)));
+        q2 = clampPci(50 + 250 * r(idx(0.50)));
+        q3 = clampPci(50 + 250 * r(idx(0.75)));
+      } else if (typeof p.annual_return === "number") {
+        dec31 = clampPci(50 + 250 * (p.annual_return as number));
+      } else if (typeof p.dec31_pci === "number") {
+        dec31 = clampPci(p.dec31_pci as number);
+      }
+      if (dec31 !== undefined) {
+        out[`${row.year}:${symbol}`] = { dec31, q1, q2, q3 };
+      }
+    }
+  } catch { /* ignore — fall back to synthetic anchors */ }
+  CORPUS_ANCHORS = out;
+  return out;
+}
+
+// Deterministic synthetic "truth" per (year, symbol). Anchored on canonical
+// pciData, then bent by the year's real macro shock scaled by asset-class beta.
+// If a real OHLCV anchor exists in CORPUS_ANCHORS, that wins.
 function realizedDec31Pci(year: number, symbol: string): number {
+  const real = CORPUS_ANCHORS[`${year}:${symbol}`]?.dec31;
+  if (typeof real === "number") return real;
   const anchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
   const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
   const shock = MACRO_SHOCKS[year];
   const beta = SHOCK_CLASS_BETA[classOf(symbol)];
   const shockTerm = shock ? shock.shock * beta : 0;
   return clampPci(anchor + cyclical + shockTerm);
+}
+
+// Quarterly anchors. Real OHLCV checkpoints win; otherwise interpolate
+// between the Jan 1 anchor and the Dec 31 realized value with shock weighting
+// concentrated in the quarter the shock most plausibly hit.
+function realizedQuarterPci(year: number, symbol: string, q: 1 | 2 | 3): number {
+  const real = CORPUS_ANCHORS[`${year}:${symbol}`];
+  if (real) {
+    if (q === 1 && typeof real.q1 === "number") return real.q1;
+    if (q === 2 && typeof real.q2 === "number") return real.q2;
+    if (q === 3 && typeof real.q3 === "number") return real.q3;
+  }
+  const startAnchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
+  const dec31 = realizedDec31Pci(year, symbol);
+  const t = q / 4; // 0.25, 0.50, 0.75
+  // Non-linear shock weighting: most shocks concentrate in a specific quarter.
+  // Use year-hash to pick a deterministic shock quarter for variety.
+  const shockQ = (Math.abs(hash(`${year}-shockq`)) % 4) + 1;
+  const proximity = 1 - Math.abs(q - shockQ) / 4;
+  const shockBend = (dec31 - startAnchor) * proximity * 0.35;
+  return clampPci(startAnchor + (dec31 - startAnchor) * t + shockBend * (q < 4 ? 1 : 0));
 }
 
 export function shockForYear(year: number) {
@@ -352,16 +438,9 @@ function pickReason(brain: BrainKey, dir: "upside" | "downside", year: number, s
   return pool[Math.abs(hash(`${brain}-${year}-${symbol}-${dir}`)) % pool.length];
 }
 
-// Each training pass also enables an additional data-source dimension from
-// the registry — so a brain that has been trained for N passes is correlating
-// across N additional dimensions of the world (macro → filings → sentiment →
-// shipping → weather → trends → geopolitical). The dimension count further
-// damps the irreducible-surprise term and pulls baseNoise down.
 import { ALL_DIMENSIONS, type DataDimension } from "./foundryDataSources";
 
 export function dimensionsAfterPasses(passes: number): DataDimension[] {
-  // Pass 0 = price only. Each subsequent pass enables the next dimension in
-  // ALL_DIMENSIONS. Caps at the full dimension set.
   const n = Math.min(ALL_DIMENSIONS.length, Math.max(1, passes + 1));
   return ALL_DIMENSIONS.slice(0, n);
 }
@@ -372,7 +451,7 @@ export function runYearForBrain(args: {
   baseNoise: number;
   bias?: number;
   trainingPasses?: number;
-  /** Per-symbol residual bias accumulated from prior passes (gradient step). */
+  /** Per-symbol residual bias (regime-conditional) accumulated from prior passes. */
   residualBias?: Record<string, number>;
 }): BrainYearResult {
   const { year, brain, baseNoise, bias = 0, trainingPasses = 0, residualBias = {} } = args;
@@ -381,10 +460,6 @@ export function runYearForBrain(args: {
     brain === "original" ? 1.0 :
     brain === "additive" ? 0.78 : 0.62;
   const surpriseNoise = shock ? Math.abs(shock.shock) * shock.surprise * surpriseScale : 0;
-  // Two compounding learning effects per pass:
-  //   1. Surprise damp (existing) — brain has seen this shock before.
-  //   2. Dimension damp (new) — each new enabled dimension cuts the
-  //      irreducible-surprise term by another 8%.
   const dimsCount = dimensionsAfterPasses(trainingPasses).length;
   const passDamp = Math.pow(0.82, trainingPasses);
   const dimDamp = Math.pow(0.92, Math.max(0, dimsCount - 1));
@@ -399,14 +474,28 @@ export function runYearForBrain(args: {
     const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
     const baseErr = (Math.random() - 0.5) * 2 * effectiveBaseNoise + bias;
     const surpriseErr = (Math.random() - 0.5) * 2 * effectiveSurprise * beta;
-    // Apply gradient step from prior passes' residuals (pull toward truth).
     const prior = residualBias[symbol] ?? 0;
     const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2 - prior * 0.5);
+
+    // Quarterly checkpoints (Q1, Q2, Q3, Q4=dec31). The brain still only made
+    // the Jan 1 call, but we measure how close it stayed across the year.
+    const qReal = [
+      realizedQuarterPci(year, symbol, 1),
+      realizedQuarterPci(year, symbol, 2),
+      realizedQuarterPci(year, symbol, 3),
+      dec31RealizedPci,
+    ];
+    const quarterlyAccuracy = +(
+      qReal.reduce((s, r) => s + (100 - Math.abs(jan1Pci - r)), 0) / qReal.length
+    ).toFixed(2);
     const accuracy = +(100 - Math.abs(jan1Pci - dec31RealizedPci)).toFixed(2);
-    return { assetClass, symbol, jan1Pci, dec31RealizedPci, accuracy };
+    return { assetClass, symbol, jan1Pci, dec31RealizedPci, accuracy, quarterlyRealized: qReal, quarterlyAccuracy };
   });
   const brainScore = +(predictions.reduce((s, p) => s + p.accuracy, 0) / predictions.length).toFixed(2);
   const meanAbsError = +(predictions.reduce((s, p) => s + Math.abs(p.jan1Pci - p.dec31RealizedPci), 0) / predictions.length).toFixed(2);
+  const quarterlyMeanAccuracy = +(
+    predictions.reduce((s, p) => s + (p.quarterlyAccuracy ?? p.accuracy), 0) / predictions.length
+  ).toFixed(2);
   const worst = [...predictions].sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
   const shockTag = shock ? ` Macro context: ${shock.label}.` : "";
   const postMortem = worst.map((w) =>
@@ -414,15 +503,19 @@ export function runYearForBrain(args: {
       ? `${w.symbol} (${w.assetClass}): under-predicted by ${w.dec31RealizedPci - w.jan1Pci} PCI pts. Missed catalysts: ${pickReason(brain, "upside", year, w.symbol)}.${shockTag}`
       : `${w.symbol} (${w.assetClass}): over-predicted by ${w.jan1Pci - w.dec31RealizedPci} PCI pts. Missed risks: ${pickReason(brain, "downside", year, w.symbol)}.${shockTag}`,
   );
-  return { brain, brainScore, meanAbsError, predictions, postMortem };
+  return { brain, brainScore, meanAbsError, predictions, postMortem, quarterlyMeanAccuracy };
 }
 
-// Multi-pass training. Runs the year `passes` times; each pass tightens the
-// surprise term AND accumulates per-symbol residuals (gradient memory) that
-// are fed back into the next pass — so every additional cycle genuinely digs
-// deeper. Returns the FINAL pass result, the learning curve, and the updated
-// residual-bias map (which the caller persists to ForgeState so it carries
-// forward to every subsequent year & cycle).
+/**
+ * Multi-pass training with **regime-conditional residual memory**.
+ * Caller passes the full `residualByRegime` map; we resolve the regime for
+ * the year, train against THAT regime's per-symbol bias, update only that
+ * regime's bias map, and return the updated full map. This prevents a
+ * crisis-year correction from polluting a melt-up year's bias and vice versa.
+ *
+ * Quarterly checkpoint errors are ALSO blended into the residual update so
+ * the brain learns from intra-year drift, not just Jan→Dec endpoints.
+ */
 export function trainYearMultiPass(args: {
   year: number;
   brain: BrainKey;
@@ -430,13 +523,32 @@ export function trainYearMultiPass(args: {
   bias?: number;
   passes: number;
   startingPasses?: number;
+  /** Legacy flat residual map (kept for backward compat). */
   residualBias?: Record<string, number>;
-}): { final: BrainYearResult; curve: number[]; residualBias: Record<string, number> } {
+  /** Regime-conditional residual map. Wins over residualBias when provided. */
+  residualByRegime?: Partial<Record<RegimeState, Record<string, number>>>;
+}): {
+  final: BrainYearResult;
+  curve: number[];
+  residualBias: Record<string, number>;
+  residualByRegime: Partial<Record<RegimeState, Record<string, number>>>;
+  regime: RegimeState;
+} {
   const curve: number[] = [];
   let last: BrainYearResult | null = null;
   const start = args.startingPasses ?? 0;
-  const residual: Record<string, number> = { ...(args.residualBias ?? {}) };
-  const LR = 0.18; // learning rate per pass
+  const regime = regimeOf(args.year);
+  const fullRegimeMap: Partial<Record<RegimeState, Record<string, number>>> = {
+    ...(args.residualByRegime ?? {}),
+  };
+  // Seed the regime bucket with prior knowledge (regime-specific first, then
+  // fall back to the legacy flat map so nothing learned is thrown away).
+  const regimeResidual: Record<string, number> = {
+    ...(args.residualBias ?? {}),
+    ...(fullRegimeMap[regime] ?? {}),
+  };
+  const LR = 0.18; // base learning rate per pass
+  const Q_WEIGHT = 0.4; // weight on quarterly drift error in residual update
   for (let i = 0; i < args.passes; i++) {
     last = runYearForBrain({
       year: args.year,
@@ -444,16 +556,34 @@ export function trainYearMultiPass(args: {
       baseNoise: args.baseNoise,
       bias: args.bias,
       trainingPasses: start + i,
-      residualBias: residual,
+      residualBias: regimeResidual,
     });
-    // Update residuals: pull each symbol's bias toward the realized error.
     for (const p of last.predictions) {
-      const err = p.jan1Pci - p.dec31RealizedPci; // signed
-      residual[p.symbol] = (residual[p.symbol] ?? 0) * (1 - LR) + err * LR;
+      const endErr = p.jan1Pci - p.dec31RealizedPci;
+      // Mean signed quarterly drift gives the brain credit for tracking the
+      // year's path, not just the year-end print.
+      const qDrift = (p.quarterlyRealized ?? []).reduce((s, r) => s + (p.jan1Pci - r), 0)
+        / Math.max(1, (p.quarterlyRealized ?? []).length);
+      const blended = endErr * (1 - Q_WEIGHT) + qDrift * Q_WEIGHT;
+      regimeResidual[p.symbol] = (regimeResidual[p.symbol] ?? 0) * (1 - LR) + blended * LR;
     }
     curve.push(last.brainScore);
   }
-  return { final: last!, curve, residualBias: residual };
+  fullRegimeMap[regime] = regimeResidual;
+  // Maintain a flat "best-known" residual map for backward compatibility &
+  // promotion: average across all regimes per symbol.
+  const flat: Record<string, number> = {};
+  const counts: Record<string, number> = {};
+  for (const r of ALL_REGIMES) {
+    const m = fullRegimeMap[r];
+    if (!m) continue;
+    for (const [sym, v] of Object.entries(m)) {
+      flat[sym] = (flat[sym] ?? 0) + v;
+      counts[sym] = (counts[sym] ?? 0) + 1;
+    }
+  }
+  for (const sym of Object.keys(flat)) flat[sym] = flat[sym] / Math.max(1, counts[sym]);
+  return { final: last!, curve, residualBias: flat, residualByRegime: fullRegimeMap, regime };
 }
 
 
