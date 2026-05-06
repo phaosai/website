@@ -26,7 +26,7 @@ const HomePhaosOneSections = () => {
             investors.
           </p>
           <p className="mt-4 text-base text-foreground/80 max-w-3xl leading-relaxed">
-            Phaos ONE is the natural next step: the discipline we apply to operations —
+            Phaos Phinance is the natural next step: the discipline we apply to operations —
             transparency, governance, evidence — applied to the markets. Same brand, same
             standards, expanded surface area.
           </p>
@@ -35,7 +35,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              Explore Phaos ONE →
+              Explore Phaos Phinance →
             </Link>
           </div>
         </div>
