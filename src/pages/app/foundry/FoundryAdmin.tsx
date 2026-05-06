@@ -334,6 +334,9 @@ export default function FoundryAdmin() {
               <h1 className="text-xl font-semibold tracking-tight">The Foundry — Brain Forge</h1>
               <p className="text-sm text-muted-foreground">Build, validate, name, version, and promote the engine that runs Phaos Sunesis.</p>
             </div>
+            <Button size="sm" variant="outline" className="gap-1" onClick={doPing} disabled={pinging}>
+              {pinging ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />} Ping IBM Quantum
+            </Button>
           </div>
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
