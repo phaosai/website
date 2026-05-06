@@ -320,11 +320,11 @@ export function runYearForBrain(args: {
     const beta = SHOCK_CLASS_BETA[assetClass];
     const anchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
     const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
-    const baseErr = (Math.random() - 0.5) * 2 * baseNoise + bias;
+    const baseErr = (Math.random() - 0.5) * 2 * effectiveBaseNoise + bias;
     const surpriseErr = (Math.random() - 0.5) * 2 * effectiveSurprise * beta;
-    // Brain anchors to Jan 1 fundamentals view; the year's shock then drives
-    // realized PCI away from that anchor — that's the "miss".
-    const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2);
+    // Apply gradient step from prior passes' residuals (pull toward truth).
+    const prior = residualBias[symbol] ?? 0;
+    const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2 - prior * 0.5);
     const accuracy = +(100 - Math.abs(jan1Pci - dec31RealizedPci)).toFixed(2);
     return { assetClass, symbol, jan1Pci, dec31RealizedPci, accuracy };
   });
