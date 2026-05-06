@@ -22,8 +22,11 @@ import {
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
+  dimensionsAfterPasses,
   type QuantumReport, type BrainKey, type QuantumPingResult,
 } from "@/lib/foundryEngine";
+import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
+import { supabase } from "@/integrations/supabase/client";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
 function loadReports(): QuantumReport[] {
