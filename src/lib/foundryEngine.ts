@@ -115,16 +115,19 @@ export interface BrainYearResult {
 export interface YearScore {
   year: number;
   status: "locked" | "ready" | "running" | "scored";
-  // Phase tracker so the UI can prove integrity (no peeking forward).
   phase?: "idle" | "jan1_blind" | "year_unfolding" | "dec31_scoring" | "post_mortem" | "complete";
-  // Final brain scores (0–100). Same numbers used in the year buttons.
   original?: number;
   additive?: number;
   combined?: number;
-  // Full per-brain breakdown captured during the run.
   results?: BrainYearResult[];
   quantumAudited?: boolean;
   notes?: string;
+  // Number of times this year has been re-trained (passes through the same year).
+  trainingPasses?: number;
+  // Learning curve: brainScore of the COMBINED brain across every pass.
+  learningCurve?: number[];
+  // The best (highest) combined score ever achieved on this year.
+  bestCombined?: number;
 }
 
 
@@ -134,6 +137,8 @@ export interface ForgeState {
   synthesis: { status: "locked" | "ready" | "running" | "done"; accuracy?: number; methodology?: string };
   years: YearScore[];
   promote: { engineName: string; version: string };
+  // Total deep-training cycles run across every year (the "100 instances" button).
+  totalTrainingCycles?: number;
 }
 
 export const VALIDATION_YEARS = Array.from({ length: 15 }, (_, i) => 2011 + i);
