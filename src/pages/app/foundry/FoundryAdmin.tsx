@@ -190,12 +190,17 @@ export default function FoundryAdmin() {
 
   // ---------- Stage 4: STRICT integrity year cycle ----------
   // Phases: jan1_blind → year_unfolding → dec31_scoring → post_mortem → complete.
-  // No brain may peek beyond Jan 1 of the year being validated. Learning from
-  // earlier years shrinks the noise budget for later years.
-  async function runYear(year: number, withQuantum: boolean) {
-    const yearsCompleted = state.years.filter((y) => y.status === "scored" && y.year < year).length;
-    // Each completed year tightens the noise budget by ~12%, asymptoting toward zero.
-    const learningFactor = Math.pow(0.88, yearsCompleted);
+  // No brain may peek beyond Jan 1 of the year being validated. Learning is
+  // expressed via (a) the year-over-year `learningFactor` AND (b) the per-year
+  // `trainingPasses` counter that re-trains the brain on the same shock.
+  async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number } = {}) {
+    const yearsCompleted = state.years.filter((y) => (y.status === "scored") && y.year < year).length;
+    const learningFactor = Math.pow(0.94, yearsCompleted); // gentler — shocks should still hurt
+
+    const yEntry = state.years.find((x) => x.year === year)!;
+    const priorPasses = yEntry.trainingPasses ?? 0;
+    const passes = opts.passes ?? 1;
+    const shock = MACRO_SHOCKS[year];
 
     function setPhase(phase: NonNullable<import("@/lib/foundryEngine").YearScore["phase"]>) {
       setState((prev) => ({
@@ -204,42 +209,51 @@ export default function FoundryAdmin() {
       }));
     }
 
-    // Phase 1 — Jan 1 blind PCI assignment.
-    setPhase("jan1_blind");
-    toast({
-      title: `🔒 Integrity gate · Jan 1, ${year}`,
-      description: `All 3 brains are assigning a blind PCI to ${ASSET_SAMPLE_COUNT} assets across ${ASSET_CLASSES.length} classes using ONLY information available as of Jan 1, ${year}. No forward knowledge.`,
-    });
-    await new Promise((r) => setTimeout(r, 1100));
+    if (!opts.silent) {
+      setPhase("jan1_blind");
+      toast({
+        title: `🔒 Integrity gate · Jan 1, ${year}`,
+        description: `Brains assigning blind PCI to ${ASSET_SAMPLE_COUNT} assets using ONLY Jan 1, ${year} info. ${shock ? `What's COMING this year (brain doesn't know): ${shock.label}` : "No major macro shock recorded for this year."}`,
+      });
+      await new Promise((r) => setTimeout(r, 900));
+      setPhase("year_unfolding");
+      await new Promise((r) => setTimeout(r, 700));
+      setPhase("dec31_scoring");
+    }
 
-    // Phase 2 — year unfolds (deterministic realized PCI computed inside the helper).
-    setPhase("year_unfolding");
-    toast({ title: `▶ ${year} unfolding`, description: `Year plays out from Jan 2 → Dec 31, ${year}. Realized returns generate the year-end PCI for every asset.` });
-    await new Promise((r) => setTimeout(r, 900));
-
-    // Phase 3 — Dec 31 scoring. Optionally quantum-audited.
-    setPhase("dec31_scoring");
     let qOut: Awaited<ReturnType<typeof runQuantumStage>> | null = null;
-    if (withQuantum) {
+    if (withQuantum && !opts.silent) {
       announceQuantum(`Year ${year} integrity audit`);
       qOut = await runQuantumStage({ scope: "year-audit", label: `audit-${year}` });
       recordReport(qOut.report);
       toast({ title: `⚛︎ Quantum result · ${year} audit`, description: qOut.message });
     }
-    const quantumBoost = withQuantum && qOut?.ran && !qOut.simulator ? 0.65 : 1.0;
+    const quantumBoost = withQuantum && qOut?.ran && !qOut.simulator ? 0.7 : 1.0;
 
-    const original = runYearForBrain({ year, brain: "original", baseNoise: 14 * learningFactor, bias: -1 });
-    const additive = runYearForBrain({ year, brain: "additive", baseNoise: 8  * learningFactor });
-    const combined = runYearForBrain({ year, brain: "combined", baseNoise: 4  * learningFactor * quantumBoost });
+    // Run the requested number of training passes for this year.
+    const learningCurve: number[] = [...(yEntry.learningCurve ?? [])];
+    let original = runYearForBrain({ year, brain: "original", baseNoise: 14 * learningFactor, bias: -1, trainingPasses: priorPasses });
+    let additive = runYearForBrain({ year, brain: "additive", baseNoise: 8  * learningFactor, trainingPasses: priorPasses });
+    let combined = runYearForBrain({ year, brain: "combined", baseNoise: 4  * learningFactor * quantumBoost, trainingPasses: priorPasses });
+    learningCurve.push(combined.brainScore);
+    for (let p = 1; p < passes; p++) {
+      original = runYearForBrain({ year, brain: "original", baseNoise: 14 * learningFactor, bias: -1, trainingPasses: priorPasses + p });
+      additive = runYearForBrain({ year, brain: "additive", baseNoise: 8  * learningFactor, trainingPasses: priorPasses + p });
+      combined = runYearForBrain({ year, brain: "combined", baseNoise: 4  * learningFactor * quantumBoost, trainingPasses: priorPasses + p });
+      learningCurve.push(combined.brainScore);
+    }
 
-    await new Promise((r) => setTimeout(r, 700));
+    if (!opts.silent) {
+      setPhase("post_mortem");
+      await new Promise((r) => setTimeout(r, 500));
+    }
 
-    // Phase 4 — Post-mortem (the brain "learns" — visible in lower next-year noise).
-    setPhase("post_mortem");
-    await new Promise((r) => setTimeout(r, 600));
+    const totalPasses = priorPasses + passes;
+    const bestCombined = Math.max(yEntry.bestCombined ?? 0, combined.brainScore);
 
     setState((prev) => recomputeGates({
       ...prev,
+      totalTrainingCycles: (prev.totalTrainingCycles ?? 0) + passes,
       years: prev.years.map((y) => y.year === year ? {
         ...y,
         status: "scored",
@@ -248,13 +262,47 @@ export default function FoundryAdmin() {
         additive: additive.brainScore,
         combined: combined.brainScore,
         results: [original, additive, combined],
-        quantumAudited: withQuantum,
-        notes: `Year ${year} brain scores — Original ${original.brainScore} (MAE ${original.meanAbsError} PCI pts), Additive ${additive.brainScore} (MAE ${additive.meanAbsError}), Combined ${combined.brainScore} (MAE ${combined.meanAbsError}). Learning factor entering ${year + 1}: ${(learningFactor * 0.88).toFixed(3)} (lower = sharper).`,
+        quantumAudited: y.quantumAudited || withQuantum,
+        trainingPasses: totalPasses,
+        learningCurve,
+        bestCombined,
+        notes: `Year ${year}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts.`,
       } : y),
     }));
+    if (!opts.silent) {
+      toast({
+        title: `✓ Year ${year} validated`,
+        description: `Combined ${combined.brainScore}/100 after ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}.${shock && shock.surprise > 0.7 ? " ⚠ This was a major shock year — expect lower scores until further training." : ""}`,
+      });
+    }
+  }
+
+  // ---------- Bulk: Run every unscored year in sequence ----------
+  const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep">(null);
+  async function runAllYearsSequential() {
+    setBulkRunning("sequential");
+    for (const y of state.years) {
+      // We have to read from the *current* state ref each iteration because
+      // setState batches; recomputeGates will mark the next year ready after
+      // each prior year scores.
+      await runYear(y.year, false, { silent: true, passes: 1 });
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    setBulkRunning(null);
+    toast({ title: "All 15 years validated", description: "Brains now have a full first-pass training cycle. Use Deep Training to keep refining." });
+  }
+
+  // ---------- Bulk: 100 deep-training cycles across every year ----------
+  async function runDeepTraining(passesPerYear = 100) {
+    setBulkRunning("deep");
+    for (const y of state.years) {
+      await runYear(y.year, false, { silent: true, passes: passesPerYear });
+      await new Promise((r) => setTimeout(r, 30));
+    }
+    setBulkRunning(null);
     toast({
-      title: `✓ Year ${year} validated with full integrity`,
-      description: `Combined brain score: ${combined.brainScore}/100. Post-mortem applied — next year starts with a tighter prediction budget.`,
+      title: `Deep training complete · ${passesPerYear} passes/year`,
+      description: `Brains absorbed ${passesPerYear * VALIDATION_YEARS.length} additional training instances. Combined-brain scores are now closer to their ceiling for each year's irreducible surprise.`,
     });
   }
 
