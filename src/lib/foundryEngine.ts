@@ -97,9 +97,30 @@ export interface BrainPrediction {
   jan1Pci: number;
   // What actually happened across the year (price/return PCI realized at Dec 31).
   dec31RealizedPci: number;
+  // Per-quarter realized PCI (Q1, Q2, Q3, Q4). Q4 == dec31RealizedPci.
+  quarterlyRealized?: number[];
+  // Mean per-quarter accuracy across the four checkpoints.
+  quarterlyAccuracy?: number;
   // Per-asset accuracy = 100 − |jan1Pci − dec31RealizedPci|. 100 = perfect.
   accuracy: number;
 }
+
+// --------- Regime classification (cross-year regime-conditional residuals) ---
+// Each year is bucketed into a regime state. The brain keeps a *separate*
+// per-symbol residual map for each regime so a 2020-style crisis bias never
+// leaks into a 2017-style melt-up year.
+export type RegimeState = "crisis" | "volatile" | "calm" | "melt_up" | "recovery";
+
+export function regimeOf(year: number): RegimeState {
+  const s = MACRO_SHOCKS[year];
+  if (!s) return "calm";
+  if (s.shock <= -20 || s.surprise >= 0.9) return "crisis";
+  if (s.shock <= -10) return "volatile";
+  if (s.shock >= 10) return "melt_up";
+  if (s.shock >= 5) return "recovery";
+  return "calm";
+}
+export const ALL_REGIMES: RegimeState[] = ["crisis", "volatile", "calm", "melt_up", "recovery"];
 
 export interface BrainYearResult {
   brain: BrainKey;
