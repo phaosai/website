@@ -769,6 +769,9 @@ export default function FoundryAdmin() {
         })()}
       </section>
 
+      {/* ---------- DATA SOURCES PANEL ---------- */}
+      <DataSourcesPanel state={state} />
+
       {/* ---------- STAGE 5 ---------- */}
       <section>
         <Card className={cn(
