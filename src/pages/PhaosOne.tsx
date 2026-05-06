@@ -15,17 +15,10 @@ const pillars = [
   },
   {
     icon: Workflow,
-    name: "Phaos Kyrios",
-    role: "Workflow governance, approvals, and client delivery",
-    output: "Review queues, approval states, client portals, publishing controls",
-    href: "/one/kyrios",
-  },
-  {
-    icon: ShieldCheck,
-    name: "Phaos Aion",
-    role: "Resilience, security, and scenario simulation",
-    output: "Change detection, scenario modeling, audit trail, privacy vault",
-    href: "/one/aion",
+    name: "Run Simulation",
+    role: "Generate top-10 PCI candidates filtered by your asset classes & brokers",
+    output: "Top 10 PCI candidates, asset-class filtering, broker compatibility",
+    href: "/one/run-simulation",
   },
 ];
 
