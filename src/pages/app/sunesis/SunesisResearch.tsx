@@ -289,8 +289,8 @@ export default function SunesisResearch() {
               No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes.
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-xl border border-border overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left p-3 w-10">#</th>

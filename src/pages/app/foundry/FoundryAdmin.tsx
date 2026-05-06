@@ -22,8 +22,11 @@ import {
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
+  dimensionsAfterPasses,
   type QuantumReport, type BrainKey, type QuantumPingResult,
 } from "@/lib/foundryEngine";
+import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
+import { supabase } from "@/integrations/supabase/client";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
 function loadReports(): QuantumReport[] {
@@ -766,6 +769,9 @@ export default function FoundryAdmin() {
         })()}
       </section>
 
+      {/* ---------- DATA SOURCES PANEL ---------- */}
+      <DataSourcesPanel state={state} />
+
       {/* ---------- STAGE 5 ---------- */}
       <section>
         <Card className={cn(
@@ -928,5 +934,89 @@ export default function FoundryAdmin() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// ---------- DataSourcesPanel ----------
+// Shows the registry of public data wells the additive brain points to per
+// year, and which dimensions are currently "learned" given the deepest
+// training-pass count across all years. Also exposes per-year ingest buttons
+// that invoke the foundry-ingest-* edge functions to hydrate the corpus.
+function DataSourcesPanel({ state }: { state: ForgeState }) {
+  const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
+  const learnedDims = new Set(dimensionsAfterPasses(maxPasses));
+  const [year, setYear] = useState<number>(VALIDATION_YEARS[0]);
+  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar">(null);
+
+  async function ingest(kind: "prices" | "gdelt" | "edgar") {
+    setBusy(kind);
+    try {
+      const { data, error } = await supabase.functions.invoke(`foundry-ingest-${kind}`, { body: { year } });
+      if (error) throw error;
+      toast({
+        title: `✓ Ingested ${kind} for ${year}`,
+        description: `Wrote ${(data?.written ?? []).length} corpus rows. ${data?.failed?.length ? `Failed: ${data.failed.length}.` : ""}`.trim(),
+      });
+    } catch (e) {
+      toast({ title: `Ingest ${kind} failed`, description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  }
+
+  return (
+    <section className="space-y-3">
+      <header className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Data Sources — Additive Brain Wells</h2>
+          <p className="text-sm text-muted-foreground">
+            Every public, no-API-key source the brain points to for 2006–2025. Each training pass enables a new dimension.
+            Currently learned (after deepest year of {maxPasses} passes): <span className="text-foreground font-mono">{Array.from(learnedDims).join(", ") || "none"}</span>.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            className="rounded border border-border/40 bg-background/40 px-2 py-1 text-xs font-mono"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+          >
+            {VALIDATION_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+            {Array.from({ length: 5 }, (_, i) => 2006 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("prices")}>
+            {busy === "prices" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest Prices
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("gdelt")}>
+            {busy === "gdelt" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest GDELT
+          </Button>
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("edgar")}>
+            {busy === "edgar" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest EDGAR
+          </Button>
+        </div>
+      </header>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        {ALL_DIMENSIONS.map((dim) => {
+          const sources = FOUNDRY_DATA_SOURCES.filter((s) => s.dimension === dim);
+          const learned = learnedDims.has(dim);
+          return (
+            <div key={dim} className={cn(
+              "rounded border p-3 text-xs",
+              learned ? "border-emerald-500/40 bg-emerald-500/5" : "border-border/40 bg-card/40",
+            )}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold uppercase tracking-wider">{dim}</span>
+                {learned
+                  ? <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px]">Learned</Badge>
+                  : <Badge variant="outline" className="text-[10px]">Pending passes</Badge>}
+              </div>
+              <ul className="space-y-1 text-muted-foreground">
+                {sources.map((s) => (
+                  <li key={s.id} className="truncate" title={s.notes}>· {s.label} <span className="opacity-60">({s.coverage.from}–{s.coverage.to})</span></li>
+                ))}
+                {sources.length === 0 && <li className="opacity-60">No registered sources yet.</li>}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
