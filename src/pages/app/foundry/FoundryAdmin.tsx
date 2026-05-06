@@ -318,11 +318,33 @@ export default function FoundryAdmin() {
     });
   }
 
-  function promote() {
-    toast({
-      title: "Engine promoted to Sunesis",
-      description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now the live processing engine.`,
-    });
+  async function promote() {
+    try {
+      // Deactivate any prior active brain, then insert the new one as active.
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { dimensionsAfterPasses } = await import("@/lib/foundryEngine");
+      const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
+      const enabledDims = dimensionsAfterPasses(maxPasses);
+      const lastCombined = lastScoredYear?.combined ?? null;
+      await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
+      const { error } = await supabase.from("promoted_brains").insert({
+        engine_name: promoteName,
+        version: state.promote.version,
+        enabled_dimensions: enabledDims,
+        residual_bias: {},
+        combined_score: lastCombined,
+        is_active: true,
+        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}.`,
+      });
+      if (error) throw error;
+      toast({
+        title: "✓ Engine promoted to Sunesis",
+        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research for daniel@phaosai.com and all live accounts. Enabled dimensions: ${enabledDims.join(", ")}.`,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown error";
+      toast({ title: "Promotion failed", description: msg, variant: "destructive" });
+    }
   }
 
   return (
