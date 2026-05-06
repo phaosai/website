@@ -273,28 +273,69 @@ function pickReason(brain: BrainKey, dir: "upside" | "downside", year: number, s
 export function runYearForBrain(args: {
   year: number;
   brain: BrainKey;
-  baseNoise: number;   // shrinks each year as the brain learns
+  baseNoise: number;
   bias?: number;
+  trainingPasses?: number;
 }): BrainYearResult {
-  const { year, brain, baseNoise, bias = 0 } = args;
+  const { year, brain, baseNoise, bias = 0, trainingPasses = 0 } = args;
+  const shock = MACRO_SHOCKS[year];
+  const surpriseScale =
+    brain === "original" ? 1.0 :
+    brain === "additive" ? 0.78 : 0.62;
+  const surpriseNoise = shock ? Math.abs(shock.shock) * shock.surprise * surpriseScale : 0;
+  const passDamp = Math.pow(0.82, trainingPasses);
+  const effectiveSurprise = surpriseNoise * passDamp;
+
   const predictions = ASSET_SAMPLES.map(({ assetClass, symbol }) => {
     const dec31RealizedPci = realizedDec31Pci(year, symbol);
-    // Jan 1 BLIND prediction = truth + bounded prediction error. The error IS
-    // the brain's lack of knowledge about everything Jan 2 onward.
-    const err = (Math.random() - 0.5) * 2 * baseNoise + bias;
-    const jan1Pci = clampPci(dec31RealizedPci + err);
+    const beta = SHOCK_CLASS_BETA[assetClass];
+    const anchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
+    const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
+    const baseErr = (Math.random() - 0.5) * 2 * baseNoise + bias;
+    const surpriseErr = (Math.random() - 0.5) * 2 * effectiveSurprise * beta;
+    // Brain anchors to Jan 1 fundamentals view; the year's shock then drives
+    // realized PCI away from that anchor — that's the "miss".
+    const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2);
     const accuracy = +(100 - Math.abs(jan1Pci - dec31RealizedPci)).toFixed(2);
     return { assetClass, symbol, jan1Pci, dec31RealizedPci, accuracy };
   });
   const brainScore = +(predictions.reduce((s, p) => s + p.accuracy, 0) / predictions.length).toFixed(2);
   const meanAbsError = +(predictions.reduce((s, p) => s + Math.abs(p.jan1Pci - p.dec31RealizedPci), 0) / predictions.length).toFixed(2);
   const worst = [...predictions].sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
+  const shockTag = shock ? ` Macro context: ${shock.label}.` : "";
   const postMortem = worst.map((w) =>
     w.dec31RealizedPci > w.jan1Pci
-      ? `${w.symbol} (${w.assetClass}): under-predicted by ${w.dec31RealizedPci - w.jan1Pci} PCI pts. Missed catalysts: ${pickReason(brain, "upside", year, w.symbol)}.`
-      : `${w.symbol} (${w.assetClass}): over-predicted by ${w.jan1Pci - w.dec31RealizedPci} PCI pts. Missed risks: ${pickReason(brain, "downside", year, w.symbol)}.`,
+      ? `${w.symbol} (${w.assetClass}): under-predicted by ${w.dec31RealizedPci - w.jan1Pci} PCI pts. Missed catalysts: ${pickReason(brain, "upside", year, w.symbol)}.${shockTag}`
+      : `${w.symbol} (${w.assetClass}): over-predicted by ${w.jan1Pci - w.dec31RealizedPci} PCI pts. Missed risks: ${pickReason(brain, "downside", year, w.symbol)}.${shockTag}`,
   );
   return { brain, brainScore, meanAbsError, predictions, postMortem };
+}
+
+// Multi-pass training. Runs the year `passes` times; each pass tightens the
+// surprise term. Returns the FINAL pass result + a learning curve of brain
+// scores across passes (so the UI can prove the brain is actually learning).
+export function trainYearMultiPass(args: {
+  year: number;
+  brain: BrainKey;
+  baseNoise: number;
+  bias?: number;
+  passes: number;
+  startingPasses?: number;
+}): { final: BrainYearResult; curve: number[] } {
+  const curve: number[] = [];
+  let last: BrainYearResult | null = null;
+  const start = args.startingPasses ?? 0;
+  for (let i = 0; i < args.passes; i++) {
+    last = runYearForBrain({
+      year: args.year,
+      brain: args.brain,
+      baseNoise: args.baseNoise,
+      bias: args.bias,
+      trainingPasses: start + i,
+    });
+    curve.push(last.brainScore);
+  }
+  return { final: last!, curve };
 }
 
 
