@@ -105,9 +105,11 @@ export default function FoundryAdmin() {
   );
 
   const lastScoredYear = [...state.years].reverse().find((y) => y.status === "scored");
+  // Promotion is allowed as soon as every year has at least one scored pass —
+  // there is no minimum brain-score threshold. The brain keeps learning every
+  // additional pass; users decide when to promote.
   const promoteEligible =
     state.years.every((y) => y.status === "scored") &&
-    (lastScoredYear?.combined ?? 0) >= 99.5 &&
     promoteName.trim().length >= 3;
 
   const stage = lockedCount < 6 ? 1
@@ -316,11 +318,33 @@ export default function FoundryAdmin() {
     });
   }
 
-  function promote() {
-    toast({
-      title: "Engine promoted to Sunesis",
-      description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now the live processing engine.`,
-    });
+  async function promote() {
+    try {
+      // Deactivate any prior active brain, then insert the new one as active.
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { dimensionsAfterPasses } = await import("@/lib/foundryEngine");
+      const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
+      const enabledDims = dimensionsAfterPasses(maxPasses);
+      const lastCombined = lastScoredYear?.combined ?? null;
+      await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
+      const { error } = await supabase.from("promoted_brains").insert({
+        engine_name: promoteName,
+        version: state.promote.version,
+        enabled_dimensions: enabledDims,
+        residual_bias: {},
+        combined_score: lastCombined,
+        is_active: true,
+        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}.`,
+      });
+      if (error) throw error;
+      toast({
+        title: "✓ Engine promoted to Sunesis",
+        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research for daniel@phaosai.com and all live accounts. Enabled dimensions: ${enabledDims.join(", ")}.`,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown error";
+      toast({ title: "Promotion failed", description: msg, variant: "destructive" });
+    }
   }
 
   return (
@@ -760,8 +784,7 @@ export default function FoundryAdmin() {
           <CardContent className="space-y-4">
             <div className="space-y-1 text-xs">
               {[
-                { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated" },
-                { ok: (lastScoredYear?.combined ?? 0) >= 99.5, label: `Combined brain ≥ 99.5% on most recent year (current: ${lastScoredYear?.combined?.toFixed(2) ?? "—"}%)` },
+                { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated (no minimum score required)" },
                 { ok: promoteName.trim().length >= 3, label: "Engine series name provided" },
               ].map((c, i) => (
                 <div key={i} className="flex items-center gap-2">

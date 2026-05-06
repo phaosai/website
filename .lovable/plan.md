@@ -1,90 +1,135 @@
-## 1. Quantum credentials — root cause (already verified live)
+## Goal
 
-I pinged IBM IAM right now with the exact key you pasted:
+Three things, in one pass:
+
+1. Point the **Foundry additive brain** at a fixed catalog of free, no-key public data sources covering Jan 1, 2006 → Dec 31, 2025, so each yearly training pass actually pulls/correlates real data.
+2. Fix **Sunesis** for live accounts (daniel@phaosai.com + every non-sandbox user): no mobile errors, runs the **live brain currently promoted by the Foundry**, returns a real PCI-ranked list across selected asset classes filtered by the chosen brokerage's investable universe.
+3. **Remove the 95% gate** in the Foundry — promotion is allowed at any score — and make every training instance deepen the algorithm rather than just dampen noise.
+
+---
+
+## Part 1 — Foundry data source catalog (no API keys, no logins)
+
+Create a single source-of-truth registry the brain reads from on every year's training pass.
+
+**New file:** `src/lib/foundryDataSources.ts` — typed registry. Each entry has `id`, `category`, `dimension` (price | macro | sentiment | geopolitical | weather | shipping | filings | trends), `urlTemplate(year)`, `format` (csv | xml | html | json | bulk), `assetClasses[]`, `coverage: { from: 2006, to: 2025 }`, `rateLimitMs`, `notes`.
+
+Catalog (locked, citing only public direct-download endpoints):
+
+- **Macro / fundamentals**
+  - FRED direct CSV: DGS10, M2SL, CPIAUCSL, UNRATE, FEDFUNDS, DEXUSEU, DCOILWTICO (`https://fred.stlouisfed.org/graph/fredgraph.csv?id={SERIES}`)
+  - World Bank Open Data bulk CSV (GDP, trade, debt)
+  - SEC EDGAR full-index archives (`https://www.sec.gov/Archives/edgar/full-index/{year}/QTR{q}/`) — 10-K / 10-Q "Risk Factors"
+  - BLS public flat files (CPI, PPI, unemployment)
+- **News / sentiment**
+  - GDELT masterfilelist (`http://data.gdeltproject.org/gdeltv2/masterfilelist.txt`) — 15-min CSV deltas, tone + Goldstein
+  - Internet Archive Wayback CDX API (front pages of CNN/Reuters/WSJ on critical dates)
+  - Wikipedia revision history (financial term edits as panic proxy)
+- **Asset prices**
+  - Yahoo Finance CSV download URL pattern with unix range
+  - Kaggle static historical NYSE/NASDAQ datasets (one-time bulk seed)
+  - CoinGecko public HTML tables (daily closes)
+- **Correlation overlays**
+  - Baltic Dry Index public pages
+  - NOAA NCEI historical climate data flat files
+  - Google Trends "Year in Search" archives
+
+**Existing edge functions to repurpose** (already in repo): `fetch-macro-data`, `fetch-sec-filings`, `fetch-xbrl-facts`, `fetch-google-trends`, `fetch-insider-transactions`, `fetch-government-contracts`, `warmup-signal-cache`. Add three new ones:
+
+- `supabase/functions/foundry-ingest-prices` — Yahoo CSV + CoinGecko scraper, year-bounded.
+- `supabase/functions/foundry-ingest-gdelt` — pulls GDELT day-level slices for a target year.
+- `supabase/functions/foundry-ingest-edgar` — walks `full-index/{year}/QTR{q}/` and extracts Risk Factors sections.
+
+All three: rate-limited, polite User-Agent, retry/backoff, write to a new `foundry_year_corpus` table keyed by `(year, dimension, source_id)`.
+
+**Wiring into the brain:**
+
+`src/lib/foundryEngine.ts` → in `runYearForBrain` and `trainYearMultiPass`, before generating predictions, call a new `loadYearCorpus(year)` helper that hydrates real macro shocks, real GDELT tone deltas, and real price returns for that year from `foundry_year_corpus`. The existing `MACRO_SHOCKS` table becomes a fallback only when the corpus row is missing.
+
+UI (`FoundryAdmin.tsx`): add a "Data Sources" panel above Stage 1 that lists every registered source with last-ingested timestamp per year and a per-year "Refresh corpus" button. The "Run all 15 years" button gains a pre-step: ensure corpus rows exist for 2006–2025; if not, ingest first.
+
+---
+
+## Part 2 — Remove the 95% gate + deeper learning per pass
+
+In `foundryEngine.ts`:
+
+- Delete any `>= 95` check that gates promotion or stage advancement (search for "95", `bestCombined`, promotion guards). The Promote stage becomes available the moment all 15 years have at least one scored pass, regardless of score.
+- `trainYearMultiPass`: today it just dampens `surpriseNoise` by `0.82^pass`. Replace with a multi-factor learning step per pass that:
+  1. Damps surprise (kept).
+  2. Adds a new **feature-discovery** term: each pass randomly enables one previously-unused dimension from the data source registry (e.g., adds GDELT tone correlation on pass 2, NOAA weather on pass 3, Baltic Dry on pass 4…). Persist enabled features per `(year, brain)` in state.
+  3. Recomputes per-asset bias from the previous pass's residuals (true gradient step).
+- New per-year metadata: `enabledDimensions: string[]`, `residualBias: Record<symbol, number>`, `lastTrainedAt`. Surface these in the year's expanded card so the user can see which dimensions the brain has absorbed.
+
+UI: "Deep training · 100×/year" button text changes to "Deepen brain · adds 1 new dimension per pass". Remove any toast/notice that says "needs 95% to promote".
+
+---
+
+## Part 3 — Sunesis runs the live promoted brain for daniel@phaosai.com and every live account
+
+Current bug: Sunesis errored on mobile and seems to share simulator code paths.
+
+Changes:
+
+- **New table** `promoted_brains`: `id, engine_name, version, promoted_at, corpus_snapshot_id, enabled_dimensions jsonb, residual_bias jsonb, is_active bool`. Foundry's "Promote Sunesis Brain" inserts a row and flips `is_active`. Only one active at a time.
+- **New edge function** `sunesis-live-research`:
+  - Auth-required.
+  - Reads the active `promoted_brains` row.
+  - Looks up the user's tier + selected brokerage from existing `useEntitlements` data (server-side).
+  - For each selected asset class, intersects the brain's investable universe with the brokerage's supported instruments.
+  - Pulls the latest signals from the live data sources (same registry as Part 1, "today" slice) and computes a real PCI per instrument using the brain's `enabledDimensions` + `residualBias`.
+  - Returns a sorted list (highest PCI → lowest) with per-instrument evidence pointers.
+- **Sandbox vs live split**:
+  - Add an `account_mode` resolver: `daniel@phaosai.com` and any account where `profiles.is_sandbox = false` always hit `sunesis-live-research`.
+  - Sandbox accounts keep the existing `CANDIDATES` / hypothetical path, clearly badged SIMULATED.
+- **Frontend** `SunesisResearch.tsx`:
+  - Replace the simulator data path for live users with a `useQuery` against `sunesis-live-research`.
+  - Mobile fixes: the current error trace on phone is from `Slider` + flex layout overflow; wrap the controls grid in `min-w-0`, switch the asset-class chips to `flex-wrap` with `gap-2`, and guard against `entitlements === undefined` before rendering tier-gated UI.
+  - Tier visibility for live results (per existing memory):
+    - **Foundry (free)** → top 10 per class.
+    - **Elite** → top 10 across all classes.
+    - **Pro** → all results, all classes.
+    - **Sovereign** → all results + PCI band slider filter (1–100).
+- Always-visible PCI gauge using the existing `QRRGauge` / PCI tier components.
+
+---
+
+## Technical details (engineers only)
 
 ```
-POST https://iam.cloud.ibm.com/identity/token
-apikey=ApiKey-ebc6ece3-20e0-4757-b9c3-d60f21ca5997
-→ HTTP 400  BXNIM0415E  "Provided API key could not be found."
+foundry_year_corpus
+  year int, dimension text, source_id text, payload jsonb,
+  fetched_at timestamptz, source_url text,
+  primary key (year, dimension, source_id)
+
+promoted_brains
+  id uuid pk, engine_name text, version text,
+  promoted_at timestamptz, corpus_snapshot_id uuid,
+  enabled_dimensions jsonb, residual_bias jsonb, is_active bool
 ```
 
-**That key is the legacy IBM Quantum Platform token (old `quantum-computing.ibm.com` UI). It is not an IBM Cloud IAM apikey, and the new Quantum Cloud Runtime endpoint your CRN points to (`crn:v1:bluemix:public:quantum-computing:us-east:...`) only accepts IAM apikeys.** Until that's replaced, every Foundry quantum click will fail at the IAM step (which is exactly what you're seeing). The CRN itself is well-formed — only the API key is wrong.
+RLS: `foundry_year_corpus` admin-write, authenticated-read. `promoted_brains` admin-write, authenticated-read of the active row only.
 
-**What you need to do (one time, ~2 minutes):**
-1. Sign in to https://cloud.ibm.com/iam/apikeys (the IBM Cloud console, not quantum-computing.ibm.com).
-2. Click *Create* → name it e.g. `phaos-foundry`. Copy the value (a long random string, **no `ApiKey-` prefix**).
-3. Make sure your IBM Cloud account has the Quantum service instance referenced by the CRN, and that your IAM user has the `quantum-computing.job.create` action on it (Service access policy → "Manager" role on the Quantum service is the simplest).
-4. Send me the new key — I'll update the `IBM_Quantum_API` secret. The CRN `crn:v1:bluemix:public:quantum-computing:us-east:a/abd1d6e9f5774e2ba6f9eca9f7544a48:60837691-4d06-46dc-8554-e1310474c70a::` stays as-is.
+Edge function deploy list: `foundry-ingest-prices`, `foundry-ingest-gdelt`, `foundry-ingest-edgar`, `sunesis-live-research`. All `verify_jwt = true` except `foundry-ingest-*` which run admin-only via service role.
 
-After that, the Foundry "execute Quantum" path will:
-- Exchange the IAM apikey for a bearer token (IBM IAM)
-- Discover an `ibm_*` QPU backend on your CRN
-- Submit a sampler job to `/jobs` on `quantum.cloud.ibm.com/api/v1`
-- Return a real `workloadId` + backend name and surface a non-simulator Quantum Report
+Files touched:
+- `src/lib/foundryDataSources.ts` (new)
+- `src/lib/foundryEngine.ts` (corpus loader, deeper learning, drop 95% gate)
+- `src/pages/app/foundry/FoundryAdmin.tsx` (Data Sources panel, refresh buttons, dimension chips per year)
+- `src/pages/app/sunesis/SunesisResearch.tsx` (live path, mobile layout fixes, tier-gated result counts)
+- `src/components/sunesis/AlertsPanel.tsx` (no changes required, reuse)
+- `supabase/migrations/*` (two tables + RLS)
+- `supabase/functions/foundry-ingest-prices/index.ts` (new)
+- `supabase/functions/foundry-ingest-gdelt/index.ts` (new)
+- `supabase/functions/foundry-ingest-edgar/index.ts` (new)
+- `supabase/functions/sunesis-live-research/index.ts` (new)
 
-I will add a new admin-only **"Ping IBM Quantum"** button on the Foundry page that exercises exactly this path (IAM → backends → no-op submission dry-run) and prints the full diagnostic so you can verify end-to-end without consuming a foundry run.
+Compliance guardrails (per memory): all live PCI output labeled with the PCI tier badge, no buy/sell language, "60+ publicly accessible signal categories" wording preserved, simulator output stays explicitly badged SIMULATED.
 
-## 2. Hide every Kyrios / Aion mention site-wide
+---
 
-Files containing those names (29 total). Treatment per file:
+## Open questions before I build
 
-- **Public marketing pages** — remove all references and rewrite copy:
-  `src/pages/About.tsx`, `Pricing.tsx`, `PhaosOne.tsx`, `PhaosKyrios.tsx`, `PhaosAion.tsx`, `OnePillarPage.tsx`, `Workflows.tsx`, `PhaosSunesis.tsx`, `Auth.tsx`
-  - Delete `PhaosKyrios.tsx` and `PhaosAion.tsx` from the router (`App.tsx`) and remove their route entries; redirect `/kyrios` and `/aion` → `/phinance`.
-- **App-internal pages still referencing them** — replace plan-name references with the canonical Sunesis tier set (Free / Elite / Pro / Sovereign):
-  `Billing.tsx`, `AppDashboard.tsx`, `AdminDashboard.tsx`, `pages/app/CommandCenter.tsx`, `pages/app/sunesis/SunesisWorkflow.tsx`, `SunesisTicker.tsx`, `SunesisResearch.tsx`, `SunesisCompliance.tsx`, `components/app/AppSidebar.tsx`
-- **Quietly retained internals (not user-visible)** — leave the Kyrios/Aion enum values in `useEntitlements.ts`, `integrations/supabase/types.ts`, and `quantum-audit/index.ts` so existing subscriptions still resolve to a tier; just stop *labeling* anything as Kyrios/Aion in the UI. (Old Kyrios subs map silently to Elite, old Aion → Pro.)
-- **Stale folders** — leave `src/pages/app/aion/*` and `src/pages/app/kyrios/*` files on disk but unrouted, so we don't break any deep-link in the user_subscriptions history. Their routes get removed from `App.tsx`.
-
-## 3. Sunesis Simulator — "Set Alerts" feature
-
-Add a **Set Alerts** button on the Sunesis Simulator (`SunesisResearch.tsx` + the public `RunSimulation.tsx`). Clicking opens a dialog with this flow:
-
-```text
-┌─ Set Alerts ─────────────────────────────┐
-│ Send via:   [☐ Email]   [☐ Text]         │
-│                                          │
-│ Frequency:                               │
-│   ○ Every hour                           │
-│   ○ Every 4 hours                        │
-│   ○ Every 12 hours                       │
-│   ○ Every 24 hours                       │
-│   ○ Custom →  7-day × 24-hour grid       │
-│              (click cells to schedule)   │
-│                                          │
-│ Quantum auto-alerts:  [Quantum]          │
-│                                          │
-│       [ Cancel ]    [ Confirm ]          │
-└──────────────────────────────────────────┘
-```
-
-- The custom grid is a 7×24 SVG grid (Mon–Sun rows, 12am→12am columns), cells toggle on click.
-- "Confirm" persists the schedule and routes alerts to the email + phone on the user's profile.
-- Quantum button behavior is **tier-gated**:
-  - **Free / Simulator** — Quantum button visible. Click → small dismissible popover (top-right ✕): *"Quantum automated alerts is a Sovereign feature."*
-  - **Elite** — Quantum button **greyed/disabled**. Click → toast: *"Upgrade to Sovereign to enable Quantum automated alerts."*
-  - **Pro** — same as Elite.
-  - **Sovereign** — Quantum button enabled. **Capped at 1 quantum-backed alert per day, max 1 instance per month included**; toggling it on opens a confirm dialog enabling **Automatic Quantum Replenishment** (consents the account to be billed for additional quantum research instances beyond the included one).
-
-### Backend pieces
-- New table `alert_schedules` (`id`, `user_id`, `channels jsonb`, `frequency text`, `custom_slots jsonb`, `quantum_enabled bool`, `auto_replenish bool`, `created_at`, `updated_at`) with RLS (owner read/write only).
-- New edge function `dispatch-alerts` (cron-driven every 15 min) — picks rows whose schedule is due, generates the latest top-10 PCI snapshot, and:
-  - emails via the existing transactional email pipeline,
-  - texts via Twilio (we'll connect the Twilio connector when you're ready — needs `TWILIO_API_KEY` to be added).
-- For Sovereign + quantum: dispatcher calls `quantum-audit` once-per-day; if `auto_replenish` is true and the included audit is exhausted, it grants/charges a quantum credit through the existing `consume_quantum_audit_credit` flow.
-
-## 4. Files to be touched (technical summary)
-
-- `src/App.tsx` — remove `/kyrios`, `/aion`, `/phaos-kyrios`, `/phaos-aion` routes; add redirects.
-- 9 marketing pages — copy rewrite (remove Kyrios/Aion mentions).
-- `src/pages/app/sunesis/SunesisResearch.tsx`, `src/pages/RunSimulation.tsx` — add Set Alerts dialog + quantum gating.
-- `src/components/app/AppSidebar.tsx` — drop any remaining Kyrios/Aion items (already mostly done in last loop, double-check).
-- `src/pages/app/foundry/FoundryAdmin.tsx` — add **Ping IBM Quantum** diagnostic button + render full report inline.
-- `supabase/functions/quantum-audit/index.ts` — add new action `"ping"` that runs IAM + backend discovery only, returns a structured diagnostic (no job submission, no credit consumed).
-- New migration: `alert_schedules` table + RLS.
-- New edge function: `dispatch-alerts` + cron schedule (every 15 min via pg_cron).
-- Twilio connector (only when you provide `TWILIO_API_KEY`).
-
-## 5. What I need from you to finish Quantum
-
-A new IBM Cloud IAM apikey (long opaque string from https://cloud.ibm.com/iam/apikeys). Until then I'll ship the diagnostic ping button so you can hit it the moment you paste the new key — and the report will tell you in plain English exactly what IBM said.
+1. **Ingestion footprint**: the full GDELT 2006–2025 corpus is multi-terabyte. OK to start with a **daily-aggregated** slice (one row per day, tone + event-count per country) instead of raw 15-min files? That fits Cloud easily and still feeds correlations.
+2. **Brokerage universe**: we need a per-brokerage instrument list to intersect against. Should I seed it with the integrations registry already in `src/data/integrations.ts`, or do you want a separate manually-curated list per broker?
+3. **Promotion**: when you "Promote Sunesis Brain" in the Foundry, should the previous active brain be archived (so you can roll back), or hard-replaced?

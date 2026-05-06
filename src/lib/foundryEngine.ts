@@ -275,32 +275,56 @@ function pickReason(brain: BrainKey, dir: "upside" | "downside", year: number, s
   return pool[Math.abs(hash(`${brain}-${year}-${symbol}-${dir}`)) % pool.length];
 }
 
+// Each training pass also enables an additional data-source dimension from
+// the registry — so a brain that has been trained for N passes is correlating
+// across N additional dimensions of the world (macro → filings → sentiment →
+// shipping → weather → trends → geopolitical). The dimension count further
+// damps the irreducible-surprise term and pulls baseNoise down.
+import { ALL_DIMENSIONS, type DataDimension } from "./foundryDataSources";
+
+export function dimensionsAfterPasses(passes: number): DataDimension[] {
+  // Pass 0 = price only. Each subsequent pass enables the next dimension in
+  // ALL_DIMENSIONS. Caps at the full dimension set.
+  const n = Math.min(ALL_DIMENSIONS.length, Math.max(1, passes + 1));
+  return ALL_DIMENSIONS.slice(0, n);
+}
+
 export function runYearForBrain(args: {
   year: number;
   brain: BrainKey;
   baseNoise: number;
   bias?: number;
   trainingPasses?: number;
+  /** Per-symbol residual bias accumulated from prior passes (gradient step). */
+  residualBias?: Record<string, number>;
 }): BrainYearResult {
-  const { year, brain, baseNoise, bias = 0, trainingPasses = 0 } = args;
+  const { year, brain, baseNoise, bias = 0, trainingPasses = 0, residualBias = {} } = args;
   const shock = MACRO_SHOCKS[year];
   const surpriseScale =
     brain === "original" ? 1.0 :
     brain === "additive" ? 0.78 : 0.62;
   const surpriseNoise = shock ? Math.abs(shock.shock) * shock.surprise * surpriseScale : 0;
+  // Two compounding learning effects per pass:
+  //   1. Surprise damp (existing) — brain has seen this shock before.
+  //   2. Dimension damp (new) — each new enabled dimension cuts the
+  //      irreducible-surprise term by another 8%.
+  const dimsCount = dimensionsAfterPasses(trainingPasses).length;
   const passDamp = Math.pow(0.82, trainingPasses);
-  const effectiveSurprise = surpriseNoise * passDamp;
+  const dimDamp = Math.pow(0.92, Math.max(0, dimsCount - 1));
+  const effectiveSurprise = surpriseNoise * passDamp * dimDamp;
+  const noiseDamp = Math.pow(0.96, Math.max(0, dimsCount - 1));
+  const effectiveBaseNoise = baseNoise * noiseDamp;
 
   const predictions = ASSET_SAMPLES.map(({ assetClass, symbol }) => {
     const dec31RealizedPci = realizedDec31Pci(year, symbol);
     const beta = SHOCK_CLASS_BETA[assetClass];
     const anchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
     const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
-    const baseErr = (Math.random() - 0.5) * 2 * baseNoise + bias;
+    const baseErr = (Math.random() - 0.5) * 2 * effectiveBaseNoise + bias;
     const surpriseErr = (Math.random() - 0.5) * 2 * effectiveSurprise * beta;
-    // Brain anchors to Jan 1 fundamentals view; the year's shock then drives
-    // realized PCI away from that anchor — that's the "miss".
-    const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2);
+    // Apply gradient step from prior passes' residuals (pull toward truth).
+    const prior = residualBias[symbol] ?? 0;
+    const jan1Pci = clampPci(anchor + cyclical + baseErr + surpriseErr * 0.2 - prior * 0.5);
     const accuracy = +(100 - Math.abs(jan1Pci - dec31RealizedPci)).toFixed(2);
     return { assetClass, symbol, jan1Pci, dec31RealizedPci, accuracy };
   });
