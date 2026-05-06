@@ -200,9 +200,10 @@ const PhaosOne = () => {
 
           <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
             {[
-              { label: "Sunesis alone", price: "$149/month" },
-              { label: "Aion alone", price: "$199/month" },
-              { label: "Kyrios alone", price: "$299/month" },
+              { label: "Sunesis Free", price: "$0/month" },
+              { label: "Sunesis Elite", price: "$149/month" },
+              { label: "Sunesis Pro", price: "$299/month" },
+              { label: "Sunesis Sovereign", price: "$599/month" },
             ].map((row) => (
               <div key={row.label} className="flex items-center justify-between px-6 py-4 border-b border-border/40">
                 <span className="text-foreground/85">{row.label}</span>
@@ -210,8 +211,8 @@ const PhaosOne = () => {
               </div>
             ))}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/40 bg-muted/20">
-              <span className="text-foreground font-semibold">Combined if purchased separately</span>
-              <span className="font-mono text-sm text-foreground line-through opacity-70">$647/month</span>
+              <span className="text-foreground font-semibold">Sovereign unlocks every Phinance capability</span>
+              <span className="font-mono text-sm text-foreground opacity-70">All-inclusive</span>
             </div>
             <div className="flex items-center justify-between px-6 py-5 bg-purple-deep/10">
               <div className="flex items-center gap-2">
