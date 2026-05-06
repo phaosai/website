@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { SunesisModuleNav, SunesisMoatStrip } from "@/components/phaos";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
