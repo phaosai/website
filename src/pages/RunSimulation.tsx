@@ -220,7 +220,6 @@ const RunSimulation = () => {
     setProgress(100);
     setResults(top10);
     setLoading(false);
-    setQuantumApproved(false);
   };
 
   return (
