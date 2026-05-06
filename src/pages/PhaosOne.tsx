@@ -83,10 +83,10 @@ const PhaosOne = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Three Pillars. <span className="text-gradient-purple">One Environment.</span>
+              Two Pillars. <span className="text-gradient-purple">One Environment.</span>
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {pillars.map((p) => (
               <Link
                 key={p.name}
