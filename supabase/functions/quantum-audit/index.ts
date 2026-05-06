@@ -352,6 +352,105 @@ Deno.serve(async (req) => {
       return json(200, ent);
     }
 
+    // -------- PING (admin diagnostic, no job submission, no credit) --------
+    if (action === "ping") {
+      const t0 = Date.now();
+      const steps: Array<{ step: string; ok: boolean; ms: number; detail?: string }> = [];
+      const credPresent = { apiKey: !!IBM_API_KEY, crn: !!IBM_CRN };
+      steps.push({
+        step: "credentials_present",
+        ok: credPresent.apiKey && credPresent.crn,
+        ms: 0,
+        detail: `IBM_Quantum_API=${credPresent.apiKey ? "set" : "MISSING"}, IBM_Quantum_CRN=${credPresent.crn ? "set" : "MISSING"}`,
+      });
+      if (!credPresent.apiKey || !credPresent.crn) {
+        return json(200, {
+          ok: false,
+          summary: "IBM Quantum credentials are not both configured in the edge function environment.",
+          steps,
+          recommendation: "Set IBM_Quantum_API (an IBM Cloud IAM API key from https://cloud.ibm.com/iam/apikeys) and IBM_Quantum_CRN, then redeploy.",
+          totalMs: Date.now() - t0,
+        });
+      }
+
+      // Step: IAM token exchange
+      let token: string | null = null;
+      const iamT0 = Date.now();
+      try {
+        const res = await fetch("https://iam.cloud.ibm.com/identity/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+          body: new URLSearchParams({ grant_type: "urn:ibm:params:oauth:grant-type:apikey", apikey: IBM_API_KEY }),
+        });
+        const bodyText = await res.text();
+        if (!res.ok) {
+          steps.push({
+            step: "ibm_iam_token_exchange",
+            ok: false,
+            ms: Date.now() - iamT0,
+            detail: `HTTP ${res.status}: ${bodyText.slice(0, 400)}`,
+          });
+          let recommendation = "IBM IAM rejected the API key. ";
+          if (bodyText.includes("BXNIM0415E") || bodyText.includes("could not be found")) {
+            recommendation += "The provided IBM_Quantum_API value is not a valid IBM Cloud IAM API key. The legacy IBM Quantum Platform 'ApiKey-...' tokens are NOT accepted by the new Quantum Cloud Runtime. Generate a new IAM API key at https://cloud.ibm.com/iam/apikeys and update the IBM_Quantum_API secret.";
+          } else if (bodyText.includes("BXNIM0204E")) {
+            recommendation += "The IAM API key exists but is disabled or expired. Regenerate at https://cloud.ibm.com/iam/apikeys.";
+          } else {
+            recommendation += "Verify the key at https://cloud.ibm.com/iam/apikeys and that your IAM user has access to the Quantum service instance referenced by the CRN.";
+          }
+          return json(200, { ok: false, summary: "IBM rejected the API key during IAM token exchange.", steps, recommendation, totalMs: Date.now() - t0 });
+        }
+        token = (JSON.parse(bodyText)).access_token ?? null;
+        steps.push({ step: "ibm_iam_token_exchange", ok: !!token, ms: Date.now() - iamT0, detail: token ? "Bearer token issued" : "No access_token in response" });
+      } catch (err) {
+        steps.push({ step: "ibm_iam_token_exchange", ok: false, ms: Date.now() - iamT0, detail: err instanceof Error ? err.message : String(err) });
+        return json(200, { ok: false, summary: "Network error reaching IBM IAM.", steps, recommendation: "Check edge-function network egress.", totalMs: Date.now() - t0 });
+      }
+      if (!token) {
+        return json(200, { ok: false, summary: "IBM IAM did not return a token.", steps, recommendation: "Re-issue an IAM API key at https://cloud.ibm.com/iam/apikeys.", totalMs: Date.now() - t0 });
+      }
+
+      // Step: backend discovery against the CRN
+      const bT0 = Date.now();
+      try {
+        const res = await ibmRuntimeRequest(token, "/backends");
+        const bodyText = await res.text();
+        if (!res.ok) {
+          steps.push({ step: "ibm_backend_discovery", ok: false, ms: Date.now() - bT0, detail: `HTTP ${res.status}: ${bodyText.slice(0, 400)}` });
+          let recommendation = "IBM accepted the token but rejected the CRN/backend listing. ";
+          if (res.status === 401 || res.status === 403) {
+            recommendation += "Your IAM user lacks permission on the Quantum service instance. Add a 'Manager' (or at minimum, role granting `quantum-computing.job.create`) policy on the Quantum service in IBM Cloud IAM.";
+          } else if (res.status === 404) {
+            recommendation += "The CRN does not resolve to an active Quantum service instance. Verify IBM_Quantum_CRN matches an existing instance in your account.";
+          } else {
+            recommendation += "Inspect the raw response above.";
+          }
+          return json(200, { ok: false, summary: "IBM rejected backend discovery for this CRN.", steps, recommendation, totalMs: Date.now() - t0 });
+        }
+        const parsed = JSON.parse(bodyText);
+        const backends = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.backends) ? parsed.backends : [];
+        const names = backends
+          .map((b: any) => typeof b === "string" ? b : b?.name ?? b?.backend_name)
+          .filter((n: unknown): n is string => typeof n === "string" && n.length > 0);
+        const qpu = names.find((n) => n.startsWith("ibm_"));
+        steps.push({ step: "ibm_backend_discovery", ok: true, ms: Date.now() - bT0, detail: `Found ${names.length} backend(s)${qpu ? `, will use: ${qpu}` : ""}` });
+        if (!qpu) {
+          return json(200, { ok: false, summary: "IBM responded but no QPU (ibm_*) backend is available on this CRN.", steps, recommendation: "Confirm your Quantum service plan grants access to a real ibm_* QPU. Open Plan options in IBM Cloud and upgrade if currently on a sandbox-only plan.", totalMs: Date.now() - t0 });
+        }
+        return json(200, {
+          ok: true,
+          summary: `End-to-end IBM Quantum reachability confirmed. Token + CRN valid; QPU '${qpu}' is accessible.`,
+          steps,
+          recommendation: "All clear. Foundry quantum executions should succeed on real IBM hardware.",
+          chosenBackend: qpu,
+          totalMs: Date.now() - t0,
+        });
+      } catch (err) {
+        steps.push({ step: "ibm_backend_discovery", ok: false, ms: Date.now() - bT0, detail: err instanceof Error ? err.message : String(err) });
+        return json(200, { ok: false, summary: "Network error during backend discovery.", steps, recommendation: "Retry; if persistent, check edge-function egress.", totalMs: Date.now() - t0 });
+      }
+    }
+
     // -------- CREATE --------
     if (action === "create") {
       const { ticker, investmentType, platforms, simulationMode, idempotencyKey } = body ?? {};
