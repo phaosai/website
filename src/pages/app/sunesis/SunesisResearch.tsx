@@ -352,6 +352,8 @@ export default function SunesisResearch() {
         </>
       )}
 
+      <AlertsPanel tierMode={tierMode} />
+
       <Disclaimer>PCI is a research confidence framework. Not a prediction of returns.</Disclaimer>
     </PageShell>
   );
