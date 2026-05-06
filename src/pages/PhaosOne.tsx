@@ -29,7 +29,7 @@ const PhaosOne = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos ONE — Unified Financial Intelligence Environment"
-        description="Phaos ONE unifies Sunesis, Kyrios, and Aion into a single research, governance, and protection environment. One subscription. $599/month."
+        description="Phaos Phinance unifies Sunesis research and Run Simulation into a single environment. One subscription."
         canonical="/one"
       />
       <Navigation />
