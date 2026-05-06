@@ -206,12 +206,61 @@ function hash(s: string): number {
   let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h;
 }
 
-// Deterministic "truth" per (year, symbol). Anchored on canonical pciData so
-// scoring stays tied to the PCI taxonomy rather than free-floating randomness.
+// Real-world macro shock map. These are the unprecedented events the brain
+// COULD NOT have known about on Jan 1 of that year — they crush prediction
+// accuracy because every brain was blind to them. This is the exact reason
+// the user-flagged "98 → 99 → 99" smoothness was wrong: in shock years the
+// realized PCI moves violently away from the Jan 1 anchor.
+//
+//   shock: magnitude in PCI points (negative = crash, positive = melt-up)
+//   surprise: 0–1 multiplier on how much the brain SHOULD miss it (1 = nobody saw it coming)
+//   label: human reason logged into the post-mortem
+export const MACRO_SHOCKS: Record<number, { shock: number; surprise: number; label: string }> = {
+  2011: { shock: -18, surprise: 0.65, label: "US debt-ceiling crisis + S&P downgrade + EU sovereign debt panic" },
+  2012: { shock:  +6, surprise: 0.30, label: "ECB \"whatever it takes\" rally" },
+  2013: { shock:  +9, surprise: 0.40, label: "Taper-tantrum bond rout, equity melt-up" },
+  2014: { shock: -10, surprise: 0.55, label: "Oil price collapse from $100 → $50" },
+  2015: { shock: -14, surprise: 0.70, label: "China devaluation, August flash crash, EM rout" },
+  2016: { shock: -12, surprise: 0.85, label: "Brexit + Trump election — both priced as tail risks" },
+  2017: { shock:  +8, surprise: 0.25, label: "Synchronized global growth, low-vol melt-up" },
+  2018: { shock: -16, surprise: 0.75, label: "Volmageddon (Feb), Q4 -20% drawdown, trade-war shock" },
+  2019: { shock: +11, surprise: 0.45, label: "Fed pivot rally, repo crisis Sept" },
+  2020: { shock: -32, surprise: 0.98, label: "COVID-19 pandemic — fastest bear market in history. NOBODY saw this coming." },
+  2021: { shock: +14, surprise: 0.60, label: "Meme-stock mania, GME squeeze, retail revolution" },
+  2022: { shock: -28, surprise: 0.90, label: "Russia invades Ukraine, 40-year inflation high, fastest Fed hiking cycle, crypto winter (LUNA, FTX)" },
+  2023: { shock:  -8, surprise: 0.70, label: "SVB / Credit Suisse banking crisis, regional bank failures" },
+  2024: { shock: +12, surprise: 0.35, label: "AI capex super-cycle, NVDA parabolic" },
+  2025: { shock:  -6, surprise: 0.50, label: "Tariff regime change, dollar reset" },
+};
+
+// Some asset classes are MORE exposed to a given shock than others. This is
+// also why the brains can't be uniformly accurate — a 2020 pandemic murders
+// equities/derivatives but barely scratches treasuries.
+const SHOCK_CLASS_BETA: Record<AssetClassId, number> = {
+  equities: 1.4,
+  derivatives: 1.6,
+  fixed_income: 0.4,
+  fx_commodities: 1.0,
+  digital_assets: 1.8,
+  alternative: 0.9,
+};
+function classOf(symbol: string): AssetClassId {
+  return ASSET_SAMPLES.find((a) => a.symbol === symbol)?.assetClass ?? "equities";
+}
+
+// Deterministic "truth" per (year, symbol). Anchored on canonical pciData,
+// then bent by the year's real macro shock scaled by asset-class beta.
 function realizedDec31Pci(year: number, symbol: string): number {
   const anchor = pciData[Math.abs(hash(symbol)) % pciData.length].score;
-  const macro = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 18;
-  return clampPci(anchor + macro);
+  const cyclical = Math.sin((year - 2010) * 1.37 + hash(symbol) * 0.001) * 8;
+  const shock = MACRO_SHOCKS[year];
+  const beta = SHOCK_CLASS_BETA[classOf(symbol)];
+  const shockTerm = shock ? shock.shock * beta : 0;
+  return clampPci(anchor + cyclical + shockTerm);
+}
+
+export function shockForYear(year: number) {
+  return MACRO_SHOCKS[year];
 }
 
 function pickReason(brain: BrainKey, dir: "upside" | "downside", year: number, symbol: string): string {
