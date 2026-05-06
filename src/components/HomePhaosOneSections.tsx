@@ -155,7 +155,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              See Live PCI Scores with Phaos ONE →
+              See Live PCI Scores with Phaos Phinance →
             </Link>
           </div>
 
@@ -228,10 +228,10 @@ const HomePhaosOneSections = () => {
                 desc: "Get oriented with the platform and explore methodology.",
               },
               {
-                tier: "Phaos ONE",
+                tier: "Phaos Phinance",
                 price: "$599",
                 cadence: "/mo",
-                desc: "The unified research environment — Sunesis, Kyrios, Aion.",
+                desc: "The evidence-first research environment powered by Sunesis.",
                 featured: true,
               },
               {
@@ -290,7 +290,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos ONE
+              Explore Phaos Phinance
             </Link>
             <Link
               to="/contact"
