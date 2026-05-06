@@ -424,8 +424,8 @@ const About = () => {
               Our mission is to bridge this gap. We are excited to offer a unified
               intelligence environment that treats financial signals with the same precision
               and accountability found in the world's most advanced industrial workflows. By
-              merging deep research (Sunesis), real-time monitoring (Aion), and institutional
-              governance (Kyrios) into a single command center (Phaos ONE), we empower our
+              merging deep research (Sunesis) and live simulation into a single command
+              center (Phaos Phinance), we empower our
               users to move past the "guesswork" of the retail market and step into a new era
               of evidence-backed financial confidence.
             </p>
