@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Hammer, Lock, Loader2, CheckCircle2, XCircle, Sparkles, Cpu, Rocket,
   ChevronRight, AlertTriangle, ShieldCheck, RotateCcw,
