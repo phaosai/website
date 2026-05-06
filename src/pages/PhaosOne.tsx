@@ -1,4 +1,4 @@
-import { ArrowRight, Check, ShieldCheck, Workflow, Microscope } from "lucide-react";
+import { ArrowRight, Check, Workflow, Microscope } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -15,17 +15,10 @@ const pillars = [
   },
   {
     icon: Workflow,
-    name: "Phaos Kyrios",
-    role: "Workflow governance, approvals, and client delivery",
-    output: "Review queues, approval states, client portals, publishing controls",
-    href: "/one/kyrios",
-  },
-  {
-    icon: ShieldCheck,
-    name: "Phaos Aion",
-    role: "Resilience, security, and scenario simulation",
-    output: "Change detection, scenario modeling, audit trail, privacy vault",
-    href: "/one/aion",
+    name: "Run Simulation",
+    role: "Generate top-10 PCI candidates filtered by your asset classes & brokers",
+    output: "Top 10 PCI candidates, asset-class filtering, broker compatibility",
+    href: "/one/run-simulation",
   },
 ];
 
@@ -36,7 +29,7 @@ const PhaosOne = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos ONE — Unified Financial Intelligence Environment"
-        description="Phaos ONE unifies Sunesis, Kyrios, and Aion into a single research, governance, and protection environment. One subscription. $599/month."
+        description="Phaos Phinance unifies Sunesis research and Run Simulation into a single environment. One subscription."
         canonical="/one"
       />
       <Navigation />
@@ -80,7 +73,7 @@ const PhaosOne = () => {
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-purple-light mb-5">What Phaos ONE Is</p>
           <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light">
-            Phaos ONE is not a separate product from Sunesis, Kyrios, and Aion. It is the unified operating environment that brings them together. One subscription gives you all three pillars working as a single integrated research operating system.
+            Phaos Phinance is the unified operating environment for Sunesis research and live simulation. One subscription. Top-10 PCI candidates filtered to your selected asset classes and brokers, with full audit trail and conviction intelligence.
           </p>
         </div>
       </section>
@@ -90,10 +83,10 @@ const PhaosOne = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Three Pillars. <span className="text-gradient-purple">One Environment.</span>
+              Two Pillars. <span className="text-gradient-purple">One Environment.</span>
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {pillars.map((p) => (
               <Link
                 key={p.name}
@@ -207,9 +200,10 @@ const PhaosOne = () => {
 
           <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
             {[
-              { label: "Sunesis alone", price: "$149/month" },
-              { label: "Aion alone", price: "$199/month" },
-              { label: "Kyrios alone", price: "$299/month" },
+              { label: "Sunesis Free", price: "$0/month" },
+              { label: "Sunesis Elite", price: "$149/month" },
+              { label: "Sunesis Pro", price: "$299/month" },
+              { label: "Sunesis Sovereign", price: "$599/month" },
             ].map((row) => (
               <div key={row.label} className="flex items-center justify-between px-6 py-4 border-b border-border/40">
                 <span className="text-foreground/85">{row.label}</span>
@@ -217,8 +211,8 @@ const PhaosOne = () => {
               </div>
             ))}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/40 bg-muted/20">
-              <span className="text-foreground font-semibold">Combined if purchased separately</span>
-              <span className="font-mono text-sm text-foreground line-through opacity-70">$647/month</span>
+              <span className="text-foreground font-semibold">Sovereign unlocks every Phinance capability</span>
+              <span className="font-mono text-sm text-foreground opacity-70">All-inclusive</span>
             </div>
             <div className="flex items-center justify-between px-6 py-5 bg-purple-deep/10">
               <div className="flex items-center gap-2">

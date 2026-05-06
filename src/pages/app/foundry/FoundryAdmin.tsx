@@ -21,8 +21,8 @@ import {
   ASSET_CLASSES, AssetClassId, PIPELINE_STEPS, VALIDATION_YEARS,
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
-  runYearForBrain, ASSET_SAMPLE_COUNT, MACRO_SHOCKS,
-  type QuantumReport, type BrainKey,
+  runYearForBrain, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
+  type QuantumReport, type BrainKey, type QuantumPingResult,
 } from "@/lib/foundryEngine";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
@@ -64,6 +64,17 @@ export default function FoundryAdmin() {
   const [promoteConfirm, setPromoteConfirm] = useState("");
   const [reports, setReports] = useState<QuantumReport[]>(() => loadReports());
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
+  const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
+  const [pinging, setPinging] = useState(false);
+  async function doPing() {
+    setPinging(true);
+    setPingResult(null);
+    try {
+      const r = await pingQuantum();
+      setPingResult(r);
+      toast({ title: r.ok ? "✓ IBM Quantum reachable" : "✗ IBM Quantum unreachable", description: r.summary });
+    } finally { setPinging(false); }
+  }
 
   function recordReport(r: QuantumReport) {
     setReports((prev) => {
@@ -323,6 +334,9 @@ export default function FoundryAdmin() {
               <h1 className="text-xl font-semibold tracking-tight">The Foundry — Brain Forge</h1>
               <p className="text-sm text-muted-foreground">Build, validate, name, version, and promote the engine that runs Phaos Sunesis.</p>
             </div>
+            <Button size="sm" variant="outline" className="gap-1" onClick={doPing} disabled={pinging}>
+              {pinging ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />} Ping IBM Quantum
+            </Button>
           </div>
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
@@ -362,6 +376,33 @@ export default function FoundryAdmin() {
           <StagePill n={5} label="Promote to Sunesis" active={stage === 5} done={false} />
         </div>
       </div>
+
+      {pingResult && (
+        <div className={cn(
+          "rounded-xl border p-4 text-xs space-y-2",
+          pingResult.ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-red-500/40 bg-red-500/5",
+        )}>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm">
+              {pingResult.ok ? "✓ IBM Quantum reachable end-to-end" : "✗ IBM Quantum check failed"}
+            </span>
+            <button onClick={() => setPingResult(null)} className="text-muted-foreground hover:text-foreground">×</button>
+          </div>
+          <p className="text-muted-foreground">{pingResult.summary}</p>
+          {pingResult.steps.length > 0 && (
+            <ul className="space-y-1 font-mono">
+              {pingResult.steps.map((s, i) => (
+                <li key={i} className={s.ok ? "text-emerald-400" : "text-red-400"}>
+                  {s.ok ? "✓" : "✗"} {s.step} ({s.ms}ms){s.detail ? ` — ${s.detail}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          {pingResult.recommendation && (
+            <p className="italic text-foreground/80 border-t border-border/40 pt-2">{pingResult.recommendation}</p>
+          )}
+        </div>
+      )}
 
       {/* ---------- STAGE 1 ---------- */}
       <section className="space-y-3">

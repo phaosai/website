@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -162,9 +162,9 @@ const AppInner = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             <Route path="/one" element={<PhaosOne />} />
-            <Route path="/one/aion" element={<PhaosAion />} />
-            <Route path="/one/sunesis" element={<PhaosSunesis />} />
-            <Route path="/one/kyrios" element={<PhaosKyrios />} />
+             <Route path="/one/aion" element={<Navigate to="/one" replace />} />
+             <Route path="/one/sunesis" element={<PhaosSunesis />} />
+             <Route path="/one/kyrios" element={<Navigate to="/one" replace />} />
             <Route path="/one/run-simulation" element={<RunSimulation />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
@@ -188,18 +188,14 @@ const AppInner = () => {
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
-              <Route path="simulations" element={<AionSimulate />} />
-              <Route path="kyrios" element={<KyriosQueue />} />
-              <Route path="kyrios/workflow/:id" element={<KyriosWorkflow />} />
-              <Route path="kyrios/portals" element={<KyriosPortals />} />
-              <Route path="portals" element={<KyriosPortals />} />
-              <Route path="aion" element={<AionMonitor />} />
-              <Route path="aion/changes/:ticker" element={<AionChanges />} />
-              <Route path="aion/simulate" element={<AionSimulate />} />
-              <Route path="aion/security" element={<AionSecurity />} />
-              <Route path="aion/audit" element={<AionAudit />} />
-              <Route path="security" element={<AionSecurity />} />
-              <Route path="audit" element={<AionAudit />} />
+               <Route path="simulations" element={<AionSimulate />} />
+               <Route path="security" element={<AionSecurity />} />
+               <Route path="audit" element={<AionAudit />} />
+               <Route path="kyrios" element={<Navigate to="/app" replace />} />
+               <Route path="kyrios/*" element={<Navigate to="/app" replace />} />
+               <Route path="aion" element={<Navigate to="/app" replace />} />
+               <Route path="aion/*" element={<Navigate to="/app" replace />} />
+               <Route path="portals" element={<Navigate to="/app" replace />} />
               <Route path="pantheon" element={<PantheonDashboard />} />
               <Route path="pantheon/team" element={<PantheonTeam />} />
               <Route path="pantheon/logos" element={<PantheonLogos />} />
