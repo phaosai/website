@@ -10,8 +10,8 @@ import { getStripeEnvironment } from "@/lib/stripe";
 
 const PRODUCT_NAMES: Record<string, string> = {
   sunesis_monthly: "Phaos Sunesis",
-  aion_monthly: "Phaos Aion",
-  kyrios_monthly: "Phaos Kyrios",
+  aion_monthly: "Phaos Pro",
+  kyrios_monthly: "Phaos Elite",
   phaos_one_monthly: "Phaos ONE",
   pantheon_monthly: "Pantheon",
   truth_memo_single_price: "Single Truth Memo",
