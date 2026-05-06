@@ -377,6 +377,33 @@ export default function FoundryAdmin() {
         </div>
       </div>
 
+      {pingResult && (
+        <div className={cn(
+          "rounded-xl border p-4 text-xs space-y-2",
+          pingResult.ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-red-500/40 bg-red-500/5",
+        )}>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm">
+              {pingResult.ok ? "✓ IBM Quantum reachable end-to-end" : "✗ IBM Quantum check failed"}
+            </span>
+            <button onClick={() => setPingResult(null)} className="text-muted-foreground hover:text-foreground">×</button>
+          </div>
+          <p className="text-muted-foreground">{pingResult.summary}</p>
+          {pingResult.steps.length > 0 && (
+            <ul className="space-y-1 font-mono">
+              {pingResult.steps.map((s, i) => (
+                <li key={i} className={s.ok ? "text-emerald-400" : "text-red-400"}>
+                  {s.ok ? "✓" : "✗"} {s.step} ({s.ms}ms){s.detail ? ` — ${s.detail}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          {pingResult.recommendation && (
+            <p className="italic text-foreground/80 border-t border-border/40 pt-2">{pingResult.recommendation}</p>
+          )}
+        </div>
+      )}
+
       {/* ---------- STAGE 1 ---------- */}
       <section className="space-y-3">
         <header className="flex items-end justify-between">
