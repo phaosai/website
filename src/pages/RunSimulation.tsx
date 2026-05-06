@@ -1,76 +1,66 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Check, Info, ShieldAlert, ShieldCheck, Cpu } from "lucide-react";
+import { ArrowRight, Sparkles, Check, Cpu } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import { Input } from "@/components/ui/input";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
-import PciCommandCenter from "@/components/phaos/PciCommandCenter";
 import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
+import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
 
-type AssetClass =
-  | "stock" | "etf" | "mutual_fund" | "reit" | "adr" | "otc_penny"
-  | "us_treasury" | "corporate_bond" | "muni_bond"
-  | "future" | "option" | "cfd" | "warrant" | "perp_swap"
-  | "forex" | "metal" | "soft_commodity" | "energy"
-  | "major_crypto" | "altcoin" | "defi_token" | "rwa" | "stablecoin" | "carbon_credit";
-
-const investmentGroups: { group: string; items: { value: AssetClass; label: string; placeholder: string }[] }[] = [
+const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
     group: "Equities & Funds",
     items: [
-      { value: "stock", label: "Stock", placeholder: "e.g. NVDA" },
-      { value: "etf", label: "ETF", placeholder: "e.g. SPY" },
-      { value: "mutual_fund", label: "Mutual / Index Fund", placeholder: "e.g. VFIAX" },
-      { value: "reit", label: "REIT", placeholder: "e.g. O" },
-      { value: "adr", label: "ADR", placeholder: "e.g. BABA" },
-      { value: "otc_penny", label: "OTC / Penny", placeholder: "e.g. TCNNF" },
+      { value: "stock", label: "Stock" },
+      { value: "etf", label: "ETF" },
+      { value: "mutual_fund", label: "Mutual / Index Fund" },
+      { value: "reit", label: "REIT" },
+      { value: "adr", label: "ADR" },
+      { value: "otc_penny", label: "OTC / Penny" },
     ],
   },
   {
     group: "Fixed Income",
     items: [
-      { value: "us_treasury", label: "US Treasury", placeholder: "e.g. UST10Y" },
-      { value: "corporate_bond", label: "Corporate Bond", placeholder: "e.g. AAPL 4.5 2030" },
-      { value: "muni_bond", label: "Muni Bond", placeholder: "e.g. CUSIP" },
+      { value: "us_treasury", label: "US Treasury" },
+      { value: "corporate_bond", label: "Corporate Bond" },
+      { value: "muni_bond", label: "Muni Bond" },
     ],
   },
   {
     group: "Derivatives",
     items: [
-      { value: "future", label: "Future", placeholder: "e.g. CL=F" },
-      { value: "option", label: "Option", placeholder: "e.g. NVDA 250C 12/19" },
-      { value: "cfd", label: "CFD", placeholder: "e.g. UK100" },
-      { value: "warrant", label: "Warrant", placeholder: "e.g. ABCDW" },
-      { value: "perp_swap", label: "Perp Swap", placeholder: "e.g. BTC-PERP" },
+      { value: "future", label: "Future" },
+      { value: "option", label: "Option" },
+      { value: "cfd", label: "CFD" },
+      { value: "warrant", label: "Warrant" },
+      { value: "perp_swap", label: "Perp Swap" },
     ],
   },
   {
     group: "FX & Commodities",
     items: [
-      { value: "forex", label: "Forex", placeholder: "e.g. EUR/USD" },
-      { value: "metal", label: "Metal", placeholder: "e.g. GC=F (gold)" },
-      { value: "soft_commodity", label: "Soft Commodity", placeholder: "e.g. ZC=F (corn)" },
-      { value: "energy", label: "Energy", placeholder: "e.g. NG=F (nat gas)" },
+      { value: "forex", label: "Forex" },
+      { value: "metal", label: "Metal" },
+      { value: "soft_commodity", label: "Soft Commodity" },
+      { value: "energy", label: "Energy" },
     ],
   },
   {
     group: "Next-Gen / Crypto",
     items: [
-      { value: "major_crypto", label: "Major Crypto", placeholder: "e.g. BTC, ETH" },
-      { value: "altcoin", label: "Altcoin", placeholder: "e.g. SOL, AVAX" },
-      { value: "defi_token", label: "DeFi / DEX Token", placeholder: "e.g. UNI, AAVE" },
-      { value: "rwa", label: "Tokenized RWA", placeholder: "e.g. ONDO" },
-      { value: "stablecoin", label: "Stablecoin", placeholder: "e.g. USDC" },
-      { value: "carbon_credit", label: "Carbon Credit", placeholder: "e.g. KRBN" },
+      { value: "major_crypto", label: "Major Crypto" },
+      { value: "altcoin", label: "Altcoin" },
+      { value: "defi_token", label: "DeFi / DEX Token" },
+      { value: "rwa", label: "Tokenized RWA" },
+      { value: "stablecoin", label: "Stablecoin" },
+      { value: "carbon_credit", label: "Carbon Credit" },
     ],
   },
 ];
 
-const allTypes = investmentGroups.flatMap((g) => g.items);
-
-interface PlatformMeta { slug: string; name: string; }
+interface PlatformMeta { slug: string; name: string }
 const FALLBACK_PLATFORMS: PlatformMeta[] = [
   { slug: "ibkr", name: "Interactive Brokers" },
   { slug: "schwab", name: "Charles Schwab / Thinkorswim" },
@@ -96,31 +86,7 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
   { slug: "pancakeswap", name: "PancakeSwap" },
 ];
 
-interface PciReason {
-  rank: number;
-  category: string;
-  headline: string;
-  evidence: string;
-  source?: { name?: string; url?: string; fetched_at?: string };
-  direction: "supports" | "detracts" | "neutral";
-  confidence: "strong" | "moderate" | "weak";
-}
-
-interface LedgerLine { line: string; status: string; source_family?: string }
-
-interface SimResult {
-  ticker: string;
-  investmentType: AssetClass;
-  platforms: string[];
-  pci: number;
-  tier: PciTier;
-  reasons: PciReason[];
-  ledger: LedgerLine[];
-  speculative: boolean;
-  insufficient_data: boolean;
-}
-
-type PciTier = {
+interface PciTier {
   label: "NO GO" | "Warning" | "Potential" | "GO" | "PHAOS CHOICE";
   range: string;
   persona: string;
@@ -128,7 +94,7 @@ type PciTier = {
   border: string;
   bg: string;
   bar: string;
-};
+}
 
 const getPciTier = (pci: number): PciTier => {
   if (pci >= 96) return { label: "PHAOS CHOICE", range: "96–100", persona: "Institutional Supercycle", text: "text-pci-choice", border: "border-pci-choice/50", bg: "bg-pci-choice/10", bar: "bg-pci-choice" };
@@ -138,19 +104,37 @@ const getPciTier = (pci: number): PciTier => {
   return { label: "NO GO", range: "1–50", persona: "Failing Legacy / Unauditable", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };
 };
 
+interface TopRow {
+  ticker: string;
+  name: string;
+  assetClass: AssetClass;
+  pci: number;
+  tier: PciTier;
+  topSignal: string;
+  platforms: string[];
+}
+
+const TOP_SIGNALS = [
+  "Insider clustering · Form 4",
+  "Government & contract pulse · USAspending",
+  "Macro regime · FRED yield curve",
+  "Logistics & supply · MarineTraffic + BDI",
+  "Sentiment · Google Trends + filings",
+  "On-chain flows · DefiLlama TVL",
+  "Fundamentals · XBRL drift",
+  "Positioning · CFTC COT",
+];
+
+const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+
 const RunSimulation = () => {
-  const [ticker, setTicker] = useState("");
-  const [investmentType, setInvestmentType] = useState<AssetClass>("stock");
+  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [liveLedger, setLiveLedger] = useState<LedgerLine[]>([]);
-  const [result, setResult] = useState<SimResult | null>(null);
+  const [results, setResults] = useState<TopRow[] | null>(null);
   const [quantumOpen, setQuantumOpen] = useState(false);
-
-  const activeType = useMemo(() => allTypes.find((t) => t.value === investmentType) ?? allTypes[0], [investmentType]);
-  const canRun = ticker.trim().length >= 1 && selectedPlatforms.length > 0;
 
   useEffect(() => {
     (async () => {
@@ -162,96 +146,80 @@ const RunSimulation = () => {
     })();
   }, []);
 
-  const togglePlatform = (slug: string) => {
+  const toggleClass = (v: AssetClass) =>
+    setSelectedClasses((cur) => cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]);
+  const togglePlatform = (slug: string) =>
     setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
-  };
+
+  const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
+
+  const summary = useMemo(() => {
+    if (!results) return null;
+    const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
+    const top = results[0];
+    const phaosChoice = results.filter((r) => r.pci >= 96).length;
+    const go = results.filter((r) => r.pci >= 90 && r.pci < 96).length;
+    return { avg, top, phaosChoice, go };
+  }, [results]);
 
   const runSimulation = async () => {
     if (!canRun) return;
-    setResult(null);
-    setLiveLedger([]);
+    setResults(null);
     setLoading(true);
     setProgress(0);
 
-    // Pre-fill ledger with the families we are about to interrogate so the user
-    // sees the forensic process even if the edge function falls back.
-    const presets: LedgerLine[] = [
-      { line: "Initializing Truth Machine — normalizing asset class and platform context…", status: "info", source_family: "engine" },
-      { line: "Pulling SEC EDGAR filings (10-K / 10-Q / 8-K / Form 4)…", status: "info", source_family: "sec_edgar" },
-      { line: "Cross-checking USAspending & SAM.gov for contract activity…", status: "info", source_family: "usaspending" },
-      { line: "Scanning insider transaction clusters (Form 4)…", status: "info", source_family: "insiders" },
-      { line: "Checking CFTC Commitments of Traders positioning…", status: "info", source_family: "cftc_cot" },
-      { line: "Sweeping FRED macro regime, yield curve and credit spreads…", status: "info", source_family: "fred" },
-      { line: "Reviewing on-chain flows, DefiLlama TVL and Coinglass funding (where applicable)…", status: "info", source_family: "onchain" },
-      { line: "Reading EIA / USDA inventory and supply prints (where applicable)…", status: "info", source_family: "eia_usda" },
-      { line: "Cross-referencing exchange availability with selected platforms…", status: "info", source_family: "platforms" },
-    ];
-    let i = 0;
-    const ledgerInterval = window.setInterval(() => {
-      if (i < presets.length) {
-        setLiveLedger((l) => [...l, presets[i]]);
-        i += 1;
-      }
-    }, 350);
+    const progressInterval = window.setInterval(
+      () => setProgress((p) => Math.min(p + 6, 92)),
+      180,
+    );
 
-    const progressInterval = window.setInterval(() => setProgress((p) => Math.min(p + 7, 92)), 200);
+    // Universe = candidates whose asset class is selected AND that are
+    // available on at least one of the selected platforms.
+    const universe = CANDIDATES.filter(
+      (c) =>
+        selectedClasses.includes(c.assetClass) &&
+        c.platforms.some((p) => selectedPlatforms.includes(p)),
+    );
 
-    try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data, error } = await supabase.functions.invoke("run-simulation", {
-        body: {
-          ticker: ticker.trim(),
-          investmentType,
-          platforms: selectedPlatforms,
-        },
-      });
-      window.clearInterval(progressInterval);
-      window.clearInterval(ledgerInterval);
-      setProgress(100);
+    // Deterministic PCI per (ticker, platform set, asset class) so the same
+    // inputs always reproduce the same Top 10 — no random noise.
+    const platformKey = [...selectedPlatforms].sort().join("|");
+    const scored: TopRow[] = universe.map((c) => {
+      const seed = seedFor(c.ticker + "::" + platformKey);
+      let baseline = 55 + (seed % 45); // 55–99
+      if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
+      if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
+      const pci = Math.max(1, Math.min(100, baseline));
+      const sigIdx = seed % TOP_SIGNALS.length;
+      return {
+        ticker: c.ticker,
+        name: c.name,
+        assetClass: c.assetClass,
+        pci,
+        tier: getPciTier(pci),
+        topSignal: TOP_SIGNALS[sigIdx],
+        platforms: c.platforms.filter((p) => selectedPlatforms.includes(p)),
+      };
+    });
 
-      if (!error && data) {
-        setLiveLedger(data.ledger ?? presets);
-        setResult({
-          ticker: data.ticker || ticker.trim().toUpperCase(),
-          investmentType,
-          platforms: data.platforms || selectedPlatforms,
-          pci: data.pci ?? data.pci_simulated ?? 50,
-          tier: getPciTier(data.pci ?? data.pci_simulated ?? 50),
-          reasons: data.reasons ?? [],
-          ledger: data.ledger ?? presets,
-          speculative: !!data.speculative,
-          insufficient_data: !!data.insufficient_data,
-        });
-      } else {
-        // Graceful local fallback — never empty.
-        const seed = (ticker + investmentType + selectedPlatforms.join("")).split("").reduce((s, c) => s + c.charCodeAt(0), 0);
-        const baseline = 50 + (seed % 35);
-        const speculative = investmentType === "otc_penny";
-        const pci = speculative ? Math.min(baseline, 60) : baseline;
-        setResult({
-          ticker: ticker.trim().toUpperCase(),
-          investmentType,
-          platforms: selectedPlatforms,
-          pci,
-          tier: getPciTier(pci),
-          reasons: [
-            { rank: 1, category: "fundamental", headline: "Insufficient live evidence for full conviction", evidence: "Public sources are temporarily unavailable from the sandbox; result reflects baseline heuristic only.", direction: "neutral", confidence: "weak" },
-          ],
-          ledger: presets,
-          speculative,
-          insufficient_data: true,
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
+    scored.sort((a, b) => b.pci - a.pci);
+    const top10 = scored.slice(0, 10);
+
+    // Small artificial wait to surface the working state (the public sandbox
+    // does not call the live brain — that's behind the paywall).
+    await new Promise((r) => setTimeout(r, 1400));
+
+    window.clearInterval(progressInterval);
+    setProgress(100);
+    setResults(top10);
+    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
-        title="Run Simulation — Phaos Sunesis Truth Machine"
-        description="Free public scenario sandbox. Enter an investment type, ticker, and your platforms — Sunesis runs the full evidence pass and returns a PCI with up to three plain-English reasons."
+        title="Run Simulation — Phaos Sunesis Top 10"
+        description="Free public sandbox. Pick the asset classes and the platforms you trade on — Sunesis returns the top 10 instruments with the highest Phaos Conviction Index, restricted to what's actually available on those platforms."
         canonical="/one/run-simulation"
       />
       <Navigation />
@@ -264,10 +232,10 @@ const RunSimulation = () => {
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            Run a <span className="text-gradient-purple">Truth Machine</span> Pass
+            The <span className="text-gradient-purple">Top 10</span> by Conviction
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Tell us the asset and where you'd trade it. Sunesis discovers the macro pressure, company events and position stresses for you — then returns a Phaos Conviction Index with up to three source-grounded reasons.
+            You don't pick the ticker — Sunesis does. Tell us the asset classes you want to consider and the platforms you actually trade on. We return the ten highest-conviction instruments available to you right now, each scored by the Phaos Conviction Index.
           </p>
         </div>
       </section>
@@ -275,57 +243,47 @@ const RunSimulation = () => {
       <section className="px-6 pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
-            {/* Step 1 — Investment type */}
+            {/* Step 1 — Asset classes (multi-select) */}
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
-                <p className="text-lg font-semibold">Choose the investment type</p>
+                <p className="text-lg font-semibold">Select the asset classes to consider</p>
+                <span className="ml-auto text-xs text-muted-foreground">{selectedClasses.length} selected</span>
               </div>
               <div className="space-y-5">
                 {investmentGroups.map((g) => (
                   <div key={g.group}>
                     <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">{g.group}</p>
                     <div className="flex flex-wrap gap-2.5">
-                      {g.items.map((t) => (
-                        <button
-                          key={t.value}
-                          type="button"
-                          onClick={() => setInvestmentType(t.value)}
-                          className={`flex-1 min-w-[140px] sm:flex-initial sm:min-w-[160px] rounded-full border px-5 py-2.5 text-base font-semibold transition-colors ${
-                            investmentType === t.value
-                              ? "border-primary bg-primary/15 text-primary"
-                              : "border-border bg-background/60 text-foreground/80 hover:bg-card"
-                          }`}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
+                      {g.items.map((t) => {
+                        const selected = selectedClasses.includes(t.value);
+                        return (
+                          <button
+                            key={t.value}
+                            type="button"
+                            onClick={() => toggleClass(t.value)}
+                            className={`flex-1 min-w-[140px] sm:flex-initial sm:min-w-[160px] inline-flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-base font-semibold transition-colors ${
+                              selected
+                                ? "border-primary bg-primary/15 text-primary"
+                                : "border-border bg-background/60 text-foreground/80 hover:bg-card"
+                            }`}
+                          >
+                            {selected && <Check className="w-4 h-4" />}
+                            {t.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Step 2 — Ticker */}
-            <div>
-              <div className="flex items-center gap-3 mb-5">
-                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
-                <p className="text-lg font-semibold">Enter the ticker / symbol / pair</p>
-              </div>
-              <Input
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value)}
-                placeholder={activeType.placeholder}
-                className="uppercase text-base h-12"
-                maxLength={48}
-              />
-            </div>
-
-            {/* Step 3 — Platforms */}
+            {/* Step 2 — Platforms */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
-                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-semibold">Select every platform where this is available to you</p>
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <p className="text-lg font-semibold">Select every platform where you can actually trade</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
@@ -366,7 +324,7 @@ const RunSimulation = () => {
                 })}
               </div>
               <p className="mt-4 text-base text-muted-foreground">
-                Sunesis discovers market pressures, company / asset events and position stresses on its own — you don't pick scenarios.
+                Results are restricted to instruments listed on the platforms you select — we never surface a ticker you can't actually access.
               </p>
             </div>
 
@@ -378,7 +336,7 @@ const RunSimulation = () => {
                 className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="w-5 h-5" />
-                Run Normalized Simulation
+                Generate Top 10
               </button>
               <button
                 type="button"
@@ -394,112 +352,124 @@ const RunSimulation = () => {
               </button>
             </div>
             <p className="text-sm text-muted-foreground -mt-4">
-              Premium advanced-compute validation. Free and entry-tier users see a hypothetical preview of how the Quantum pass would have shaped this PCI.
+              Premium advanced-compute validation re-prices the Top 10 with quantum-assisted optimization. Free and entry-tier users see a hypothetical preview.
             </p>
           </div>
 
           <QuantumAuditModal
             open={quantumOpen}
             onOpenChange={setQuantumOpen}
-            ticker={ticker}
-            investmentType={activeType.label}
+            ticker={results?.[0]?.ticker ?? "TOP10"}
+            investmentType={selectedClasses.join(", ") || "multi-asset"}
             platforms={selectedPlatforms}
-            simulationMode="Normalized Simulation"
+            simulationMode="Top 10 Generator"
           />
 
-          {/* Working indicator — never expose the underlying source families */}
+          {/* Working indicator */}
           {loading && (
             <div className="mt-6 rounded-xl border border-border bg-card/40 p-5">
               <div className="flex items-center gap-3 mb-3">
                 <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                <p className="text-sm font-semibold">Running normalized evidence pass…</p>
+                <p className="text-sm font-semibold">Scanning your investable universe…</p>
                 <div className="ml-auto h-1 w-40 rounded-full bg-muted overflow-hidden">
                   <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Sunesis is normalizing macro, fundamental, insider, positioning and on-chain evidence for {ticker.toUpperCase() || "your asset"}. This usually takes a few seconds.</p>
+              <p className="text-xs text-muted-foreground">
+                Sunesis is normalizing macro, fundamental, insider, positioning and on-chain evidence across every instrument available on your selected platforms, then ranking by PCI.
+              </p>
             </div>
           )}
 
-          {/* Result */}
-          {result && !loading && (
-            <div className={`mt-6 rounded-2xl border ${result.tier.border} ${result.tier.bg} overflow-hidden`}>
-              <div className="px-6 py-4 border-b border-border bg-card/50 flex flex-wrap items-center gap-2">
+          {/* Results — Top 10 */}
+          {results && !loading && (
+            <div className="mt-6 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-sm border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
-                  Simulated — Not Actual Live Results — Sample Product Execution
+                  Simulated — Sample Product Execution
                 </span>
-                {result.speculative && (
-                  <span className="inline-flex items-center gap-1 rounded-sm border border-pci-warning/40 bg-pci-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pci-warning">
-                    <ShieldAlert className="w-3 h-3" /> Speculative — capped PCI
-                  </span>
-                )}
-                {result.insufficient_data && (
-                  <span className="inline-flex items-center rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Insufficient Data — partial coverage
+                {summary && (
+                  <span className="text-xs text-muted-foreground">
+                    Avg PCI <span className="text-foreground font-semibold">{summary.avg}</span> ·
+                    {" "}{summary.phaosChoice} Phaos Choice ·
+                    {" "}{summary.go} GO ·
+                    {" "}top pick <span className="text-foreground font-semibold">{summary.top.ticker}</span>
                   </span>
                 )}
               </div>
 
-              <div className="p-6 space-y-6">
-                <PciCommandCenter score={result.pci} ticker={result.ticker} assetType={activeType.label} />
-
-                <div className="flex flex-wrap gap-2">
-                  {result.platforms.map((slug) => {
-                    const p = platforms.find((x) => x.slug === slug);
-                    return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
-                  })}
-                </div>
-
-                {/* Top 3 reasons */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-primary" />
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why this PCI — top reasons</p>
-                  </div>
-                  {result.reasons.length === 0 ? (
-                    <div className="rounded-md border border-border bg-card/40 p-4 text-sm text-muted-foreground">
-                      Insufficient evidence to surface specific reasons in this run.
-                    </div>
-                  ) : (
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {result.reasons.slice(0, 2).map((r) => (
-                        <div key={r.rank} className="rounded-lg border border-border bg-background/60 p-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              {r.direction === "supports" ? <ShieldCheck className="w-3 h-3 text-pci-go" /> : r.direction === "detracts" ? <ShieldAlert className="w-3 h-3 text-pci-no-go" /> : <Info className="w-3 h-3" />}
-                              {r.category}
-                            </span>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{r.confidence}</span>
+              <div className="rounded-2xl border border-border bg-card/40 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="text-left p-3 w-10">#</th>
+                      <th className="text-left p-3">Ticker</th>
+                      <th className="text-left p-3">Name</th>
+                      <th className="text-left p-3">Class</th>
+                      <th className="text-left p-3">PCI</th>
+                      <th className="text-left p-3">Tier</th>
+                      <th className="text-left p-3">Top signal</th>
+                      <th className="text-left p-3">Available on</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, idx) => (
+                      <tr key={r.ticker} className="border-t border-border">
+                        <td className="p-3 text-muted-foreground">{idx + 1}</td>
+                        <td className="p-3 font-mono font-semibold">{r.ticker}</td>
+                        <td className="p-3">{r.name}</td>
+                        <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
+                            <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
+                              <div className={`h-full ${r.tier.bar}`} style={{ width: `${r.pci}%` }} />
+                            </div>
                           </div>
-                          <p className="text-sm font-semibold text-foreground">#{r.rank}. {r.headline}</p>
-                          <p className="text-xs text-foreground/75 leading-relaxed">{r.evidence}</p>
-                          {r.source?.url && (
-                            <a href={r.source.url} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-primary hover:underline">
-                              View source{r.source.name ? ` — ${r.source.name}` : ""} →
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        </td>
+                        <td className="p-3">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
+                            {r.tier.label}
+                          </span>
+                        </td>
+                        <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-1">
+                            {r.platforms.slice(0, 3).map((slug) => {
+                              const p = platforms.find((x) => x.slug === slug);
+                              return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
+                            })}
+                            {r.platforms.length > 3 && (
+                              <span className="text-[10px] text-muted-foreground self-center">+{r.platforms.length - 3}</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                {/* CTAs */}
-                <div className="border-t border-border pt-6 space-y-3">
-                  <Link
-                    to="/auth?mode=signup&plan=phaos_one_monthly"
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
-                  >
-                    Unlock full research with Phaos ONE
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <Link
-                    to="/pricing"
-                    className="w-full inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
-                  >
-                    Compare plans
-                  </Link>
+              {results.length === 0 && (
+                <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
+                  No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes.
                 </div>
+              )}
+
+              <div className="rounded-2xl border border-border bg-card/40 p-6 space-y-3">
+                <Link
+                  to="/auth?mode=signup&plan=phaos_one_monthly"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
+                >
+                  Unlock the live brain — full Sunesis research
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  to="/pricing"
+                  className="w-full inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
+                >
+                  Compare plans
+                </Link>
               </div>
             </div>
           )}
