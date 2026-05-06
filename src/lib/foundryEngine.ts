@@ -139,6 +139,11 @@ export interface ForgeState {
   promote: { engineName: string; version: string };
   // Total deep-training cycles run across every year (the "100 instances" button).
   totalTrainingCycles?: number;
+  // Persistent per-symbol residual bias accumulated across every pass and every
+  // year. This is the brain's learned correction map — promoted to Sunesis.
+  residualBias?: Record<string, number>;
+  // Best-ever combined score reached across the entire forge (any year).
+  bestCombinedEver?: number;
 }
 
 export const VALIDATION_YEARS = Array.from({ length: 15 }, (_, i) => 2011 + i);
