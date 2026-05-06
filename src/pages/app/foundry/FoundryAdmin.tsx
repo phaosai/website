@@ -196,10 +196,11 @@ export default function FoundryAdmin() {
   // expressed via (a) the year-over-year `learningFactor` AND (b) the per-year
   // `trainingPasses` counter that re-trains the brain on the same shock.
   async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number } = {}) {
-    const yearsCompleted = state.years.filter((y) => (y.status === "scored") && y.year < year).length;
-    const learningFactor = Math.pow(0.94, yearsCompleted); // gentler — shocks should still hurt
+    const cur = stateRef.current;
+    const yearsCompleted = cur.years.filter((y) => (y.status === "scored") && y.year < year).length;
+    const learningFactor = Math.pow(0.94, yearsCompleted);
 
-    const yEntry = state.years.find((x) => x.year === year)!;
+    const yEntry = cur.years.find((x) => x.year === year)!;
     const priorPasses = yEntry.trainingPasses ?? 0;
     const passes = opts.passes ?? 1;
     const shock = MACRO_SHOCKS[year];
