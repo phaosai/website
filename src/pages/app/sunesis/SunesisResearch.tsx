@@ -257,6 +257,24 @@ export default function SunesisResearch() {
         </div>
       </div>
 
+      {tierMode === "sovereign" && (
+        <div className="rounded-xl border border-pci-choice/30 bg-pci-choice/5 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-pci-choice/50 bg-pci-choice/10 text-pci-choice text-[10px] uppercase tracking-wider">Sovereign filter</Badge>
+              <p className="text-sm font-semibold">Target PCI range</p>
+            </div>
+            <span className="font-mono text-sm">{pciRange[0]} – {pciRange[1]}</span>
+          </div>
+          <Slider
+            min={1} max={100} step={1}
+            value={pciRange}
+            onValueChange={(v) => setPciRange([v[0], v[1]] as [number, number])}
+          />
+          <p className="text-xs text-muted-foreground">Set 96–100 for Phaos Choice only, 1–10 for distressed/short candidates, etc.</p>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={generate}
@@ -264,7 +282,10 @@ export default function SunesisResearch() {
         className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-3.5 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         <Sparkles className="w-5 h-5" />
-        {running ? "Scanning your investable universe…" : "Generate Top 10"}
+        {running ? "Scanning your investable universe…" :
+          tierMode === "elite" ? "Generate Top 10" :
+          tierMode === "pro" ? "Generate full results" :
+          `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
 
       {results && (
