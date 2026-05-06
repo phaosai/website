@@ -220,6 +220,7 @@ export default function FoundryAdmin() {
     const priorPasses = yEntry.trainingPasses ?? 0;
     const passes = opts.passes ?? 1;
     const shock = MACRO_SHOCKS[year];
+    const startingResiduals = { ...(cur.residualBias ?? {}) };
 
     function setPhase(phase: NonNullable<import("@/lib/foundryEngine").YearScore["phase"]>) {
       setState((prev) => ({
@@ -249,18 +250,26 @@ export default function FoundryAdmin() {
     }
     const quantumBoost = withQuantum && qOut?.ran && !qOut.simulator ? 0.7 : 1.0;
 
-    // Run the requested number of training passes for this year.
+    // Multi-pass training with accumulating per-symbol residuals (true gradient
+    // memory). The combined brain's residual map is what gets carried forward
+    // into every subsequent pass and every subsequent year.
     const learningCurve: number[] = [...(yEntry.learningCurve ?? [])];
-    let original = runYearForBrain({ year, brain: "original", baseNoise: 14 * learningFactor, bias: -1, trainingPasses: priorPasses });
-    let additive = runYearForBrain({ year, brain: "additive", baseNoise: 8  * learningFactor, trainingPasses: priorPasses });
-    let combined = runYearForBrain({ year, brain: "combined", baseNoise: 4  * learningFactor * quantumBoost, trainingPasses: priorPasses });
-    learningCurve.push(combined.brainScore);
-    for (let p = 1; p < passes; p++) {
-      original = runYearForBrain({ year, brain: "original", baseNoise: 14 * learningFactor, bias: -1, trainingPasses: priorPasses + p });
-      additive = runYearForBrain({ year, brain: "additive", baseNoise: 8  * learningFactor, trainingPasses: priorPasses + p });
-      combined = runYearForBrain({ year, brain: "combined", baseNoise: 4  * learningFactor * quantumBoost, trainingPasses: priorPasses + p });
-      learningCurve.push(combined.brainScore);
-    }
+    const originalRun = trainYearMultiPass({
+      year, brain: "original", baseNoise: 14 * learningFactor, bias: -1,
+      passes, startingPasses: priorPasses,
+    });
+    const additiveRun = trainYearMultiPass({
+      year, brain: "additive", baseNoise: 8 * learningFactor,
+      passes, startingPasses: priorPasses, residualBias: startingResiduals,
+    });
+    const combinedRun = trainYearMultiPass({
+      year, brain: "combined", baseNoise: 4 * learningFactor * quantumBoost,
+      passes, startingPasses: priorPasses, residualBias: startingResiduals,
+    });
+    learningCurve.push(...combinedRun.curve);
+    const original = originalRun.final;
+    const additive = additiveRun.final;
+    const combined = combinedRun.final;
 
     if (!opts.silent) {
       setPhase("post_mortem");
@@ -273,6 +282,8 @@ export default function FoundryAdmin() {
     setState((prev) => recomputeGates({
       ...prev,
       totalTrainingCycles: (prev.totalTrainingCycles ?? 0) + passes,
+      residualBias: combinedRun.residualBias,
+      bestCombinedEver: Math.max(prev.bestCombinedEver ?? 0, combined.brainScore),
       years: prev.years.map((y) => y.year === year ? {
         ...y,
         status: "scored",
@@ -296,8 +307,10 @@ export default function FoundryAdmin() {
     }
   }
 
-  // ---------- Bulk: Run every unscored year in sequence ----------
-  const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep">(null);
+  // ---------- Bulk runners ----------
+  const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep" | "hyper">(null);
+  const [hyperProgress, setHyperProgress] = useState<{ sweep: number; year: number; totalSweeps: number } | null>(null);
+
   async function runAllYearsSequential() {
     setBulkRunning("sequential");
     for (const y of stateRef.current.years) {
@@ -305,7 +318,7 @@ export default function FoundryAdmin() {
       await new Promise((r) => setTimeout(r, 50));
     }
     setBulkRunning(null);
-    toast({ title: "All 15 years validated", description: "Brains now have a full first-pass training cycle. Use Deep Training (100×) to keep refining the algorithm." });
+    toast({ title: "All 15 years validated", description: "Brains now have a full first-pass training cycle. Use Deep Training (100×) or Hyper-Forge (1,000 sweeps) to keep refining the algorithm." });
   }
 
   async function runDeepTraining(passesPerYear = 100) {
@@ -321,28 +334,50 @@ export default function FoundryAdmin() {
     });
   }
 
+  // Hyper-Forge: 1,000 full 15-year sweeps. Each sweep runs every year once
+  // with residuals carried forward, so the brain compounds its learning across
+  // 15,000 cycles and pulls every per-symbol bias toward zero.
+  async function runHyperForge(sweeps = 1000) {
+    setBulkRunning("hyper");
+    setHyperProgress({ sweep: 0, year: VALIDATION_YEARS[0], totalSweeps: sweeps });
+    for (let s = 0; s < sweeps; s++) {
+      for (const y of stateRef.current.years) {
+        setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
+        await runYear(y.year, false, { silent: true, passes: 1 });
+      }
+      // yield once per sweep to keep the UI responsive
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    setBulkRunning(null);
+    setHyperProgress(null);
+    toast({
+      title: `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
+      description: `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
+    });
+  }
+
   async function promote() {
     try {
-      // Deactivate any prior active brain, then insert the new one as active.
       const { supabase } = await import("@/integrations/supabase/client");
       const { dimensionsAfterPasses } = await import("@/lib/foundryEngine");
       const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
       const enabledDims = dimensionsAfterPasses(maxPasses);
       const lastCombined = lastScoredYear?.combined ?? null;
+      const residuals = state.residualBias ?? {};
       await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
       const { error } = await supabase.from("promoted_brains").insert({
         engine_name: promoteName,
         version: state.promote.version,
         enabled_dimensions: enabledDims,
-        residual_bias: {},
+        residual_bias: residuals,
         combined_score: lastCombined,
         is_active: true,
-        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}.`,
+        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Residual map covers ${Object.keys(residuals).length} symbols.`,
       });
       if (error) throw error;
       toast({
         title: "✓ Engine promoted to Sunesis",
-        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research for daniel@phaosai.com and all live accounts. Enabled dimensions: ${enabledDims.join(", ")}.`,
+        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research for daniel@phaosai.com and all live accounts. Enabled dimensions: ${enabledDims.join(", ")}. Residual gradient map (${Object.keys(residuals).length} symbols) included so the live brain inherits everything learned in the Foundry.`,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown error";
