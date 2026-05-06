@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Check } from "lucide-react";
+import { Sparkles, Check, Atom } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
-import { SunesisModuleNav, SunesisMoatStrip } from "@/components/phaos";
+import { SunesisModuleNav } from "@/components/phaos";
 import type { AssetClass } from "@/data/simulationCandidates";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
 
@@ -112,17 +113,39 @@ export default function SunesisResearch() {
 
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK);
+  const [platforms, setPlatforms] = useState<Array<PlatformMeta & { assetClasses: string[] }>>(
+    FALLBACK.map((p) => ({ ...p, assetClasses: [] }))
+  );
   const [running, setRunning] = useState(false);
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
+  const [quantumManual, setQuantumManual] = useState(false);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("trading_platforms").select("slug,name").order("name");
-      if (data && data.length) setPlatforms(data);
+      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes").order("name");
+      if (data && data.length) {
+        setPlatforms(data.map((d) => ({
+          slug: d.slug,
+          name: d.name,
+          assetClasses: Array.isArray(d.asset_classes) ? d.asset_classes as string[] : [],
+        })));
+      }
     })();
   }, []);
+
+  // Only show platforms that actually support at least one selected asset class.
+  const visiblePlatforms = useMemo(() => {
+    if (selectedClasses.length === 0) return platforms;
+    return platforms.filter((p) =>
+      p.assetClasses.length === 0 || p.assetClasses.some((ac) => selectedClasses.includes(ac as AssetClass))
+    );
+  }, [platforms, selectedClasses]);
+
+  // Drop selected platforms that no longer match any selected asset class.
+  useEffect(() => {
+    setSelectedPlatforms((cur) => cur.filter((slug) => visiblePlatforms.some((p) => p.slug === slug)));
+  }, [visiblePlatforms]);
 
   const toggleClass = (v: AssetClass) =>
     setSelectedClasses((cur) => cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]);
@@ -130,6 +153,12 @@ export default function SunesisResearch() {
     setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
 
   const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
+
+  // Quantum auto-engage: >3 asset classes, >3 brokerages, or >6 total selections.
+  const totalSelections = selectedClasses.length + selectedPlatforms.length;
+  const quantumAuto =
+    selectedClasses.length > 3 || selectedPlatforms.length > 3 || totalSelections > 6;
+  const quantumActive = quantumManual || quantumAuto;
 
   const generate = async () => {
     if (!canRun) return;
@@ -142,6 +171,7 @@ export default function SunesisResearch() {
           platforms: selectedPlatforms,
           pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
           pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
+          quantum_enabled: quantumActive,
         },
       });
       if (error) throw error;
@@ -169,7 +199,6 @@ export default function SunesisResearch() {
       minTier="sunesis"
     >
       <SunesisModuleNav />
-      <SunesisMoatStrip />
 
       {/* Step 1 — Asset classes */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
@@ -204,14 +233,21 @@ export default function SunesisResearch() {
         </div>
       </div>
 
-      {/* Step 2 — Platforms */}
+      {/* Step 2 — Platforms (filtered to brokerages compatible with the selected classes) */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-sm font-semibold">2. Select your platforms</p>
+          <p className="text-sm font-semibold">
+            2. Select your platforms
+            {selectedClasses.length > 0 && (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                ({visiblePlatforms.length} compatible)
+              </span>
+            )}
+          </p>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setSelectedPlatforms(platforms.map((p) => p.slug))}
+              onClick={() => setSelectedPlatforms(visiblePlatforms.map((p) => p.slug))}
               className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card"
             >Select all</button>
             {selectedPlatforms.length > 0 && (
@@ -224,7 +260,7 @@ export default function SunesisResearch() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-          {platforms.map((p) => {
+          {visiblePlatforms.map((p) => {
             const selected = selectedPlatforms.includes(p.slug);
             return (
               <button
@@ -260,6 +296,32 @@ export default function SunesisResearch() {
           <p className="text-xs text-muted-foreground">Set 96–100 for Phaos Choice only, 1–10 for distressed/short candidates, etc.</p>
         </div>
       )}
+
+      {/* Quantum cross-validation toggle */}
+      <div className="rounded-xl border border-border bg-card/50 p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-3">
+          <Atom className={`w-5 h-5 mt-0.5 ${quantumActive ? "text-purple-deep" : "text-muted-foreground"}`} />
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold">Quantum cross-validation</p>
+              {quantumAuto && (
+                <Badge variant="outline" className="border-purple-deep/50 bg-purple-deep/10 text-purple-deep text-[10px] uppercase tracking-wider">
+                  Auto-engaged
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Automatically engages when you choose more than 3 asset classes, more than 3 brokerages, or more than 6 total selections.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={quantumActive}
+          disabled={quantumAuto}
+          onCheckedChange={setQuantumManual}
+        />
+      </div>
+
 
       <button
         type="button"
