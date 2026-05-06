@@ -378,6 +378,39 @@ const RunSimulation = () => {
             simulationMode="Top 10 Generator"
           />
 
+          <AlertDialog open={quantumPrompt} onOpenChange={setQuantumPrompt}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-primary" /> Quantum processor required
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <span className="block">
+                    You selected <span className="text-foreground font-semibold">{selectedClasses.length} asset classes</span>. Cross-correlating multiple classes simultaneously is a combinatorial workload — Sunesis has to engage the quantum processor (hypothetically, in this sandbox) to evaluate every instrument across every class in parallel.
+                  </span>
+                  <span className="block">
+                    Click OK to simulate the quantum cycle. The brain will then return the global Top 10 across the union of your selected classes — restricted to what's actually tradable on the platforms you chose.
+                  </span>
+                  <span className="block text-xs italic">
+                    SIMULATED — sandbox preview. Live quantum execution is reserved for Pro and Sovereign tiers.
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setQuantumPrompt(false);
+                    setQuantumApproved(true);
+                    setTimeout(() => runSimulation(), 0);
+                  }}
+                >
+                  OK — engage quantum
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Working indicator */}
           {loading && (
             <div className="mt-6 rounded-xl border border-border bg-card/40 p-5">
