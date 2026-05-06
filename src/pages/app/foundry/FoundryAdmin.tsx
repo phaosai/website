@@ -93,6 +93,28 @@ export default function FoundryAdmin() {
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; saveForgeState(state); }, [state]);
 
+  // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
+  // brain's Dec 31 (and quarterly) targets come from real data instead of
+  // the synthetic shock model. Falls back silently if the corpus is empty.
+  const [anchorCount, setAnchorCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { loadRealizedAnchors } = await import("@/lib/foundryEngine");
+      const anchors = await loadRealizedAnchors();
+      if (cancelled) return;
+      const count = Object.keys(anchors).length;
+      setAnchorCount(count);
+      setState((prev) => ({ ...prev, realizedAnchors: Object.fromEntries(
+        Object.entries(anchors).map(([k, v]) => [k, v.dec31]),
+      ) }));
+      if (count > 0) {
+        toast({ title: `📊 Loaded ${count} real OHLCV anchors`, description: "Year-end PCI targets will be computed from real ingested prices, not the synthetic shock model." });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   function resetForge() {
     clearForgeState();
     setState(recomputeGates(initialForgeState()));
