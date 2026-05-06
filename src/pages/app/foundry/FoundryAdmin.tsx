@@ -495,13 +495,41 @@ export default function FoundryAdmin() {
 
       {/* ---------- STAGE 4 ---------- */}
       <section className="space-y-3">
-        <header className="flex items-end justify-between">
+        <header className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-semibold">Stage 4 — Rolling Annual Validation</h2>
-            <p className="text-sm text-muted-foreground">Strictly sequential 2011 → 2025. Brains self-heal and self-learn after each year.</p>
+            <p className="text-sm text-muted-foreground">Strictly sequential 2011 → 2025. Each scored year can be re-trained any number of times. Deep training (100×) drives the algorithm toward each year's irreducible-surprise ceiling.</p>
           </div>
-          {SIMULATED}
+          <div className="flex items-center gap-2 flex-wrap">
+            {SIMULATED}
+            <Badge variant="outline" className="font-mono">Total cycles: {state.totalTrainingCycles ?? 0}</Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={runAllYearsSequential}
+              disabled={bulkRunning !== null || state.synthesis.status !== "done"}
+            >
+              {bulkRunning === "sequential" ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+              Run all 15 years
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => runDeepTraining(100)}
+              disabled={bulkRunning !== null || !state.years.every((y) => y.status === "scored")}
+              className="gap-1"
+            >
+              {bulkRunning === "deep" ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />}
+              Deep training · 100× / year
+            </Button>
+          </div>
         </header>
+        {bulkRunning && (
+          <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs text-primary">
+            {bulkRunning === "sequential"
+              ? "Running every year 2011 → 2025 in sequence. Each year is scored independently before the next begins."
+              : `Deep training in progress — 100 passes per year × 15 years = 1,500 additional training instances. The brain is repeatedly retrained against every macro shock (2011 debt-ceiling, 2018 volmageddon, 2020 pandemic, 2022 inflation, etc.) to drive accuracy toward the irreducible-surprise ceiling.`}
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {state.years.map((y) => (
             <button
