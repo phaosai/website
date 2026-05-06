@@ -1,4 +1,4 @@
-import { ArrowRight, Check, ShieldCheck, Workflow, Microscope } from "lucide-react";
+import { ArrowRight, Check, Workflow, Microscope } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
