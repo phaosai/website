@@ -162,9 +162,9 @@ const AppInner = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
             <Route path="/one" element={<PhaosOne />} />
-            <Route path="/one/aion" element={<PhaosAion />} />
-            <Route path="/one/sunesis" element={<PhaosSunesis />} />
-            <Route path="/one/kyrios" element={<PhaosKyrios />} />
+             <Route path="/one/aion" element={<Navigate to="/one" replace />} />
+             <Route path="/one/sunesis" element={<PhaosSunesis />} />
+             <Route path="/one/kyrios" element={<Navigate to="/one" replace />} />
             <Route path="/one/run-simulation" element={<RunSimulation />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
