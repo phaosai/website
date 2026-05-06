@@ -162,8 +162,20 @@ const RunSimulation = () => {
     return { avg, top, phaosChoice, go };
   }, [results]);
 
+  const requiresQuantum = selectedClasses.length > 1;
+  const [quantumApproved, setQuantumApproved] = useState(false);
+  const [quantumPrompt, setQuantumPrompt] = useState(false);
+
   const runSimulation = async () => {
     if (!canRun) return;
+    // Multi-asset-class scans must (hypothetically) engage the quantum
+    // processor — a single classical pass can't cross-correlate every class
+    // simultaneously without combinatorial blow-up. Free/sandbox tier shows
+    // the prompt; clicking OK simulates the quantum run.
+    if (requiresQuantum && !quantumApproved) {
+      setQuantumPrompt(true);
+      return;
+    }
     setResults(null);
     setLoading(true);
     setProgress(0);
@@ -173,20 +185,16 @@ const RunSimulation = () => {
       180,
     );
 
-    // Universe = candidates whose asset class is selected AND that are
-    // available on at least one of the selected platforms.
     const universe = CANDIDATES.filter(
       (c) =>
         selectedClasses.includes(c.assetClass) &&
         c.platforms.some((p) => selectedPlatforms.includes(p)),
     );
 
-    // Deterministic PCI per (ticker, platform set, asset class) so the same
-    // inputs always reproduce the same Top 10 — no random noise.
     const platformKey = [...selectedPlatforms].sort().join("|");
     const scored: TopRow[] = universe.map((c) => {
       const seed = seedFor(c.ticker + "::" + platformKey);
-      let baseline = 55 + (seed % 45); // 55–99
+      let baseline = 55 + (seed % 45);
       if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
       if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
       const pci = Math.max(1, Math.min(100, baseline));
@@ -203,16 +211,17 @@ const RunSimulation = () => {
     });
 
     scored.sort((a, b) => b.pci - a.pci);
+    // Sandbox always shows the global Top 10 across the selected universe.
     const top10 = scored.slice(0, 10);
 
-    // Small artificial wait to surface the working state (the public sandbox
-    // does not call the live brain — that's behind the paywall).
-    await new Promise((r) => setTimeout(r, 1400));
+    // Hypothetical "quantum cross-asset cycle" delay if engaged.
+    await new Promise((r) => setTimeout(r, requiresQuantum && quantumApproved ? 2200 : 1400));
 
     window.clearInterval(progressInterval);
     setProgress(100);
     setResults(top10);
     setLoading(false);
+    setQuantumApproved(false);
   };
 
   return (
