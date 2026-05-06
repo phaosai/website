@@ -74,8 +74,10 @@ export default function FoundryAdmin() {
     setOpenReport(r);
   }
 
-  // Persist forge state on every change.
-  useEffect(() => { saveForgeState(state); }, [state]);
+  // Persist forge state on every change. Also keep a ref so async loops
+  // (bulk + deep training) read fresh state without depending on closures.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; saveForgeState(state); }, [state]);
 
   function resetForge() {
     clearForgeState();
