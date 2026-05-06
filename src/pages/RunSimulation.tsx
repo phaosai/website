@@ -395,8 +395,7 @@ const RunSimulation = () => {
                 <AlertDialogAction
                   onClick={() => {
                     setQuantumPrompt(false);
-                    setQuantumApproved(true);
-                    setTimeout(() => runSimulation(), 0);
+                    runSimulation(true);
                   }}
                 >
                   OK — engage quantum
