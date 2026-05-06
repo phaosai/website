@@ -21,7 +21,7 @@ import {
   ASSET_CLASSES, AssetClassId, PIPELINE_STEPS, VALIDATION_YEARS,
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
-  runYearForBrain, ASSET_SAMPLE_COUNT,
+  runYearForBrain, ASSET_SAMPLE_COUNT, MACRO_SHOCKS,
   type QuantumReport, type BrainKey,
 } from "@/lib/foundryEngine";
 
