@@ -64,6 +64,17 @@ export default function FoundryAdmin() {
   const [promoteConfirm, setPromoteConfirm] = useState("");
   const [reports, setReports] = useState<QuantumReport[]>(() => loadReports());
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
+  const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
+  const [pinging, setPinging] = useState(false);
+  async function doPing() {
+    setPinging(true);
+    setPingResult(null);
+    try {
+      const r = await pingQuantum();
+      setPingResult(r);
+      toast({ title: r.ok ? "✓ IBM Quantum reachable" : "✗ IBM Quantum unreachable", description: r.summary });
+    } finally { setPinging(false); }
+  }
 
   function recordReport(r: QuantumReport) {
     setReports((prev) => {
