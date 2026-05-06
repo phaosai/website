@@ -27,7 +27,7 @@ const AppDashboard = () => {
           <Link to="/pricing" className="rounded-xl border border-border bg-card/50 p-5 hover:bg-card transition-colors">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Plans</p>
             <p className="text-lg font-semibold mt-1">Upgrade or change plan</p>
-            <p className="text-sm text-muted-foreground mt-2">Sunesis, Aion, Kyrios, Phaos ONE, Pantheon.</p>
+            <p className="text-sm text-muted-foreground mt-2">Sunesis, Phinance, Pantheon.</p>
           </Link>
           <Link to="/app/billing" className="text-left rounded-xl border border-border bg-card/50 p-5 hover:bg-card transition-colors block">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Billing</p>
