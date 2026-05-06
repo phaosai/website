@@ -93,6 +93,28 @@ export default function FoundryAdmin() {
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; saveForgeState(state); }, [state]);
 
+  // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
+  // brain's Dec 31 (and quarterly) targets come from real data instead of
+  // the synthetic shock model. Falls back silently if the corpus is empty.
+  const [anchorCount, setAnchorCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { loadRealizedAnchors } = await import("@/lib/foundryEngine");
+      const anchors = await loadRealizedAnchors();
+      if (cancelled) return;
+      const count = Object.keys(anchors).length;
+      setAnchorCount(count);
+      setState((prev) => ({ ...prev, realizedAnchors: Object.fromEntries(
+        Object.entries(anchors).map(([k, v]) => [k, v.dec31]),
+      ) }));
+      if (count > 0) {
+        toast({ title: `📊 Loaded ${count} real OHLCV anchors`, description: "Year-end PCI targets will be computed from real ingested prices, not the synthetic shock model." });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   function resetForge() {
     clearForgeState();
     setState(recomputeGates(initialForgeState()));
@@ -221,6 +243,7 @@ export default function FoundryAdmin() {
     const passes = opts.passes ?? 1;
     const shock = MACRO_SHOCKS[year];
     const startingResiduals = { ...(cur.residualBias ?? {}) };
+    const startingByRegime = { ...(cur.residualByRegime ?? {}) };
 
     function setPhase(phase: NonNullable<import("@/lib/foundryEngine").YearScore["phase"]>) {
       setState((prev) => ({
@@ -250,9 +273,9 @@ export default function FoundryAdmin() {
     }
     const quantumBoost = withQuantum && qOut?.ran && !qOut.simulator ? 0.7 : 1.0;
 
-    // Multi-pass training with accumulating per-symbol residuals (true gradient
-    // memory). The combined brain's residual map is what gets carried forward
-    // into every subsequent pass and every subsequent year.
+    // Multi-pass training with regime-conditional residual memory + quarterly
+    // checkpoint blending. Each year trains against ONLY its regime's bias
+    // bucket so a 2020-style crisis correction never pollutes a 2017 melt-up.
     const learningCurve: number[] = [...(yEntry.learningCurve ?? [])];
     const originalRun = trainYearMultiPass({
       year, brain: "original", baseNoise: 14 * learningFactor, bias: -1,
@@ -261,10 +284,12 @@ export default function FoundryAdmin() {
     const additiveRun = trainYearMultiPass({
       year, brain: "additive", baseNoise: 8 * learningFactor,
       passes, startingPasses: priorPasses, residualBias: startingResiduals,
+      residualByRegime: startingByRegime,
     });
     const combinedRun = trainYearMultiPass({
       year, brain: "combined", baseNoise: 4 * learningFactor * quantumBoost,
       passes, startingPasses: priorPasses, residualBias: startingResiduals,
+      residualByRegime: startingByRegime,
     });
     learningCurve.push(...combinedRun.curve);
     const original = originalRun.final;
@@ -283,6 +308,7 @@ export default function FoundryAdmin() {
       ...prev,
       totalTrainingCycles: (prev.totalTrainingCycles ?? 0) + passes,
       residualBias: combinedRun.residualBias,
+      residualByRegime: combinedRun.residualByRegime,
       bestCombinedEver: Math.max(prev.bestCombinedEver ?? 0, combined.brainScore),
       years: prev.years.map((y) => y.year === year ? {
         ...y,
@@ -296,7 +322,7 @@ export default function FoundryAdmin() {
         trainingPasses: totalPasses,
         learningCurve,
         bestCombined,
-        notes: `Year ${year}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts.`,
+        notes: `Year ${year} · regime=${combinedRun.regime}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts. Quarterly mean accuracy: ${combined.quarterlyMeanAccuracy ?? "—"}.`,
       } : y),
     }));
     if (!opts.silent) {
@@ -364,15 +390,18 @@ export default function FoundryAdmin() {
       const enabledDims = dimensionsAfterPasses(maxPasses);
       const lastCombined = lastScoredYear?.combined ?? null;
       const residuals = state.residualBias ?? {};
+      const residualsByRegime = state.residualByRegime ?? {};
+      const regimeSymCount = Object.values(residualsByRegime)
+        .reduce((s, m) => s + Object.keys(m ?? {}).length, 0);
       await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
       const { error } = await supabase.from("promoted_brains").insert({
         engine_name: promoteName,
         version: state.promote.version,
         enabled_dimensions: enabledDims,
-        residual_bias: residuals,
+        residual_bias: { flat: residuals, by_regime: residualsByRegime },
         combined_score: lastCombined,
         is_active: true,
-        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Residual map covers ${Object.keys(residuals).length} symbols.`,
+        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
       });
       if (error) throw error;
       toast({
