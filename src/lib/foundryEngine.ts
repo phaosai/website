@@ -139,6 +139,11 @@ export interface ForgeState {
   promote: { engineName: string; version: string };
   // Total deep-training cycles run across every year (the "100 instances" button).
   totalTrainingCycles?: number;
+  // Persistent per-symbol residual bias accumulated across every pass and every
+  // year. This is the brain's learned correction map — promoted to Sunesis.
+  residualBias?: Record<string, number>;
+  // Best-ever combined score reached across the entire forge (any year).
+  bestCombinedEver?: number;
 }
 
 export const VALIDATION_YEARS = Array.from({ length: 15 }, (_, i) => 2011 + i);
@@ -341,8 +346,11 @@ export function runYearForBrain(args: {
 }
 
 // Multi-pass training. Runs the year `passes` times; each pass tightens the
-// surprise term. Returns the FINAL pass result + a learning curve of brain
-// scores across passes (so the UI can prove the brain is actually learning).
+// surprise term AND accumulates per-symbol residuals (gradient memory) that
+// are fed back into the next pass — so every additional cycle genuinely digs
+// deeper. Returns the FINAL pass result, the learning curve, and the updated
+// residual-bias map (which the caller persists to ForgeState so it carries
+// forward to every subsequent year & cycle).
 export function trainYearMultiPass(args: {
   year: number;
   brain: BrainKey;
@@ -350,10 +358,13 @@ export function trainYearMultiPass(args: {
   bias?: number;
   passes: number;
   startingPasses?: number;
-}): { final: BrainYearResult; curve: number[] } {
+  residualBias?: Record<string, number>;
+}): { final: BrainYearResult; curve: number[]; residualBias: Record<string, number> } {
   const curve: number[] = [];
   let last: BrainYearResult | null = null;
   const start = args.startingPasses ?? 0;
+  const residual: Record<string, number> = { ...(args.residualBias ?? {}) };
+  const LR = 0.18; // learning rate per pass
   for (let i = 0; i < args.passes; i++) {
     last = runYearForBrain({
       year: args.year,
@@ -361,10 +372,16 @@ export function trainYearMultiPass(args: {
       baseNoise: args.baseNoise,
       bias: args.bias,
       trainingPasses: start + i,
+      residualBias: residual,
     });
+    // Update residuals: pull each symbol's bias toward the realized error.
+    for (const p of last.predictions) {
+      const err = p.jan1Pci - p.dec31RealizedPci; // signed
+      residual[p.symbol] = (residual[p.symbol] ?? 0) * (1 - LR) + err * LR;
+    }
     curve.push(last.brainScore);
   }
-  return { final: last!, curve };
+  return { final: last!, curve, residualBias: residual };
 }
 
 
