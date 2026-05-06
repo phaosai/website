@@ -80,33 +80,23 @@ const HomePhaosOneSections = () => {
         </div>
       </section>
 
-      {/* SECTION C — Phaos ONE Ecosystem */}
+      {/* SECTION C — Phaos Phinance Ecosystem */}
       <section className="py-24 border-t border-border/40">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
-            One Environment. Three Powers. The Complete Research Operating System.
+            Evidence-First Research. One Conviction Score. Complete Transparency.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            Phaos ONE combines Sunesis (research), Kyrios (governance), and Aion (protection)
-            in a single unified environment for serious investors.
+            Phaos Phinance is built around Sunesis — filing-backed research and the Phaos
+            Conviction Index — for serious investors.
           </p>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-1">
             {[
               {
                 name: "Phaos Sunesis",
                 to: "/one/sunesis",
                 desc: "Evidence-first research with filing-backed synthesis and the Phaos Conviction Index.",
-              },
-              {
-                name: "Phaos Kyrios",
-                to: "/one/kyrios",
-                desc: "Governed workflows, approval stages, and structured action orchestration.",
-              },
-              {
-                name: "Phaos Aion",
-                to: "/one/aion",
-                desc: "Resilience, scenario simulation, and long-horizon protection.",
               },
             ].map((p) => (
               <Link
@@ -115,7 +105,7 @@ const HomePhaosOneSections = () => {
                 className="group rounded-xl border border-border bg-card/60 p-6 hover:bg-card transition-colors"
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                  Phaos ONE
+                  Phaos Phinance
                 </p>
                 <h3 className="text-xl font-semibold tracking-tight text-foreground">
                   {p.name}
@@ -133,7 +123,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos ONE
+              Explore Phaos Phinance
             </Link>
             <Link
               to="/one/run-simulation"
