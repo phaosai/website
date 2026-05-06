@@ -358,12 +358,13 @@ export async function loadRealizedAnchors(years: number[] = VALIDATION_YEARS): P
     const { data, error } = await supabase
       .from("foundry_year_corpus")
       .select("year,source_id,payload,dimension")
-      .eq("dimension", "macro")
+      .eq("dimension", "price")
       .in("year", years);
     if (error || !data) return out;
     for (const row of data as Array<{ year: number; source_id: string; payload: Record<string, unknown> }>) {
-      // source_id convention from foundry-ingest-prices: "<symbol>:<year>" or "<symbol>"
-      const symbol = String(row.source_id).split(":")[0].toUpperCase();
+      // source_id convention from foundry-ingest-prices: "yahoo:AAPL" or "coingecko:bitcoin"
+      const parts = String(row.source_id).split(":");
+      const symbol = (parts[1] ?? parts[0]).toUpperCase();
       const p = row.payload ?? {};
       const closes = (p.closes ?? p.daily_closes ?? p.prices) as number[] | undefined;
       let dec31: number | undefined;
