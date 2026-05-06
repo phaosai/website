@@ -105,9 +105,11 @@ export default function FoundryAdmin() {
   );
 
   const lastScoredYear = [...state.years].reverse().find((y) => y.status === "scored");
+  // Promotion is allowed as soon as every year has at least one scored pass —
+  // there is no minimum brain-score threshold. The brain keeps learning every
+  // additional pass; users decide when to promote.
   const promoteEligible =
     state.years.every((y) => y.status === "scored") &&
-    (lastScoredYear?.combined ?? 0) >= 99.5 &&
     promoteName.trim().length >= 3;
 
   const stage = lockedCount < 6 ? 1
