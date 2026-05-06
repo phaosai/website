@@ -188,18 +188,14 @@ const AppInner = () => {
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
-              <Route path="simulations" element={<AionSimulate />} />
-              <Route path="kyrios" element={<KyriosQueue />} />
-              <Route path="kyrios/workflow/:id" element={<KyriosWorkflow />} />
-              <Route path="kyrios/portals" element={<KyriosPortals />} />
-              <Route path="portals" element={<KyriosPortals />} />
-              <Route path="aion" element={<AionMonitor />} />
-              <Route path="aion/changes/:ticker" element={<AionChanges />} />
-              <Route path="aion/simulate" element={<AionSimulate />} />
-              <Route path="aion/security" element={<AionSecurity />} />
-              <Route path="aion/audit" element={<AionAudit />} />
-              <Route path="security" element={<AionSecurity />} />
-              <Route path="audit" element={<AionAudit />} />
+               <Route path="simulations" element={<AionSimulate />} />
+               <Route path="security" element={<AionSecurity />} />
+               <Route path="audit" element={<AionAudit />} />
+               <Route path="kyrios" element={<Navigate to="/app" replace />} />
+               <Route path="kyrios/*" element={<Navigate to="/app" replace />} />
+               <Route path="aion" element={<Navigate to="/app" replace />} />
+               <Route path="aion/*" element={<Navigate to="/app" replace />} />
+               <Route path="portals" element={<Navigate to="/app" replace />} />
               <Route path="pantheon" element={<PantheonDashboard />} />
               <Route path="pantheon/team" element={<PantheonTeam />} />
               <Route path="pantheon/logos" element={<PantheonLogos />} />
