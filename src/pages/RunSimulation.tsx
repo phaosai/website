@@ -338,7 +338,7 @@ const RunSimulation = () => {
             <div className="grid sm:grid-cols-[1fr_auto] gap-3">
               <button
                 type="button"
-                onClick={runSimulation}
+                onClick={() => runSimulation()}
                 disabled={!canRun || loading}
                 className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
