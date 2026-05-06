@@ -652,17 +652,49 @@ export default function FoundryAdmin() {
                     {y.notes}
                   </div>
                 )}
-                {y.status !== "scored" && (
-                  <div className="flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => runYear(y.year, false)} disabled={y.status === "running"}>
-                      Run year (classical)
-                    </Button>
-                    <Button size="sm" onClick={() => runYear(y.year, true)} disabled={y.status === "running"}>
-                      {y.status === "running" ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                      Run year + Quantum audit
-                    </Button>
+                {(() => {
+                  const shock = MACRO_SHOCKS[y.year];
+                  return shock ? (
+                    <div className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-[11px]">
+                      <div className="font-medium text-amber-400 uppercase tracking-wider mb-0.5">Macro reality of {y.year}</div>
+                      <div className="text-muted-foreground">{shock.label}</div>
+                      <div className="mt-1 text-muted-foreground">Surprise weight: <span className="text-foreground font-mono">{shock.surprise.toFixed(2)}</span> · Shock magnitude: <span className="text-foreground font-mono">{shock.shock > 0 ? "+" : ""}{shock.shock} PCI pts</span></div>
+                      <div className="mt-1 italic text-muted-foreground">The brain knew NONE of this on Jan 1, {y.year}. Lower scores in this year are honest evidence of integrity.</div>
+                    </div>
+                  ) : null;
+                })()}
+                {y.trainingPasses && y.trainingPasses > 0 && (
+                  <div className="rounded border border-border/40 bg-background/40 p-3 text-[11px]">
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>Training passes on {y.year}: <span className="text-foreground font-mono">{y.trainingPasses}</span></span>
+                      <span>Best Combined: <span className="text-emerald-400 font-mono">{y.bestCombined?.toFixed(2)}</span></span>
+                    </div>
+                    {y.learningCurve && y.learningCurve.length > 1 && (
+                      <div className="mt-1 flex items-end gap-0.5 h-8">
+                        {y.learningCurve.slice(-60).map((v, i) => (
+                          <div
+                            key={i}
+                            className="flex-1 bg-primary/60"
+                            style={{ height: `${Math.max(2, ((v - 60) / 40) * 100)}%` }}
+                            title={`Pass ${i + 1}: ${v.toFixed(2)}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
+                <div className="flex items-center justify-end gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => runYear(y.year, false)} disabled={y.status === "running" || bulkRunning !== null}>
+                    {y.status === "scored" ? "Re-train year (1×)" : "Run year (classical)"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => runYear(y.year, false, { passes: 100, silent: true })} disabled={y.status === "running" || bulkRunning !== null}>
+                    Deep-train this year 100×
+                  </Button>
+                  <Button size="sm" onClick={() => runYear(y.year, true)} disabled={y.status === "running" || bulkRunning !== null}>
+                    {y.status === "running" ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+                    Run + Quantum audit
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
