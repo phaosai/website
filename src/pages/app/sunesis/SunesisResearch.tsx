@@ -113,17 +113,39 @@ export default function SunesisResearch() {
 
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK);
+  const [platforms, setPlatforms] = useState<Array<PlatformMeta & { assetClasses: string[] }>>(
+    FALLBACK.map((p) => ({ ...p, assetClasses: [] }))
+  );
   const [running, setRunning] = useState(false);
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
+  const [quantumManual, setQuantumManual] = useState(false);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("trading_platforms").select("slug,name").order("name");
-      if (data && data.length) setPlatforms(data);
+      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes").order("name");
+      if (data && data.length) {
+        setPlatforms(data.map((d) => ({
+          slug: d.slug,
+          name: d.name,
+          assetClasses: Array.isArray(d.asset_classes) ? d.asset_classes as string[] : [],
+        })));
+      }
     })();
   }, []);
+
+  // Only show platforms that actually support at least one selected asset class.
+  const visiblePlatforms = useMemo(() => {
+    if (selectedClasses.length === 0) return platforms;
+    return platforms.filter((p) =>
+      p.assetClasses.length === 0 || p.assetClasses.some((ac) => selectedClasses.includes(ac as AssetClass))
+    );
+  }, [platforms, selectedClasses]);
+
+  // Drop selected platforms that no longer match any selected asset class.
+  useEffect(() => {
+    setSelectedPlatforms((cur) => cur.filter((slug) => visiblePlatforms.some((p) => p.slug === slug)));
+  }, [visiblePlatforms]);
 
   const toggleClass = (v: AssetClass) =>
     setSelectedClasses((cur) => cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]);
@@ -131,6 +153,12 @@ export default function SunesisResearch() {
     setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
 
   const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
+
+  // Quantum auto-engage: >3 asset classes, >3 brokerages, or >6 total selections.
+  const totalSelections = selectedClasses.length + selectedPlatforms.length;
+  const quantumAuto =
+    selectedClasses.length > 3 || selectedPlatforms.length > 3 || totalSelections > 6;
+  const quantumActive = quantumManual || quantumAuto;
 
   const generate = async () => {
     if (!canRun) return;
@@ -143,6 +171,7 @@ export default function SunesisResearch() {
           platforms: selectedPlatforms,
           pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
           pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
+          quantum_enabled: quantumActive,
         },
       });
       if (error) throw error;
