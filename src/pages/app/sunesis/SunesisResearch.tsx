@@ -199,7 +199,6 @@ export default function SunesisResearch() {
       minTier="sunesis"
     >
       <SunesisModuleNav />
-      <SunesisMoatStrip />
 
       {/* Step 1 — Asset classes */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
@@ -234,14 +233,21 @@ export default function SunesisResearch() {
         </div>
       </div>
 
-      {/* Step 2 — Platforms */}
+      {/* Step 2 — Platforms (filtered to brokerages compatible with the selected classes) */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-sm font-semibold">2. Select your platforms</p>
+          <p className="text-sm font-semibold">
+            2. Select your platforms
+            {selectedClasses.length > 0 && (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                ({visiblePlatforms.length} compatible)
+              </span>
+            )}
+          </p>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setSelectedPlatforms(platforms.map((p) => p.slug))}
+              onClick={() => setSelectedPlatforms(visiblePlatforms.map((p) => p.slug))}
               className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card"
             >Select all</button>
             {selectedPlatforms.length > 0 && (
@@ -254,7 +260,7 @@ export default function SunesisResearch() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-          {platforms.map((p) => {
+          {visiblePlatforms.map((p) => {
             const selected = selectedPlatforms.includes(p.slug);
             return (
               <button
@@ -290,6 +296,32 @@ export default function SunesisResearch() {
           <p className="text-xs text-muted-foreground">Set 96–100 for Phaos Choice only, 1–10 for distressed/short candidates, etc.</p>
         </div>
       )}
+
+      {/* Quantum cross-validation toggle */}
+      <div className="rounded-xl border border-border bg-card/50 p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-3">
+          <Atom className={`w-5 h-5 mt-0.5 ${quantumActive ? "text-purple-deep" : "text-muted-foreground"}`} />
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold">Quantum cross-validation</p>
+              {quantumAuto && (
+                <Badge variant="outline" className="border-purple-deep/50 bg-purple-deep/10 text-purple-deep text-[10px] uppercase tracking-wider">
+                  Auto-engaged
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Automatically engages when you choose more than 3 asset classes, more than 3 brokerages, or more than 6 total selections.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={quantumActive}
+          disabled={quantumAuto}
+          onCheckedChange={setQuantumManual}
+        />
+      </div>
+
 
       <button
         type="button"
