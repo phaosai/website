@@ -368,6 +368,33 @@ export type Database = {
         }
         Relationships: []
       }
+      foundry_year_corpus: {
+        Row: {
+          dimension: string
+          fetched_at: string
+          payload: Json
+          source_id: string
+          source_url: string | null
+          year: number
+        }
+        Insert: {
+          dimension: string
+          fetched_at?: string
+          payload?: Json
+          source_id: string
+          source_url?: string | null
+          year: number
+        }
+        Update: {
+          dimension?: string
+          fetched_at?: string
+          payload?: Json
+          source_id?: string
+          source_url?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       investment_themes: {
         Row: {
           contributing_tickers: Json | null
@@ -758,6 +785,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promoted_brains: {
+        Row: {
+          combined_score: number | null
+          enabled_dimensions: Json
+          engine_name: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          promoted_at: string
+          promoted_by: string | null
+          residual_bias: Json
+          version: string
+        }
+        Insert: {
+          combined_score?: number | null
+          enabled_dimensions?: Json
+          engine_name: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          promoted_at?: string
+          promoted_by?: string | null
+          residual_bias?: Json
+          version: string
+        }
+        Update: {
+          combined_score?: number | null
+          enabled_dimensions?: Json
+          engine_name?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          promoted_at?: string
+          promoted_by?: string | null
+          residual_bias?: Json
+          version?: string
+        }
+        Relationships: []
       }
       published_artifacts: {
         Row: {
@@ -1926,6 +1992,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_sandbox: boolean
           tier: string
           updated_at: string
         }
@@ -1935,6 +2002,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_sandbox?: boolean
           tier?: string
           updated_at?: string
         }
@@ -1944,6 +2012,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_sandbox?: boolean
           tier?: string
           updated_at?: string
         }
