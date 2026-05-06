@@ -108,10 +108,21 @@ const TOP_SIGNALS = [
 const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
 
 export default function SunesisResearch() {
+  const ent = useEntitlements();
+  // Tier-based result mode:
+  //   sunesis (Elite) → Top 10 across selected classes
+  //   aion / kyrios (Pro) → all results across selected classes
+  //   phaos_one / pantheon (Sovereign) → all + PCI range filter
+  const tierMode: "elite" | "pro" | "sovereign" =
+    ent.has("phaos_one") ? "sovereign"
+    : ent.has("aion") ? "pro"
+    : "elite";
+
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK);
   const [running, setRunning] = useState(false);
+  const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
 
   useEffect(() => {
@@ -152,7 +163,10 @@ export default function SunesisResearch() {
     });
     scored.sort((a, b) => b.pci - a.pci);
     await new Promise((r) => setTimeout(r, 900));
-    setResults(scored.slice(0, 10));
+    let final = scored;
+    if (tierMode === "elite") final = scored.slice(0, 10);
+    if (tierMode === "sovereign") final = scored.filter((r) => r.pci >= pciRange[0] && r.pci <= pciRange[1]);
+    setResults(final);
     setRunning(false);
   };
 
