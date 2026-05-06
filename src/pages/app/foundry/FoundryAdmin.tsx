@@ -243,6 +243,7 @@ export default function FoundryAdmin() {
     const passes = opts.passes ?? 1;
     const shock = MACRO_SHOCKS[year];
     const startingResiduals = { ...(cur.residualBias ?? {}) };
+    const startingByRegime = { ...(cur.residualByRegime ?? {}) };
 
     function setPhase(phase: NonNullable<import("@/lib/foundryEngine").YearScore["phase"]>) {
       setState((prev) => ({
@@ -272,9 +273,9 @@ export default function FoundryAdmin() {
     }
     const quantumBoost = withQuantum && qOut?.ran && !qOut.simulator ? 0.7 : 1.0;
 
-    // Multi-pass training with accumulating per-symbol residuals (true gradient
-    // memory). The combined brain's residual map is what gets carried forward
-    // into every subsequent pass and every subsequent year.
+    // Multi-pass training with regime-conditional residual memory + quarterly
+    // checkpoint blending. Each year trains against ONLY its regime's bias
+    // bucket so a 2020-style crisis correction never pollutes a 2017 melt-up.
     const learningCurve: number[] = [...(yEntry.learningCurve ?? [])];
     const originalRun = trainYearMultiPass({
       year, brain: "original", baseNoise: 14 * learningFactor, bias: -1,
@@ -283,10 +284,12 @@ export default function FoundryAdmin() {
     const additiveRun = trainYearMultiPass({
       year, brain: "additive", baseNoise: 8 * learningFactor,
       passes, startingPasses: priorPasses, residualBias: startingResiduals,
+      residualByRegime: startingByRegime,
     });
     const combinedRun = trainYearMultiPass({
       year, brain: "combined", baseNoise: 4 * learningFactor * quantumBoost,
       passes, startingPasses: priorPasses, residualBias: startingResiduals,
+      residualByRegime: startingByRegime,
     });
     learningCurve.push(...combinedRun.curve);
     const original = originalRun.final;
@@ -305,6 +308,7 @@ export default function FoundryAdmin() {
       ...prev,
       totalTrainingCycles: (prev.totalTrainingCycles ?? 0) + passes,
       residualBias: combinedRun.residualBias,
+      residualByRegime: combinedRun.residualByRegime,
       bestCombinedEver: Math.max(prev.bestCombinedEver ?? 0, combined.brainScore),
       years: prev.years.map((y) => y.year === year ? {
         ...y,
