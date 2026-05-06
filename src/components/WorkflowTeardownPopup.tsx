@@ -8,7 +8,7 @@ import phaosCrown from "@/assets/phaos-crown-transparent.png";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [bottleneck, setBottleneck] = useState("");
@@ -19,18 +19,17 @@ const WorkflowTeardownPopup = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Suppress auto-open on pricing/auth/checkout — high-intent pages where popup is intrusive.
+    // Default behavior: stay minimized as a side tab. Only auto-open the
+    // full modal once the visitor has been on the site for 3+ minutes,
+    // and never auto-open on high-intent routes.
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const suppressedRoutes = ["/pricing", "/auth", "/checkout", "/billing"];
-    if (suppressedRoutes.some((p) => path.startsWith(p))) {
-      setMinimized(true);
-      return;
-    }
+    if (suppressedRoutes.some((p) => path.startsWith(p))) return;
     const timer = setTimeout(() => {
       setIsOpen(true);
       setMinimized(false);
       openedAt.current = Date.now();
-    }, 5000);
+    }, 180_000);
     return () => clearTimeout(timer);
   }, []);
 
