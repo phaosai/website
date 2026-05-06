@@ -144,31 +144,25 @@ export default function SunesisResearch() {
     if (!canRun) return;
     setRunning(true);
     setResults(null);
-    const platformKey = [...selectedPlatforms].sort().join("|");
-    const universe = CANDIDATES.filter(
-      (c) => selectedClasses.includes(c.assetClass) && c.platforms.some((p) => selectedPlatforms.includes(p)),
-    );
-    const scored = universe.map((c) => {
-      const seed = seedFor(c.ticker + "::" + platformKey);
-      let baseline = 55 + (seed % 45);
-      if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
-      if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
-      return {
-        ticker: c.ticker,
-        name: c.name,
-        assetClass: c.assetClass,
-        pci: Math.max(1, Math.min(100, baseline)),
-        topSignal: TOP_SIGNALS[seed % TOP_SIGNALS.length],
-        platforms: c.platforms.filter((p) => selectedPlatforms.includes(p)),
-      };
-    });
-    scored.sort((a, b) => b.pci - a.pci);
-    await new Promise((r) => setTimeout(r, 900));
-    let final = scored;
-    if (tierMode === "elite") final = scored.slice(0, 10);
-    if (tierMode === "sovereign") final = scored.filter((r) => r.pci >= pciRange[0] && r.pci <= pciRange[1]);
-    setResults(final);
-    setRunning(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
+        body: {
+          asset_classes: selectedClasses,
+          platforms: selectedPlatforms,
+          pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
+          pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
+        },
+      });
+      if (error) throw error;
+      let final = (data?.results ?? []) as Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>;
+      if (tierMode === "elite") final = final.slice(0, 10);
+      setResults(final);
+    } catch (e) {
+      console.error("sunesis-live-research failed", e);
+      setResults([]);
+    } finally {
+      setRunning(false);
+    }
   };
 
   const summary = useMemo(() => {
