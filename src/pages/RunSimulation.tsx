@@ -167,15 +167,10 @@ const RunSimulation = () => {
   }, [results]);
 
   const requiresQuantum = selectedClasses.length > 1;
-  const [quantumApproved, setQuantumApproved] = useState(false);
   const [quantumPrompt, setQuantumPrompt] = useState(false);
 
-  const runSimulation = async () => {
+  const runSimulation = async (quantumApproved = false) => {
     if (!canRun) return;
-    // Multi-asset-class scans must (hypothetically) engage the quantum
-    // processor — a single classical pass can't cross-correlate every class
-    // simultaneously without combinatorial blow-up. Free/sandbox tier shows
-    // the prompt; clicking OK simulates the quantum run.
     if (requiresQuantum && !quantumApproved) {
       setQuantumPrompt(true);
       return;
