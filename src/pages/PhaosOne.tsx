@@ -73,7 +73,7 @@ const PhaosOne = () => {
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-purple-light mb-5">What Phaos ONE Is</p>
           <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light">
-            Phaos ONE is not a separate product from Sunesis, Kyrios, and Aion. It is the unified operating environment that brings them together. One subscription gives you all three pillars working as a single integrated research operating system.
+            Phaos Phinance is the unified operating environment for Sunesis research and live simulation. One subscription. Top-10 PCI candidates filtered to your selected asset classes and brokers, with full audit trail and conviction intelligence.
           </p>
         </div>
       </section>
