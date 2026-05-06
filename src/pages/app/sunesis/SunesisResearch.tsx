@@ -8,6 +8,7 @@ import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -350,6 +351,8 @@ export default function SunesisResearch() {
           )}
         </>
       )}
+
+      <AlertsPanel tierMode={tierMode} />
 
       <Disclaimer>PCI is a research confidence framework. Not a prediction of returns.</Disclaimer>
     </PageShell>

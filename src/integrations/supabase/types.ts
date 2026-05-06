@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_schedules: {
+        Row: {
+          auto_replenish: boolean
+          channels: Json
+          created_at: string
+          custom_slots: Json
+          frequency: string
+          id: string
+          last_dispatched_at: string | null
+          phone_e164: string | null
+          quantum_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_replenish?: boolean
+          channels?: Json
+          created_at?: string
+          custom_slots?: Json
+          frequency?: string
+          id?: string
+          last_dispatched_at?: string | null
+          phone_e164?: string | null
+          quantum_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_replenish?: boolean
+          channels?: Json
+          created_at?: string
+          custom_slots?: Json
+          frequency?: string
+          id?: string
+          last_dispatched_at?: string | null
+          phone_e164?: string | null
+          quantum_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_events: {
         Row: {
           action: string
