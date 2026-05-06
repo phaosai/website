@@ -390,15 +390,18 @@ export default function FoundryAdmin() {
       const enabledDims = dimensionsAfterPasses(maxPasses);
       const lastCombined = lastScoredYear?.combined ?? null;
       const residuals = state.residualBias ?? {};
+      const residualsByRegime = state.residualByRegime ?? {};
+      const regimeSymCount = Object.values(residualsByRegime)
+        .reduce((s, m) => s + Object.keys(m ?? {}).length, 0);
       await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
       const { error } = await supabase.from("promoted_brains").insert({
         engine_name: promoteName,
         version: state.promote.version,
         enabled_dimensions: enabledDims,
-        residual_bias: residuals,
+        residual_bias: { flat: residuals, by_regime: residualsByRegime },
         combined_score: lastCombined,
         is_active: true,
-        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Residual map covers ${Object.keys(residuals).length} symbols.`,
+        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
       });
       if (error) throw error;
       toast({
