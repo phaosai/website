@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { SunesisModuleNav, SunesisMoatStrip } from "@/components/phaos";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -105,10 +108,21 @@ const TOP_SIGNALS = [
 const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
 
 export default function SunesisResearch() {
+  const ent = useEntitlements();
+  // Tier-based result mode:
+  //   sunesis (Elite) → Top 10 across selected classes
+  //   aion / kyrios (Pro) → all results across selected classes
+  //   phaos_one / pantheon (Sovereign) → all + PCI range filter
+  const tierMode: "elite" | "pro" | "sovereign" =
+    ent.has("phaos_one") ? "sovereign"
+    : ent.has("aion") ? "pro"
+    : "elite";
+
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK);
   const [running, setRunning] = useState(false);
+  const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
 
   useEffect(() => {
@@ -149,7 +163,10 @@ export default function SunesisResearch() {
     });
     scored.sort((a, b) => b.pci - a.pci);
     await new Promise((r) => setTimeout(r, 900));
-    setResults(scored.slice(0, 10));
+    let final = scored;
+    if (tierMode === "elite") final = scored.slice(0, 10);
+    if (tierMode === "sovereign") final = scored.filter((r) => r.pci >= pciRange[0] && r.pci <= pciRange[1]);
+    setResults(final);
     setRunning(false);
   };
 
@@ -240,6 +257,24 @@ export default function SunesisResearch() {
         </div>
       </div>
 
+      {tierMode === "sovereign" && (
+        <div className="rounded-xl border border-pci-choice/30 bg-pci-choice/5 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-pci-choice/50 bg-pci-choice/10 text-pci-choice text-[10px] uppercase tracking-wider">Sovereign filter</Badge>
+              <p className="text-sm font-semibold">Target PCI range</p>
+            </div>
+            <span className="font-mono text-sm">{pciRange[0]} – {pciRange[1]}</span>
+          </div>
+          <Slider
+            min={1} max={100} step={1}
+            value={pciRange}
+            onValueChange={(v) => setPciRange([v[0], v[1]] as [number, number])}
+          />
+          <p className="text-xs text-muted-foreground">Set 96–100 for Phaos Choice only, 1–10 for distressed/short candidates, etc.</p>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={generate}
@@ -247,7 +282,10 @@ export default function SunesisResearch() {
         className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-3.5 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         <Sparkles className="w-5 h-5" />
-        {running ? "Scanning your investable universe…" : "Generate Top 10"}
+        {running ? "Scanning your investable universe…" :
+          tierMode === "elite" ? "Generate Top 10" :
+          tierMode === "pro" ? "Generate full results" :
+          `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
 
       {results && (

@@ -7,6 +7,10 @@ import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -162,8 +166,15 @@ const RunSimulation = () => {
     return { avg, top, phaosChoice, go };
   }, [results]);
 
-  const runSimulation = async () => {
+  const requiresQuantum = selectedClasses.length > 1;
+  const [quantumPrompt, setQuantumPrompt] = useState(false);
+
+  const runSimulation = async (quantumApproved = false) => {
     if (!canRun) return;
+    if (requiresQuantum && !quantumApproved) {
+      setQuantumPrompt(true);
+      return;
+    }
     setResults(null);
     setLoading(true);
     setProgress(0);
@@ -173,20 +184,16 @@ const RunSimulation = () => {
       180,
     );
 
-    // Universe = candidates whose asset class is selected AND that are
-    // available on at least one of the selected platforms.
     const universe = CANDIDATES.filter(
       (c) =>
         selectedClasses.includes(c.assetClass) &&
         c.platforms.some((p) => selectedPlatforms.includes(p)),
     );
 
-    // Deterministic PCI per (ticker, platform set, asset class) so the same
-    // inputs always reproduce the same Top 10 — no random noise.
     const platformKey = [...selectedPlatforms].sort().join("|");
     const scored: TopRow[] = universe.map((c) => {
       const seed = seedFor(c.ticker + "::" + platformKey);
-      let baseline = 55 + (seed % 45); // 55–99
+      let baseline = 55 + (seed % 45);
       if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
       if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
       const pci = Math.max(1, Math.min(100, baseline));
@@ -203,11 +210,11 @@ const RunSimulation = () => {
     });
 
     scored.sort((a, b) => b.pci - a.pci);
+    // Sandbox always shows the global Top 10 across the selected universe.
     const top10 = scored.slice(0, 10);
 
-    // Small artificial wait to surface the working state (the public sandbox
-    // does not call the live brain — that's behind the paywall).
-    await new Promise((r) => setTimeout(r, 1400));
+    // Hypothetical "quantum cross-asset cycle" delay if engaged.
+    await new Promise((r) => setTimeout(r, requiresQuantum && quantumApproved ? 2200 : 1400));
 
     window.clearInterval(progressInterval);
     setProgress(100);
@@ -331,7 +338,7 @@ const RunSimulation = () => {
             <div className="grid sm:grid-cols-[1fr_auto] gap-3">
               <button
                 type="button"
-                onClick={runSimulation}
+                onClick={() => runSimulation()}
                 disabled={!canRun || loading}
                 className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
@@ -364,6 +371,38 @@ const RunSimulation = () => {
             platforms={selectedPlatforms}
             simulationMode="Top 10 Generator"
           />
+
+          <AlertDialog open={quantumPrompt} onOpenChange={setQuantumPrompt}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-primary" /> Quantum processor required
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <span className="block">
+                    You selected <span className="text-foreground font-semibold">{selectedClasses.length} asset classes</span>. Cross-correlating multiple classes simultaneously is a combinatorial workload — Sunesis has to engage the quantum processor (hypothetically, in this sandbox) to evaluate every instrument across every class in parallel.
+                  </span>
+                  <span className="block">
+                    Click OK to simulate the quantum cycle. The brain will then return the global Top 10 across the union of your selected classes — restricted to what's actually tradable on the platforms you chose.
+                  </span>
+                  <span className="block text-xs italic">
+                    SIMULATED — sandbox preview. Live quantum execution is reserved for Pro and Sovereign tiers.
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setQuantumPrompt(false);
+                    runSimulation(true);
+                  }}
+                >
+                  OK — engage quantum
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Working indicator */}
           {loading && (
