@@ -221,21 +221,64 @@ export function recomputeGates(s: ForgeState): ForgeState {
 //   4) Post-mortem: misses are diagnosed; learning shrinks next year's noise.
 
 const ASSET_SAMPLES: { assetClass: AssetClassId; symbol: string }[] = [
+  // Equities — broad coverage across mega-cap, sector leaders, indices
   { assetClass: "equities",       symbol: "SPX" },
+  { assetClass: "equities",       symbol: "NDX" },
+  { assetClass: "equities",       symbol: "RUT" },
+  { assetClass: "equities",       symbol: "DJI" },
   { assetClass: "equities",       symbol: "AAPL" },
   { assetClass: "equities",       symbol: "MSFT" },
+  { assetClass: "equities",       symbol: "GOOGL" },
+  { assetClass: "equities",       symbol: "AMZN" },
+  { assetClass: "equities",       symbol: "META" },
+  { assetClass: "equities",       symbol: "NVDA" },
+  { assetClass: "equities",       symbol: "TSLA" },
   { assetClass: "equities",       symbol: "JPM" },
+  { assetClass: "equities",       symbol: "BAC" },
+  { assetClass: "equities",       symbol: "XOM" },
+  { assetClass: "equities",       symbol: "CVX" },
+  { assetClass: "equities",       symbol: "JNJ" },
+  { assetClass: "equities",       symbol: "UNH" },
+  { assetClass: "equities",       symbol: "WMT" },
+  { assetClass: "equities",       symbol: "PG" },
+  // Fixed income — sovereign curve + credit + munis
+  { assetClass: "fixed_income",   symbol: "UST2Y" },
   { assetClass: "fixed_income",   symbol: "UST10Y" },
+  { assetClass: "fixed_income",   symbol: "UST30Y" },
+  { assetClass: "fixed_income",   symbol: "TIP" },
+  { assetClass: "fixed_income",   symbol: "LQD" },
   { assetClass: "fixed_income",   symbol: "HYG" },
   { assetClass: "fixed_income",   symbol: "MUB" },
+  { assetClass: "fixed_income",   symbol: "EMB" },
+  // Derivatives — vol, futures, rates
   { assetClass: "derivatives",    symbol: "ES_FUT" },
+  { assetClass: "derivatives",    symbol: "NQ_FUT" },
   { assetClass: "derivatives",    symbol: "VIX" },
+  { assetClass: "derivatives",    symbol: "MOVE" },
+  { assetClass: "derivatives",    symbol: "SOFR3M" },
+  // FX & Commodities
   { assetClass: "fx_commodities", symbol: "EURUSD" },
+  { assetClass: "fx_commodities", symbol: "USDJPY" },
+  { assetClass: "fx_commodities", symbol: "GBPUSD" },
+  { assetClass: "fx_commodities", symbol: "USDCNH" },
+  { assetClass: "fx_commodities", symbol: "DXY" },
   { assetClass: "fx_commodities", symbol: "XAUUSD" },
+  { assetClass: "fx_commodities", symbol: "XAGUSD" },
   { assetClass: "fx_commodities", symbol: "WTI" },
+  { assetClass: "fx_commodities", symbol: "BRENT" },
+  { assetClass: "fx_commodities", symbol: "NATGAS" },
+  { assetClass: "fx_commodities", symbol: "COPPER" },
+  { assetClass: "fx_commodities", symbol: "CORN" },
+  // Digital assets
   { assetClass: "digital_assets", symbol: "BTC" },
   { assetClass: "digital_assets", symbol: "ETH" },
+  { assetClass: "digital_assets", symbol: "SOL" },
+  { assetClass: "digital_assets", symbol: "BNB" },
+  { assetClass: "digital_assets", symbol: "XRP" },
+  // Alternatives
   { assetClass: "alternative",    symbol: "CARBON_EUA" },
+  { assetClass: "alternative",    symbol: "REIT_VNQ" },
+  { assetClass: "alternative",    symbol: "INFRA_IFRA" },
 ];
 export const ASSET_SAMPLE_COUNT = ASSET_SAMPLES.length;
 
