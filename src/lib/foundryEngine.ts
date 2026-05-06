@@ -442,3 +442,29 @@ export async function runQuantumStage(args: {
     };
   }
 }
+
+export interface QuantumPingResult {
+  ok: boolean;
+  summary: string;
+  recommendation?: string;
+  steps: Array<{ step: string; ok: boolean; ms: number; detail?: string }>;
+  chosenBackend?: string;
+  totalMs?: number;
+}
+
+export async function pingQuantum(): Promise<QuantumPingResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke("quantum-audit", { body: { action: "ping" } });
+    if (error) {
+      const ctx = (error as { context?: unknown }).context;
+      if (ctx instanceof Response) {
+        const body = await ctx.clone().json().catch(() => null);
+        if (body) return body as QuantumPingResult;
+      }
+      return { ok: false, summary: error.message ?? "Ping failed", steps: [] };
+    }
+    return data as QuantumPingResult;
+  } catch (e) {
+    return { ok: false, summary: e instanceof Error ? e.message : "Ping failed", steps: [] };
+  }
+}
