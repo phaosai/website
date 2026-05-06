@@ -96,17 +96,8 @@ const TIER = (s: number) => {
   return { label: "NO GO", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };
 };
 
-const TOP_SIGNALS = [
-  "Insider clustering · Form 4",
-  "Government & contract pulse · USAspending",
-  "Macro regime · FRED yield curve",
-  "Logistics & supply · MarineTraffic + BDI",
-  "Sentiment · Google Trends + filings",
-  "On-chain flows · DefiLlama TVL",
-  "Fundamentals · XBRL drift",
-  "Positioning · CFTC COT",
-];
-const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
+// Live PCI is computed server-side by the sunesis-live-research edge function
+// using the currently-promoted Foundry brain. Client just renders the result.
 
 export default function SunesisResearch() {
   const ent = useEntitlements();
