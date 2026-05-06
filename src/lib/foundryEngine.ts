@@ -128,9 +128,11 @@ export interface BrainYearResult {
   brainScore: number;
   meanAbsError: number;
   // Sample of per-asset predictions used in the post-mortem table.
-  predictions: { assetClass: AssetClassId; symbol: string; jan1Pci: number; dec31RealizedPci: number; accuracy: number }[];
+  predictions: { assetClass: AssetClassId; symbol: string; jan1Pci: number; dec31RealizedPci: number; accuracy: number; quarterlyRealized?: number[]; quarterlyAccuracy?: number }[];
   // Misses the brain learned from this year (drives next-year noise reduction).
   postMortem: string[];
+  // Mean quarterly-checkpoint accuracy across the asset universe (Q1/Q2/Q3/Q4).
+  quarterlyMeanAccuracy?: number;
 }
 
 export interface YearScore {
@@ -161,10 +163,16 @@ export interface ForgeState {
   // Total deep-training cycles run across every year (the "100 instances" button).
   totalTrainingCycles?: number;
   // Persistent per-symbol residual bias accumulated across every pass and every
-  // year. This is the brain's learned correction map — promoted to Sunesis.
+  // year. Kept for backward compatibility & promotion snapshot.
   residualBias?: Record<string, number>;
+  // Regime-conditional residuals: separate per-symbol bias per regime state.
+  // residualByRegime[regime][symbol] = learned bias for that symbol in that regime.
+  residualByRegime?: Partial<Record<RegimeState, Record<string, number>>>;
   // Best-ever combined score reached across the entire forge (any year).
   bestCombinedEver?: number;
+  // Anchor cache built from real ingested OHLCV (foundry_year_corpus). Maps
+  // `${year}:${symbol}` → realized Dec 31 PCI derived from real returns.
+  realizedAnchors?: Record<string, number>;
 }
 
 export const VALIDATION_YEARS = Array.from({ length: 15 }, (_, i) => 2011 + i);
