@@ -284,21 +284,17 @@ export default function FoundryAdmin() {
   const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep">(null);
   async function runAllYearsSequential() {
     setBulkRunning("sequential");
-    for (const y of state.years) {
-      // We have to read from the *current* state ref each iteration because
-      // setState batches; recomputeGates will mark the next year ready after
-      // each prior year scores.
+    for (const y of stateRef.current.years) {
       await runYear(y.year, false, { silent: true, passes: 1 });
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 50));
     }
     setBulkRunning(null);
-    toast({ title: "All 15 years validated", description: "Brains now have a full first-pass training cycle. Use Deep Training to keep refining." });
+    toast({ title: "All 15 years validated", description: "Brains now have a full first-pass training cycle. Use Deep Training (100×) to keep refining the algorithm." });
   }
 
-  // ---------- Bulk: 100 deep-training cycles across every year ----------
   async function runDeepTraining(passesPerYear = 100) {
     setBulkRunning("deep");
-    for (const y of state.years) {
+    for (const y of stateRef.current.years) {
       await runYear(y.year, false, { silent: true, passes: passesPerYear });
       await new Promise((r) => setTimeout(r, 30));
     }
