@@ -322,7 +322,7 @@ export default function FoundryAdmin() {
         trainingPasses: totalPasses,
         learningCurve,
         bestCombined,
-        notes: `Year ${year}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts.`,
+        notes: `Year ${year} · regime=${combinedRun.regime}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts. Quarterly mean accuracy: ${combined.quarterlyMeanAccuracy ?? "—"}.`,
       } : y),
     }));
     if (!opts.silent) {
