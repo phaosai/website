@@ -762,8 +762,7 @@ export default function FoundryAdmin() {
           <CardContent className="space-y-4">
             <div className="space-y-1 text-xs">
               {[
-                { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated" },
-                { ok: (lastScoredYear?.combined ?? 0) >= 99.5, label: `Combined brain ≥ 99.5% on most recent year (current: ${lastScoredYear?.combined?.toFixed(2) ?? "—"}%)` },
+                { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated (no minimum score required)" },
                 { ok: promoteName.trim().length >= 3, label: "Engine series name provided" },
               ].map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
