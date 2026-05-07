@@ -6,6 +6,8 @@ const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    const authBlock = await requireUserOrService(req);
+    if (authBlock) return authBlock;
   try {
     const { keyword } = await req.json();
     const kw = (keyword || "").toString().trim();

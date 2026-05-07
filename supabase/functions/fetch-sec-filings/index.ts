@@ -4,6 +4,8 @@ const UA = "PhaosAI Research/1.0 (info@phaosai.com)";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    const authBlock = await requireUserOrService(req);
+    if (authBlock) return authBlock;
   try {
     const { ticker } = await req.json();
     if (!ticker || typeof ticker !== "string") return json({ error: "ticker required" }, 400);

@@ -20,6 +20,8 @@ async function resolveCik(ticker: string): Promise<string | null> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    const authBlock = await requireUserOrService(req);
+    if (authBlock) return authBlock;
   try {
     const { ticker } = await req.json();
     if (!ticker) return json({ error: "ticker required" }, 400);
