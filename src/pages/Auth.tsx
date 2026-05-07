@@ -183,6 +183,12 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {portalLabel && !selectedPlan && (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Signing in to</p>
+                <p className="mt-1 text-sm font-semibold text-white">Phaos {portalLabel}</p>
+              </div>
+            )}
             {selectedPlan && (
               <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Selected plan</p>
