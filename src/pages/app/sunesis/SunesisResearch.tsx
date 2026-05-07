@@ -129,6 +129,24 @@ export default function SunesisResearch() {
   const [watchlistTickers, setWatchlistTickers] = useState<Set<string>>(new Set());
   const [watchlistRefreshKey, setWatchlistRefreshKey] = useState(0);
   const [savedSearchKey, setSavedSearchKey] = useState(0);
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+  const [groupChoices, setGroupChoices] = useState<{ id: string; name: string }[]>([]);
+  const [bulkGroupId, setBulkGroupId] = useState<string>("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // Load watchlist groups for bulk-assign dropdown.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("sunesis_watchlist_groups")
+        .select("id,name")
+        .order("created_at", { ascending: true });
+      if (data) {
+        setGroupChoices(data as { id: string; name: string }[]);
+        if (data.length > 0 && !bulkGroupId) setBulkGroupId((data[0] as { id: string }).id);
+      }
+    })();
+  }, [watchlistRefreshKey]);
 
   // Hydrate the user's existing watchlist tickers so the UI reflects state.
   useEffect(() => {
