@@ -262,7 +262,13 @@ export default function SunesisResearch() {
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm font-semibold">1. Select asset classes</p>
-          <span className="text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+            <button type="button" onClick={selectAllClasses} className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card">Select all</button>
+            {selectedClasses.length > 0 && (
+              <button type="button" onClick={clearAllClasses} className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold text-muted-foreground hover:bg-card">Clear</button>
+            )}
+          </div>
         </div>
         <div className="space-y-4">
           {ASSET_GROUPS.map((g) => (
