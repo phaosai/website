@@ -2441,6 +2441,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      consume_quantum_addon_credit_atomic: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       consume_quantum_audit_credit: {
         Args: { _audit_id: string; _user_id: string }
         Returns: Json
@@ -2595,6 +2599,10 @@ export type Database = {
       refund_quantum_audit_credit: {
         Args: { _audit_id: string; _user_id: string }
         Returns: Json
+      }
+      restore_quantum_addon_credit_atomic: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       update_quantum_audit_status: {
         Args: { _audit_id: string; _metadata?: Json; _new_status: string }
