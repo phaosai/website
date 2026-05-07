@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, RefreshCw, FolderPlus, Pencil, Check, X } from "lucide-react";
+import { Trash2, RefreshCw, FolderPlus, Pencil, Check, X, Globe, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface WatchRow {
@@ -20,6 +20,7 @@ interface WatchRow {
 interface Group {
   id: string;
   name: string;
+  is_public?: boolean;
 }
 
 const fmtPct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
@@ -31,23 +32,92 @@ interface Props {
   fullPage?: boolean;
 }
 
+interface Stats {
+  n: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  best: WatchRow | null;
+  worst: WatchRow | null;
+  avgPciNow: number;
+  avgPciDelta: number;
+  totalNotional: number;
+  oldestDays: number;
+  roi: number;
+}
+
+const itemRoi = (r: WatchRow) => {
+  const cur = r.last_price ?? r.price_at_add;
+  if (!r.price_at_add) return 0;
+  return ((cur - r.price_at_add) / r.price_at_add) * 100;
+};
+
+const computeStats = (rows: WatchRow[]): Stats => {
+  const n = rows.length;
+  const wins = rows.filter((r) => itemRoi(r) > 0).length;
+  const losses = rows.filter((r) => itemRoi(r) < 0).length;
+  const roi = n === 0 ? 0 : rows.reduce((s, r) => s + itemRoi(r), 0) / n;
+  return {
+    n, wins, losses,
+    winRate: n === 0 ? 0 : (wins / n) * 100,
+    best: n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) >= itemRoi(b) ? a : b)),
+    worst: n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) <= itemRoi(b) ? a : b)),
+    avgPciNow: n === 0 ? 0 : rows.reduce((s, r) => s + (r.last_pci ?? r.pci_at_add), 0) / n,
+    avgPciDelta: n === 0 ? 0 : rows.reduce((s, r) => s + ((r.last_pci ?? r.pci_at_add) - r.pci_at_add), 0) / n,
+    totalNotional: rows.reduce((s, r) => s + Number(r.last_price ?? r.price_at_add ?? 0), 0),
+    oldestDays: n === 0 ? 0 : Math.max(...rows.map((r) => Math.floor((Date.now() - new Date(r.added_at).getTime()) / (1000 * 60 * 60 * 24)))),
+    roi,
+  };
+};
+
+const Stat = ({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) => (
+  <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    <p className={`mt-1 text-lg font-bold tabular-nums ${tone ?? "text-foreground"}`}>{value}</p>
+    {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+  </div>
+);
+
+const HeroBlock = ({ stats, label, groups }: { stats: Stats; label: string; groups?: number }) => (
+  <div className="rounded-xl border border-border bg-background/40 p-5 grid gap-4 md:grid-cols-12 items-stretch">
+    <div className="md:col-span-4 flex flex-col justify-center rounded-lg border border-border/60 bg-background/60 p-5">
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
+      <div className={`text-5xl md:text-6xl font-bold tabular-nums ${colorFor(stats.roi)}`}>
+        {stats.n === 0 ? "—" : fmtPct(stats.roi)}
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">
+        {stats.n === 0 ? "Add results to begin tracking." : `${stats.n} instrument${stats.n === 1 ? "" : "s"}${groups ? ` across ${groups} group${groups === 1 ? "" : "s"}` : ""}.`}
+      </p>
+    </div>
+    <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <Stat label="Win rate" value={stats.n === 0 ? "—" : `${stats.winRate.toFixed(0)}%`} sub={`${stats.wins}W · ${stats.losses}L`} tone={stats.winRate >= 50 ? "text-pci-go" : stats.winRate > 0 ? "text-pci-warning" : "text-foreground"} />
+      <Stat label="Best performer" value={stats.best ? stats.best.ticker : "—"} sub={stats.best ? fmtPct(itemRoi(stats.best)) : undefined} tone="text-pci-go" />
+      <Stat label="Worst drawdown" value={stats.worst ? stats.worst.ticker : "—"} sub={stats.worst ? fmtPct(itemRoi(stats.worst)) : undefined} tone="text-pci-no-go" />
+      <Stat label="Avg PCI (now)" value={stats.n === 0 ? "—" : stats.avgPciNow.toFixed(0)} sub={stats.n === 0 ? undefined : `${stats.avgPciDelta >= 0 ? "+" : ""}${stats.avgPciDelta.toFixed(1)} since add`} />
+      <Stat label="Notional tracked" value={stats.n === 0 ? "—" : `$${stats.totalNotional.toFixed(2)}`} sub={`${stats.n} symbol${stats.n === 1 ? "" : "s"}`} />
+      <Stat label="Oldest hold" value={stats.n === 0 ? "—" : `${stats.oldestDays}d`} sub="since first add" />
+    </div>
+  </div>
+);
+
 export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
   const [rows, setRows] = useState<WatchRow[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
 
   const ensureDefaultGroup = useCallback(async (userId: string): Promise<Group[]> => {
     const { data: existing } = await supabase
       .from("sunesis_watchlist_groups")
-      .select("id,name")
+      .select("id,name,is_public")
       .order("created_at", { ascending: true });
     if (existing && existing.length > 0) return existing as Group[];
     const { data: created } = await supabase
       .from("sunesis_watchlist_groups")
       .insert([{ user_id: userId, name: "My Watchlist" }] as never)
-      .select("id,name")
+      .select("id,name,is_public")
       .maybeSingle();
     return created ? [created as Group] : [];
   }, []);
@@ -66,6 +136,14 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
       } catch (e) {
         console.warn("watchlist refresh edge call failed", e);
       }
+
+      // Pull public toggle
+      const { data: profile } = await supabase
+        .from("users")
+        .select("handle_is_public")
+        .eq("id", user.id)
+        .maybeSingle();
+      setIsPublic(!!(profile as any)?.handle_is_public);
 
       // Always pull ALL rows directly from DB so nothing is missed.
       const { data: items } = await supabase
@@ -99,18 +177,21 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
     setRows((r) => r.filter((x) => x.id !== id));
   };
 
-  const itemRoi = (r: WatchRow) => {
-    const cur = r.last_price ?? r.price_at_add;
-    if (!r.price_at_add) return 0;
-    return ((cur - r.price_at_add) / r.price_at_add) * 100;
+  const togglePublic = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const next = !isPublic;
+    setIsPublic(next);
+    const { error } = await supabase.from("users").update({ handle_is_public: next } as never).eq("id", user.id);
+    if (error) {
+      setIsPublic(!next);
+      toast({ title: "Could not update visibility", description: error.message, variant: "destructive" });
+      return;
+    }
+    // Cascade to all groups
+    await supabase.from("sunesis_watchlist_groups").update({ is_public: next } as never).eq("user_id", user.id);
+    toast({ title: next ? "Watchlist is now public" : "Watchlist is now private", description: next ? "Your handle (set in Settings) appears on the leaderboard." : "You'll only show as anonymous on the leaderboard." });
   };
-
-  const groupRoi = (groupRows: WatchRow[]) =>
-    groupRows.length === 0
-      ? 0
-      : groupRows.reduce((s, r) => s + itemRoi(r), 0) / groupRows.length;
-
-  const aggregateRoi = groupRoi(rows);
 
   const createGroup = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -119,7 +200,7 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
     if (!name) return;
     const { error } = await supabase
       .from("sunesis_watchlist_groups")
-      .insert([{ user_id: user.id, name }] as never);
+      .insert([{ user_id: user.id, name, is_public: isPublic }] as never);
     if (error) {
       toast({ title: "Could not create group", description: error.message, variant: "destructive" });
     } else {
@@ -156,7 +237,7 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
 
   const renderGroup = (g: Group) => {
     const groupRows = rows.filter((r) => r.group_id === g.id);
-    const roi = groupRoi(groupRows);
+    const stats = computeStats(groupRows);
     return (
       <div key={g.id} className="rounded-xl border border-border bg-background/40 p-4 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -185,13 +266,11 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
               </>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Group WLH-ROI</p>
-            <div className={`text-xl font-bold tabular-nums ${colorFor(roi)}`}>
-              {groupRows.length === 0 ? "—" : fmtPct(roi)}
-            </div>
-          </div>
         </div>
+
+        {/* Per-group hero stats — same layout as combined */}
+        <HeroBlock stats={stats} label={`${g.name} · WLH-ROI`} />
+
         {groupRows.length > 0 && (
           <div className="rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-sm min-w-[760px]">
@@ -258,6 +337,8 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
     );
   };
 
+  const combined = computeStats(rows);
+
   return (
     <div className="rounded-xl border border-border bg-card/50 p-5 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -265,16 +346,27 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
           <p className="text-sm font-semibold">Your Watchlist</p>
           <p className="text-xs text-muted-foreground">WLH-ROI · Watch List Hypothetical Return On Investment, equal-weighted from each item's add-date.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {fullPage && (
-            <button
-              type="button"
-              onClick={createGroup}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs font-semibold hover:bg-card"
-            >
-              <FolderPlus className="w-3.5 h-3.5" />
-              New group
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={togglePublic}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${isPublic ? "border-pci-go/40 bg-pci-go/10 text-pci-go" : "border-border bg-background/60 hover:bg-card"}`}
+                title={isPublic ? "Public — appears on leaderboard with your handle" : "Private — only anonymous on leaderboard"}
+              >
+                {isPublic ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                {isPublic ? "Public" : "Make public"}
+              </button>
+              <button
+                type="button"
+                onClick={createGroup}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs font-semibold hover:bg-card"
+              >
+                <FolderPlus className="w-3.5 h-3.5" />
+                New group
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -288,49 +380,8 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
         </div>
       </div>
 
-      {/* Hero combined stats — WLH-ROI on the far left, supporting metrics fill the row */}
-      {(() => {
-        const n = rows.length;
-        const wins = rows.filter((r) => itemRoi(r) > 0).length;
-        const losses = rows.filter((r) => itemRoi(r) < 0).length;
-        const winRate = n === 0 ? 0 : (wins / n) * 100;
-        const best = n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) >= itemRoi(b) ? a : b));
-        const worst = n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) <= itemRoi(b) ? a : b));
-        const avgPciNow = n === 0 ? 0 : rows.reduce((s, r) => s + (r.last_pci ?? r.pci_at_add), 0) / n;
-        const avgPciDelta = n === 0 ? 0 : rows.reduce((s, r) => s + ((r.last_pci ?? r.pci_at_add) - r.pci_at_add), 0) / n;
-        const totalNotional = rows.reduce((s, r) => s + Number(r.last_price ?? r.price_at_add ?? 0), 0);
-        const oldestDays = n === 0 ? 0 : Math.max(...rows.map((r) => Math.floor((Date.now() - new Date(r.added_at).getTime()) / (1000 * 60 * 60 * 24))));
-
-        const Stat = ({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) => (
-          <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className={`mt-1 text-lg font-bold tabular-nums ${tone ?? "text-foreground"}`}>{value}</p>
-            {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
-          </div>
-        );
-
-        return (
-          <div className="rounded-xl border border-border bg-background/40 p-5 grid gap-4 md:grid-cols-12 items-stretch">
-            <div className="md:col-span-4 flex flex-col justify-center rounded-lg border border-border/60 bg-background/60 p-5">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Combined WLH-ROI · all groups</p>
-              <div className={`text-5xl md:text-6xl font-bold tabular-nums ${colorFor(aggregateRoi)}`}>
-                {n === 0 ? "—" : fmtPct(aggregateRoi)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {n === 0 ? "Add results to begin tracking." : `${n} instrument${n === 1 ? "" : "s"} across ${groups.length} group${groups.length === 1 ? "" : "s"}.`}
-              </p>
-            </div>
-            <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <Stat label="Win rate" value={n === 0 ? "—" : `${winRate.toFixed(0)}%`} sub={`${wins}W · ${losses}L`} tone={winRate >= 50 ? "text-pci-go" : winRate > 0 ? "text-pci-warning" : "text-foreground"} />
-              <Stat label="Best performer" value={best ? best.ticker : "—"} sub={best ? fmtPct(itemRoi(best)) : undefined} tone="text-pci-go" />
-              <Stat label="Worst drawdown" value={worst ? worst.ticker : "—"} sub={worst ? fmtPct(itemRoi(worst)) : undefined} tone="text-pci-no-go" />
-              <Stat label="Avg PCI (now)" value={n === 0 ? "—" : avgPciNow.toFixed(0)} sub={n === 0 ? undefined : `${avgPciDelta >= 0 ? "+" : ""}${avgPciDelta.toFixed(1)} since add`} />
-              <Stat label="Notional tracked" value={n === 0 ? "—" : `$${totalNotional.toFixed(2)}`} sub={`${n} symbol${n === 1 ? "" : "s"}`} />
-              <Stat label="Oldest hold" value={n === 0 ? "—" : `${oldestDays}d`} sub="since first add" />
-            </div>
-          </div>
-        );
-      })()}
+      {/* Combined hero — WLH-ROI on far left, supporting metrics fill the row */}
+      <HeroBlock stats={combined} label="Combined WLH-ROI · all groups" groups={groups.length} />
 
       <div className="space-y-3">
         {groups.map(renderGroup)}

@@ -457,6 +457,7 @@ export type Database = {
       }
       login_events: {
         Row: {
+          country_code: string | null
           id: string
           ip_hash: string | null
           occurred_at: string
@@ -465,6 +466,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country_code?: string | null
           id?: string
           ip_hash?: string | null
           occurred_at?: string
@@ -473,6 +475,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country_code?: string | null
           id?: string
           ip_hash?: string | null
           occurred_at?: string
@@ -1542,6 +1545,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_public: boolean
           name: string
           updated_at: string
           user_id: string
@@ -1549,6 +1553,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_public?: boolean
           name?: string
           updated_at?: string
           user_id: string
@@ -1556,6 +1561,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_public?: boolean
           name?: string
           updated_at?: string
           user_id?: string
@@ -2096,31 +2102,40 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null
+          country_code: string | null
           created_at: string
           email: string
           full_name: string | null
+          handle_is_public: boolean
           id: string
           is_sandbox: boolean
+          public_handle: string | null
           tier: string
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           email: string
           full_name?: string | null
+          handle_is_public?: boolean
           id: string
           is_sandbox?: boolean
+          public_handle?: string | null
           tier?: string
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
+          handle_is_public?: boolean
           id?: string
           is_sandbox?: boolean
+          public_handle?: string | null
           tier?: string
           updated_at?: string
         }

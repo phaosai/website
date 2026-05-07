@@ -17,7 +17,7 @@ const planNames: Record<string, string> = {
   sunesis_monthly: "Phaos Sunesis",
   aion_monthly: "Phaos Pro",
   kyrios_monthly: "Phaos Elite",
-  phaos_one_monthly: "Phaos ONE",
+  phaos_one_monthly: "Phaos Research",
 };
 
 const passwordRules = (pw: string) => ({
@@ -35,6 +35,8 @@ const Auth = () => {
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
   const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
+  const portal = (new URLSearchParams(location.search).get("portal") || "").toLowerCase();
+  const portalLabel = portal === "workflow" ? "Workflow" : portal === "research" ? "Research" : portal === "voice" ? "Voice" : "";
   const selectedPlanName = planNames[selectedPlan] || "your plan";
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
 
@@ -181,6 +183,12 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {portalLabel && !selectedPlan && (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Signing in to</p>
+                <p className="mt-1 text-sm font-semibold text-white">Phaos {portalLabel}</p>
+              </div>
+            )}
             {selectedPlan && (
               <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Selected plan</p>

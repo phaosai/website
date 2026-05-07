@@ -39,8 +39,8 @@ const PhaosAion = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
-        title="Phaos Aion — Resilience, Protection, and Long-Horizon Clarity"
-        description="Phaos Aion is the security and scenario-simulation layer that protects research integrity, monitors for change, and prepares you for what comes next. $199/month."
+        title="Phaos Research — Resilience, Protection, and Long-Horizon Clarity"
+        description="Phaos Research is the security and scenario-simulation layer that protects research integrity, monitors for change, and prepares you for what comes next. $199/month."
         canonical="/one/aion"
       />
       <Navigation />
@@ -50,7 +50,7 @@ const PhaosAion = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Aion</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Research</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
@@ -58,7 +58,7 @@ const PhaosAion = () => {
             <span className="text-gradient-purple">Long-Horizon Clarity</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
-            Phaos Aion is the security and scenario-simulation layer that protects your research integrity, monitors for change, and prepares you for what comes next.
+            Phaos Research is the security and scenario-simulation layer that protects your research integrity, monitors for change, and prepares you for what comes next.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -72,7 +72,7 @@ const PhaosAion = () => {
               to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
             >
-              Get everything with Phaos ONE — $599/month
+              Get everything with Phaos Research — $599/month
             </Link>
           </div>
         </div>
@@ -246,7 +246,7 @@ const PhaosAion = () => {
             </div>
             <div className="p-8 rounded-xl border border-primary/40 bg-primary/5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos ONE</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos Research</span>
                 <FeatureStatusBadge status="LIVE" />
               </div>
               <p className="text-4xl font-bold mb-1">$599<span className="text-base font-normal text-muted-foreground">/month</span></p>
@@ -260,7 +260,7 @@ const PhaosAion = () => {
                 to="/auth?mode=signup&plan=phaos_one_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
               >
-                Get everything with Phaos ONE
+                Get everything with Phaos Research
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -272,7 +272,7 @@ const PhaosAion = () => {
       <section className="py-12 px-6 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs leading-relaxed text-muted-foreground text-center">
-            Phaos Aion scenario simulations are analytical tools, not financial forecasts. All simulation outputs are labeled SIMULATED and do not predict future market behavior.
+            Phaos Research scenario simulations are analytical tools, not financial forecasts. All simulation outputs are labeled SIMULATED and do not predict future market behavior.
           </p>
         </div>
       </section>

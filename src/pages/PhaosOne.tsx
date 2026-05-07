@@ -28,18 +28,18 @@ const PhaosOne = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
-        title="Phaos ONE — Unified Financial Intelligence Environment"
+        title="Phaos Research — Unified Financial Intelligence Environment"
         description="Phaos Research unifies Sunesis research and Run Simulation into a single environment. One subscription."
         canonical="/one"
       />
       <Navigation />
 
       {/* HERO */}
-      <section className="relative pt-32 pb-20 px-6" aria-label="Phaos ONE Hero">
+      <section className="relative pt-32 pb-20 px-6" aria-label="Phaos Research Hero">
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos ONE</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Research</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
@@ -54,7 +54,7 @@ const PhaosOne = () => {
               className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-7 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group"
               data-interactive
             >
-              Explore Phaos ONE — $599/month
+              Explore Phaos Research — $599/month
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
@@ -69,9 +69,9 @@ const PhaosOne = () => {
       </section>
 
       {/* WHAT IT IS */}
-      <section className="py-16 px-6 border-t border-border/30" aria-label="What Phaos ONE Is">
+      <section className="py-16 px-6 border-t border-border/30" aria-label="What Phaos Research Is">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-purple-light mb-5">What Phaos ONE Is</p>
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-purple-light mb-5">What Phaos Research Is</p>
           <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light">
             Phaos Research is the unified operating environment for Sunesis research and live simulation. One subscription. Top-10 PCI candidates filtered to your selected asset classes and brokers, with full audit trail and conviction intelligence.
           </p>
@@ -195,7 +195,7 @@ const PhaosOne = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Honest <span className="text-gradient-purple">Pricing Math</span>
             </h2>
-            <p className="text-muted-foreground">Phaos ONE combines everything at a lower total cost.</p>
+            <p className="text-muted-foreground">Phaos Research combines everything at a lower total cost.</p>
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
@@ -217,7 +217,7 @@ const PhaosOne = () => {
             <div className="flex items-center justify-between px-6 py-5 bg-purple-deep/10">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-purple-light" aria-hidden="true" />
-                <span className="font-semibold text-foreground">Phaos ONE — one environment, one subscription</span>
+                <span className="font-semibold text-foreground">Phaos Research — one environment, one subscription</span>
               </div>
               <span className="font-mono text-base font-bold text-gradient-purple">$599/month</span>
             </div>
@@ -229,7 +229,7 @@ const PhaosOne = () => {
               className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-7 py-3.5 rounded-full glow-purple-lg hover:opacity-90 active:scale-[0.97] transition-all text-base items-center gap-2 group"
               data-interactive
             >
-              Start with Phaos ONE
+              Start with Phaos Research
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -240,7 +240,7 @@ const PhaosOne = () => {
       <section className="py-12 px-6 border-t border-border/30" aria-label="Disclaimer">
         <div className="max-w-3xl mx-auto">
           <p className="text-xs text-muted-foreground/80 leading-relaxed text-center">
-            Phaos ONE is a research and workflow intelligence environment. It does not provide personalized investment advice and is not a registered investment advisor.
+            Phaos Research is a research and workflow intelligence environment. It does not provide personalized investment advice and is not a registered investment advisor.
           </p>
         </div>
       </section>

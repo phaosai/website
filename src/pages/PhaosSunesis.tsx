@@ -110,7 +110,7 @@ const PhaosSunesis = () => {
               to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
             >
-              Explore Phaos ONE — $599/month
+              Explore Phaos Research — $599/month
             </Link>
           </div>
         </div>
@@ -291,7 +291,7 @@ const PhaosSunesis = () => {
             </div>
             <div className="p-8 rounded-xl border border-primary/40 bg-primary/5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos ONE</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos Research</span>
                 <FeatureStatusBadge status="LIVE" />
               </div>
               <p className="text-4xl font-bold mb-1">$599<span className="text-base font-normal text-muted-foreground">/month</span></p>
@@ -300,7 +300,7 @@ const PhaosSunesis = () => {
                 to="/auth?mode=signup&plan=phaos_one_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
               >
-                Get everything with Phaos ONE
+                Get everything with Phaos Research
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
