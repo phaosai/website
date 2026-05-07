@@ -250,7 +250,6 @@ const AdminPurge = () => {
       return;
     }
     setStateBusy(true);
-    const { data: { session } } = await supabase.auth.getSession();
     const { error } = await supabase
       .from("system_state")
       .update({ [field]: value, updated_by: session?.user.id, updated_at: new Date().toISOString() })
