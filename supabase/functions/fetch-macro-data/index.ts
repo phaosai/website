@@ -1,4 +1,4 @@
-import { corsHeaders, json, readCache, writeCache } from "../_shared/phaos.ts";
+import { corsHeaders, json, readCache, writeCache , requireUserOrService } from "../_shared/phaos.ts";
 
 // FRED API key optional; falls back to public series via FRED's public CSV endpoints.
 const FRED_KEY = Deno.env.get("FRED_API_KEY");
@@ -7,6 +7,8 @@ const SERIES = ["DGS10", "DGS2", "T10Y2Y", "UNRATE", "CPIAUCSL", "VIXCLS"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    const authBlock = await requireUserOrService(req);
+    if (authBlock) return authBlock;
   try {
     const cached = await readCache("_MACRO", "macro", 6 * 60);
     if (cached) return json({ cached: true, ...(cached.processed_data as object) });

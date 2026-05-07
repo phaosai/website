@@ -1,7 +1,9 @@
-import { corsHeaders, json, readCache, writeCache } from "../_shared/phaos.ts";
+import { corsHeaders, json, readCache, writeCache , requireUserOrService } from "../_shared/phaos.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    const authBlock = await requireUserOrService(req);
+    if (authBlock) return authBlock;
   try {
     const { ticker, recipient } = await req.json();
     if (!ticker) return json({ error: "ticker required" }, 400);

@@ -27,6 +27,33 @@ export const userClient = (authHeader: string) =>
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } },
   );
 
+// Allow only service-role calls (used by internal warmup, cron, and inter-function calls).
+export function requireServiceRole(req: Request): Response | null {
+  const auth = req.headers.get("Authorization") ?? "";
+  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+  if (!expected || auth !== expected) {
+    return json({ error: "Forbidden" }, 403);
+  }
+  return null;
+}
+
+// Require either an authenticated end-user OR the service role (for inter-function calls).
+// Returns null when allowed, or a Response when blocked.
+export async function requireUserOrService(req: Request): Promise<Response | null> {
+  const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+  const token = auth.replace("Bearer ", "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (serviceKey && token === serviceKey) return null;
+  // Reject the publishable/anon key explicitly — it must be paired with a real user JWT.
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (anonKey && token === anonKey) return json({ error: "Unauthorized" }, 401);
+  const supa = userClient(auth);
+  const { data, error } = await (supa.auth as any).getClaims(token);
+  if (error || !data?.claims) return json({ error: "Unauthorized" }, 401);
+  return null;
+}
+
 export async function requireUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return { error: json({ error: "Unauthorized" }, 401) };
