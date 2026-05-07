@@ -395,7 +395,7 @@ export default function SunesisResearch() {
       >
         <Sparkles className="w-5 h-5" />
         {running ? "Scanning your investable universe…" :
-          tierMode === "elite" ? "Generate Top 10" :
+          tierMode === "elite" ? "Generate results" :
           tierMode === "pro" ? "Generate full results" :
           `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
