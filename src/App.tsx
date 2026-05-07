@@ -66,6 +66,7 @@ const SunesisWorkflow = lazy(() => import("./pages/app/sunesis/SunesisWorkflow.t
 const SunesisCompliance = lazy(() => import("./pages/app/sunesis/SunesisCompliance.tsx"));
 const SunesisLedger = lazy(() => import("./pages/app/sunesis/SunesisLedger.tsx"));
 const SunesisWatchlists = lazy(() => import("./pages/app/sunesis/SunesisWatchlists.tsx"));
+const SunesisLeaderboard = lazy(() => import("./pages/app/sunesis/SunesisLeaderboard.tsx"));
 const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
 const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
 const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
