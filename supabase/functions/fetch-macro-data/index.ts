@@ -1,4 +1,4 @@
-import { corsHeaders, json, readCache, writeCache } from "../_shared/phaos.ts";
+import { corsHeaders, json, readCache, writeCache , requireUserOrService } from "../_shared/phaos.ts";
 
 // FRED API key optional; falls back to public series via FRED's public CSV endpoints.
 const FRED_KEY = Deno.env.get("FRED_API_KEY");

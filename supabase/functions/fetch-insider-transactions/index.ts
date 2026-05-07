@@ -1,4 +1,4 @@
-import { corsHeaders, json, readCache, writeCache } from "../_shared/phaos.ts";
+import { corsHeaders, json, readCache, writeCache , requireUserOrService } from "../_shared/phaos.ts";
 
 const UA = "PhaosAI Research/1.0 (info@phaosai.com)";
 

@@ -1,4 +1,4 @@
-import { corsHeaders, json, readCache, writeCache } from "../_shared/phaos.ts";
+import { corsHeaders, json, readCache, writeCache , requireUserOrService } from "../_shared/phaos.ts";
 
 // Google Trends has no official API. We use the unofficial daily-trends RSS as a public fallback.
 // If SERPAPI_KEY is provided, we use SerpAPI's Google Trends endpoint for better data.
