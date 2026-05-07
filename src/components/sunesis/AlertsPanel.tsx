@@ -3,29 +3,99 @@ import { Bell, Lock, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 type TierMode = "elite" | "pro" | "sovereign";
 
 interface Props { tierMode: TierMode }
 
+type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+const DAYS: { key: DayKey; label: string }[] = [
+  { key: "mon", label: "M" },
+  { key: "tue", label: "T" },
+  { key: "wed", label: "W" },
+  { key: "thu", label: "T" },
+  { key: "fri", label: "F" },
+  { key: "sat", label: "Sa" },
+  { key: "sun", label: "Su" },
+];
+
+const TIMEZONES = [
+  "Pacific/Honolulu",
+  "America/Anchorage",
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Chicago",
+  "America/New_York",
+  "America/Halifax",
+  "America/Sao_Paulo",
+  "Atlantic/Azores",
+  "UTC",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Athens",
+  "Europe/Moscow",
+  "Asia/Dubai",
+  "Asia/Karachi",
+  "Asia/Kolkata",
+  "Asia/Bangkok",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Tokyo",
+  "Australia/Perth",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];
+
+interface CustomConfig {
+  same_time: boolean;
+  same_time_value: string;
+  days: Record<DayKey, { enabled: boolean; time: string }>;
+}
+
+interface ScheduleConfig {
+  timezone: string;
+  daily_time: string;
+  weekly: { day: number; time: string }; // 0=Sun..6=Sat
+  custom: CustomConfig;
+}
+
 interface Schedule {
   channels: { email: boolean; sms: boolean; save: boolean };
   frequency: "daily" | "weekly" | "custom";
-  custom_slots: string[];
+  config: ScheduleConfig;
   quantum_enabled: boolean;
   auto_replenish: boolean;
   phone_e164: string | null;
 }
 
+const defaultConfig = (): ScheduleConfig => ({
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  daily_time: "09:00",
+  weekly: { day: 1, time: "09:00" },
+  custom: {
+    same_time: true,
+    same_time_value: "09:00",
+    days: DAYS.reduce((acc, d) => {
+      acc[d.key] = { enabled: false, time: "09:00" };
+      return acc;
+    }, {} as CustomConfig["days"]),
+  },
+});
+
 const DEFAULTS: Schedule = {
   channels: { email: false, sms: false, save: false },
   frequency: "daily",
-  custom_slots: [],
+  config: defaultConfig(),
   quantum_enabled: false,
   auto_replenish: false,
   phone_e164: null,
 };
+
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function AlertsPanel({ tierMode }: Props) {
   const [s, setS] = useState<Schedule>(DEFAULTS);
@@ -39,15 +109,25 @@ export function AlertsPanel({ tierMode }: Props) {
       const { data } = await supabase.from("alert_schedules").select("*").eq("user_id", user.id).maybeSingle();
       if (data) {
         const ch = (data.channels as Record<string, boolean>) ?? {};
+        const raw = data.custom_slots as unknown;
+        let config = defaultConfig();
+        if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+          const incoming = raw as Partial<ScheduleConfig>;
+          config = {
+            ...config,
+            ...incoming,
+            weekly: { ...config.weekly, ...(incoming.weekly ?? {}) },
+            custom: {
+              ...config.custom,
+              ...(incoming.custom ?? {}),
+              days: { ...config.custom.days, ...((incoming.custom?.days) ?? {}) },
+            },
+          };
+        }
         setS({
-          channels: {
-            email: !!ch.email,
-            sms: !!ch.sms,
-            // Migrate legacy push → save
-            save: !!(ch.save ?? ch.push),
-          },
+          channels: { email: !!ch.email, sms: !!ch.sms, save: !!(ch.save ?? ch.push) },
           frequency: data.frequency as Schedule["frequency"],
-          custom_slots: (data.custom_slots as string[]) ?? [],
+          config,
           quantum_enabled: data.quantum_enabled,
           auto_replenish: data.auto_replenish,
           phone_e164: data.phone_e164,
@@ -65,7 +145,7 @@ export function AlertsPanel({ tierMode }: Props) {
       user_id: user.id,
       channels: s.channels,
       frequency: s.frequency,
-      custom_slots: s.custom_slots,
+      custom_slots: s.config as unknown as never,
       quantum_enabled: s.quantum_enabled && tierMode === "sovereign",
       auto_replenish: s.auto_replenish && tierMode === "sovereign",
       phone_e164: s.phone_e164,
@@ -77,18 +157,26 @@ export function AlertsPanel({ tierMode }: Props) {
 
   const tryQuantum = (next: boolean) => {
     if (tierMode !== "sovereign") {
-      toast.error("Quantum auto-alerts require Sovereign", {
-        description: tierMode === "elite" ? "Upgrade to Sovereign to enable automated quantum alerts." : "Pro tier cannot enable quantum auto-alerts. Upgrade to Sovereign.",
-      });
+      toast.error("Quantum auto-alerts require Sovereign");
       return;
     }
     setS({ ...s, quantum_enabled: next });
   };
 
-  const slotInput = (idx: number, val: string) => {
-    const next = [...s.custom_slots];
-    next[idx] = val;
-    setS({ ...s, custom_slots: next });
+  const updateCfg = (patch: Partial<ScheduleConfig>) =>
+    setS({ ...s, config: { ...s.config, ...patch } });
+
+  const updateCustom = (patch: Partial<CustomConfig>) =>
+    setS({ ...s, config: { ...s.config, custom: { ...s.config.custom, ...patch } } });
+
+  const toggleDay = (key: DayKey, enabled: boolean) => {
+    const days = { ...s.config.custom.days, [key]: { ...s.config.custom.days[key], enabled } };
+    updateCustom({ days });
+  };
+
+  const setDayTime = (key: DayKey, time: string) => {
+    const days = { ...s.config.custom.days, [key]: { ...s.config.custom.days[key], time } };
+    updateCustom({ days });
   };
 
   if (!loaded) return null;
@@ -131,8 +219,22 @@ export function AlertsPanel({ tierMode }: Props) {
         )}
       </div>
 
-      {/* Frequency */}
+      {/* Timezone */}
       <div className="space-y-2">
+        <p className="text-xs font-semibold text-muted-foreground">Time zone</p>
+        <select
+          value={s.config.timezone}
+          onChange={(e) => updateCfg({ timezone: e.target.value })}
+          className="w-full max-w-xs rounded-md border border-border bg-background/60 px-3 py-2 text-sm"
+        >
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Frequency */}
+      <div className="space-y-3">
         <p className="text-xs font-semibold text-muted-foreground">Frequency</p>
         <div className="flex flex-wrap gap-2">
           {(["daily", "weekly", "custom"] as const).map((f) => (
@@ -143,17 +245,81 @@ export function AlertsPanel({ tierMode }: Props) {
             >{f}</button>
           ))}
         </div>
+
+        {s.frequency === "daily" && (
+          <div className="flex items-center gap-2 pt-1">
+            <label className="text-xs text-muted-foreground">Time</label>
+            <input
+              type="time"
+              value={s.config.daily_time}
+              onChange={(e) => updateCfg({ daily_time: e.target.value })}
+              className="rounded-md border border-border bg-background/60 px-3 py-1.5 text-sm font-mono"
+            />
+          </div>
+        )}
+
+        {s.frequency === "weekly" && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <label className="text-xs text-muted-foreground">Day</label>
+            <select
+              value={s.config.weekly.day}
+              onChange={(e) => updateCfg({ weekly: { ...s.config.weekly, day: Number(e.target.value) } })}
+              className="rounded-md border border-border bg-background/60 px-3 py-1.5 text-sm"
+            >
+              {WEEKDAY_NAMES.map((name, i) => <option key={i} value={i}>{name}</option>)}
+            </select>
+            <label className="text-xs text-muted-foreground ml-2">Time</label>
+            <input
+              type="time"
+              value={s.config.weekly.time}
+              onChange={(e) => updateCfg({ weekly: { ...s.config.weekly, time: e.target.value } })}
+              className="rounded-md border border-border bg-background/60 px-3 py-1.5 text-sm font-mono"
+            />
+          </div>
+        )}
+
         {s.frequency === "custom" && (
-          <div className="flex flex-wrap gap-2 pt-2">
-            {[0, 1, 2].map((i) => (
-              <input
-                key={i}
-                type="time"
-                value={s.custom_slots[i] ?? ""}
-                onChange={(e) => slotInput(i, e.target.value)}
-                className="rounded-md border border-border bg-background/60 px-3 py-1.5 text-sm font-mono"
+          <div className="space-y-3 pt-1">
+            <label className="inline-flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={s.config.custom.same_time}
+                onCheckedChange={(v) => updateCustom({ same_time: !!v })}
               />
-            ))}
+              Same time for every selected day
+            </label>
+            {s.config.custom.same_time && (
+              <input
+                type="time"
+                value={s.config.custom.same_time_value}
+                onChange={(e) => updateCustom({ same_time_value: e.target.value })}
+                className="rounded-md border border-border bg-background/60 px-3 py-1.5 text-sm font-mono block"
+              />
+            )}
+            <div className="space-y-2">
+              {DAYS.map((d) => {
+                const cfg = s.config.custom.days[d.key];
+                return (
+                  <div key={d.key} className="flex items-center gap-3">
+                    <label className="inline-flex items-center gap-2 w-20">
+                      <Checkbox
+                        checked={cfg.enabled}
+                        onCheckedChange={(v) => toggleDay(d.key, !!v)}
+                      />
+                      <span className="text-sm font-semibold">{d.label}</span>
+                    </label>
+                    {!s.config.custom.same_time && (
+                      <input
+                        type="time"
+                        disabled={!cfg.enabled}
+                        value={cfg.time}
+                        onChange={(e) => setDayTime(d.key, e.target.value)}
+                        className="rounded-md border border-border bg-background/60 px-3 py-1 text-sm font-mono disabled:opacity-40"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -180,13 +346,6 @@ export function AlertsPanel({ tierMode }: Props) {
             <Switch checked={s.auto_replenish} onCheckedChange={(v) => setS({ ...s, auto_replenish: v })} />
             Authorize automatic quantum replenishment billing
           </label>
-        )}
-        {tierMode !== "sovereign" && (
-          <p className="text-[11px] text-muted-foreground italic">
-            {tierMode === "elite"
-              ? "Greyed out on Elite. Upgrade to Sovereign to enable."
-              : "Pro cannot enable quantum auto-alerts. Upgrade to Sovereign."}
-          </p>
         )}
       </div>
 
