@@ -25,7 +25,7 @@ const NAV: NavItem[] = [
     children: [{ label: "Workflow Automation", to: "/workflows" }],
   },
   {
-    label: "Phinance",
+    label: "Research",
     children: [
       { label: "Sunesis", to: "/one/sunesis" },
       { label: "Run Simulation", to: "/one/run-simulation" },
