@@ -27,6 +27,16 @@ export const userClient = (authHeader: string) =>
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } },
   );
 
+// Allow only service-role calls (used by internal warmup, cron, and inter-function calls).
+export function requireServiceRole(req: Request): Response | null {
+  const auth = req.headers.get("Authorization") ?? "";
+  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+  if (!expected || auth !== expected) {
+    return json({ error: "Forbidden" }, 403);
+  }
+  return null;
+}
+
 export async function requireUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return { error: json({ error: "Unauthorized" }, 401) };
