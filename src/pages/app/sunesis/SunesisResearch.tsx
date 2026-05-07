@@ -212,7 +212,31 @@ export default function SunesisResearch() {
     }
   };
 
-  const summary = useMemo(() => {
+  const allAssetValues = useMemo<AssetClass[]>(
+    () => ASSET_GROUPS.flatMap((g) => g.items.map((i) => i.value)),
+    [],
+  );
+  const selectAllClasses = () => setSelectedClasses(allAssetValues);
+  const clearAllClasses = () => setSelectedClasses([]);
+
+  const addToWatchlist = async (r: PciResult) => {
+    if (watchlistTickers.has(r.ticker)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("sunesis-watchlist-add", {
+        body: { ticker: r.ticker, name: r.name, asset_class: r.assetClass, pci: r.pci },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        setWatchlistTickers((s) => new Set(s).add(r.ticker));
+        setWatchlistRefreshKey((k) => k + 1);
+        toast({ title: "Added to watchlist", description: `${r.ticker} · PCI ${r.pci} locked at ${new Date().toLocaleDateString()}` });
+      } else {
+        throw new Error(data?.error ?? "unknown");
+      }
+    } catch (e) {
+      toast({ title: "Could not add", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    }
+  };
     if (!results || results.length === 0) return null;
     const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
     return { avg, top: results[0], phaosChoice: results.filter((r) => r.pci >= 96).length, go: results.filter((r) => r.pci >= 90 && r.pci < 96).length };
