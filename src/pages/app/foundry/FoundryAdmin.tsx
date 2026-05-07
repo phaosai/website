@@ -388,28 +388,33 @@ export default function FoundryAdmin() {
       const { dimensionsAfterPasses } = await import("@/lib/foundryEngine");
       const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
       const enabledDims = dimensionsAfterPasses(maxPasses);
-      const lastCombined = lastScoredYear?.combined ?? null;
-      const residuals = state.residualBias ?? {};
-      const residualsByRegime = state.residualByRegime ?? {};
+      const lastCombined = lastScoredYear?.combined ?? 0;
+      const residuals = JSON.parse(JSON.stringify(state.residualBias ?? {}));
+      const residualsByRegime = JSON.parse(JSON.stringify(state.residualByRegime ?? {}));
       const regimeSymCount = Object.values(residualsByRegime)
-        .reduce((s, m) => s + Object.keys(m ?? {}).length, 0);
-      await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
+        .reduce((s: number, m) => s + Object.keys((m ?? {}) as Record<string, number>).length, 0);
+      const { error: deactErr } = await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
+      if (deactErr) throw deactErr;
       const { error } = await supabase.from("promoted_brains").insert({
-        engine_name: promoteName,
-        version: state.promote.version,
-        enabled_dimensions: enabledDims,
+        engine_name: promoteName.trim(),
+        version: state.promote.version || "v1.0",
+        enabled_dimensions: enabledDims as unknown as string[],
         residual_bias: { flat: residuals, by_regime: residualsByRegime },
-        combined_score: lastCombined,
+        combined_score: Number(lastCombined) || 0,
         is_active: true,
         notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
       });
       if (error) throw error;
       toast({
         title: "✓ Engine promoted to Sunesis",
-        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research for daniel@phaosai.com and all live accounts. Enabled dimensions: ${enabledDims.join(", ")}. Residual gradient map (${Object.keys(residuals).length} symbols) included so the live brain inherits everything learned in the Foundry.`,
+        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research. Enabled dimensions: ${enabledDims.join(", ")}. Residual gradient map (${Object.keys(residuals).length} symbols) included.`,
       });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "unknown error";
+    } catch (e: unknown) {
+      // PostgrestError has message/details/hint/code as plain props (not Error instance).
+      const err = e as { message?: string; details?: string; hint?: string; code?: string };
+      const parts = [err?.message, err?.details, err?.hint, err?.code ? `(code ${err.code})` : ""].filter(Boolean);
+      const msg = parts.length ? parts.join(" — ") : (e instanceof Error ? e.message : JSON.stringify(e));
+      console.error("promote() failed", e);
       toast({ title: "Promotion failed", description: msg, variant: "destructive" });
     }
   }

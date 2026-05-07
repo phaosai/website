@@ -278,6 +278,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    let emptyReason: string | null = null;
+    if (scored.length === 0) {
+      const matchingClass = INSTRUMENTS.some((u) => assetClasses.includes(u.assetClass));
+      if (!matchingClass) emptyReason = "No instruments registered for the selected asset class(es).";
+      else if (unsupportedPairs.length === assetClasses.length * platforms.length) emptyReason = "None of your selected brokerages support the selected asset class(es).";
+      else emptyReason = `All matching instruments fell outside the PCI ${pciMin}–${pciMax} filter.`;
+    }
+    console.log("sunesis-live-research", { userEmail, assetClasses, platforms, results: scored.length, emptyReason });
+
     return new Response(JSON.stringify({
       ok: true,
       mode: isLive ? "live" : "sandbox",
@@ -292,6 +301,7 @@ Deno.serve(async (req) => {
         total_instruments: scored.length,
         unsupported_pairs: unsupportedPairs,
       },
+      empty_reason: emptyReason,
       results: scored,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
