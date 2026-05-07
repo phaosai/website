@@ -113,28 +113,19 @@ async function getCredits(svc: ReturnType<typeof createClient>, userId: string) 
 }
 
 async function consumeAddonCredit(svc: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
-  const { data } = await svc
-    .from("quantum_audit_credits")
-    .select("execution_credits")
-    .eq("user_id", userId)
-    .maybeSingle();
-  const current = (data as any)?.execution_credits ?? 0;
-  if (current <= 0) return false;
-  await svc
-    .from("quantum_audit_credits")
-    .update({ execution_credits: current - 1 })
-    .eq("user_id", userId);
-  return true;
+  // Atomic conditional decrement — safe under concurrent calls (TOCTOU-free).
+  const { data, error } = await svc.rpc("consume_quantum_addon_credit_atomic", { _user_id: userId });
+  if (error) {
+    console.error("consumeAddonCredit rpc failed", error);
+    return false;
+  }
+  return data === true;
 }
 
 async function restoreAddonCredit(svc: ReturnType<typeof createClient>, userId: string): Promise<void> {
-  const { data } = await svc
-    .from("quantum_audit_credits")
-    .select("execution_credits")
-    .eq("user_id", userId)
-    .maybeSingle();
-  const current = (data as any)?.execution_credits ?? 0;
-  await svc.from("quantum_audit_credits").upsert({ user_id: userId, execution_credits: current + 1 });
+  // Atomic increment via upsert with ON CONFLICT inside SECURITY DEFINER function.
+  const { error } = await svc.rpc("restore_quantum_addon_credit_atomic", { _user_id: userId });
+  if (error) console.error("restoreAddonCredit rpc failed", error);
 }
 
 interface Entitlement {

@@ -7,6 +7,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ALLOWED_RETURN_ORIGINS = [
+  "https://phaosai.com",
+  "https://www.phaosai.com",
+  "https://phaos-visionary-site.lovable.app",
+  "https://id-preview--33d50209-9802-41ab-ac95-cc89b03746b2.lovable.app",
+  "http://localhost",
+];
+
+function isAllowedReturnUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const origin = `${u.protocol}//${u.host}`;
+    return ALLOWED_RETURN_ORIGINS.some((p) => origin === p || origin.startsWith(p));
+  } catch {
+    return false;
+  }
+}
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -36,6 +54,11 @@ Deno.serve(async (req) => {
     };
     if (environment !== "sandbox" && environment !== "live") {
       return new Response(JSON.stringify({ error: "Invalid environment" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (returnUrl && !isAllowedReturnUrl(returnUrl)) {
+      return new Response(JSON.stringify({ error: "returnUrl not allowed" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
