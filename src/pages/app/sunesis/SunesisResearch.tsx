@@ -205,6 +205,30 @@ export default function SunesisResearch() {
       const final = (data?.results ?? []) as PciResult[];
       setResults(final);
       setEmptyReason(data?.empty_reason ?? null);
+
+      // Auto-save the search so the user can revisit it later.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && final.length > 0) {
+          const label = `${selectedClasses.slice(0, 2).join(", ")}${selectedClasses.length > 2 ? "…" : ""} · ${selectedPlatforms.length} platform${selectedPlatforms.length === 1 ? "" : "s"} · ${new Date().toLocaleDateString()}`;
+          await supabase.from("sunesis_saved_searches").insert({
+            user_id: user.id,
+            label,
+            inputs: {
+              asset_classes: selectedClasses,
+              platforms: selectedPlatforms,
+              pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
+              pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
+              quantum_enabled: quantumActive,
+            },
+            results: final,
+            source: "manual",
+          });
+          setSavedSearchKey((k) => k + 1);
+        }
+      } catch (saveErr) {
+        console.warn("save search failed", saveErr);
+      }
     } catch (e) {
       console.error("sunesis-live-research failed", e);
       setResults([]);
