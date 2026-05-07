@@ -200,8 +200,7 @@ export default function SunesisResearch() {
         }
         throw new Error(detail);
       }
-      let final = (data?.results ?? []) as Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>;
-      if (tierMode === "elite") final = final.slice(0, 10);
+      const final = (data?.results ?? []) as PciResult[];
       setResults(final);
       setEmptyReason(data?.empty_reason ?? null);
     } catch (e) {
