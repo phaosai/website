@@ -55,11 +55,13 @@ const StyleTile = () => {
           <div className="max-w-2xl">
             <FadeIn delay={0.1}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
-                <span className="text-gradient-purple">AI-Powered</span> Voice &
+                <span className="text-gradient-purple">AI-Powered</span> Voice,
                 <br />
                 Agentic Workflow
                 <br />
-                Automation
+                Automation and
+                <br />
+                Quantum Research
               </h1>
             </FadeIn>
 
