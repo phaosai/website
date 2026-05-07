@@ -55,8 +55,8 @@ const PhaosKyrios = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
-        title="Phaos Kyrios — Governed Financial Action"
-        description="Phaos Kyrios turns research signals into structured, reviewable, accountable workflows with human oversight at every critical step. $299/month."
+        title="Phaos Research — Governed Financial Action"
+        description="Phaos Research turns research signals into structured, reviewable, accountable workflows with human oversight at every critical step. $299/month."
         canonical="/one/kyrios"
       />
       <Navigation />
@@ -66,7 +66,7 @@ const PhaosKyrios = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Kyrios</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Research</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
@@ -74,7 +74,7 @@ const PhaosKyrios = () => {
             <span className="text-gradient-purple">From Signal to Stewardship</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
-            Phaos Kyrios turns research signals into structured, reviewable, accountable workflows with human oversight at every critical step.
+            Phaos Research turns research signals into structured, reviewable, accountable workflows with human oversight at every critical step.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -88,7 +88,7 @@ const PhaosKyrios = () => {
               to="/auth?mode=signup&plan=phaos_one_monthly"
               className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
             >
-              Get everything with Phaos ONE — $599/month
+              Get everything with Phaos Research — $599/month
             </Link>
           </div>
         </div>
@@ -223,7 +223,7 @@ const PhaosKyrios = () => {
             </div>
             <div className="p-8 rounded-xl border border-primary/40 bg-primary/5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos ONE</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos Research</span>
                 <FeatureStatusBadge status="LIVE" />
               </div>
               <p className="text-4xl font-bold mb-1">$599<span className="text-base font-normal text-muted-foreground">/month</span></p>
@@ -237,7 +237,7 @@ const PhaosKyrios = () => {
                 to="/auth?mode=signup&plan=phaos_one_monthly"
                 className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
               >
-                Get everything with Phaos ONE
+                Get everything with Phaos Research
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -249,7 +249,7 @@ const PhaosKyrios = () => {
       <section className="py-12 px-6 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs leading-relaxed text-muted-foreground text-center">
-            Phaos Kyrios is a workflow governance and publishing tool. It does not execute trades or act as a financial advisor.
+            Phaos Research is a workflow governance and publishing tool. It does not execute trades or act as a financial advisor.
           </p>
         </div>
       </section>

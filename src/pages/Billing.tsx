@@ -12,7 +12,7 @@ const PRODUCT_NAMES: Record<string, string> = {
   sunesis_monthly: "Phaos Sunesis",
   aion_monthly: "Phaos Pro",
   kyrios_monthly: "Phaos Elite",
-  phaos_one_monthly: "Phaos ONE",
+  phaos_one_monthly: "Phaos Research",
   pantheon_monthly: "Pantheon",
   truth_memo_single_price: "Single Truth Memo",
   weekly_conviction_pack_price: "Weekly Conviction Pack",

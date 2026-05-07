@@ -12,7 +12,7 @@ interface Props {
 
 const OnePillarPage = ({ pillar, tagline, description }: Props) => {
   const isAction = pillar === "Run Simulation";
-  const title = isAction ? `Run Simulation · Phaos ONE` : `Phaos ${pillar}`;
+  const title = isAction ? `Run Simulation · Phaos Research` : `Phaos ${pillar}`;
 
   return (
     <>
@@ -25,7 +25,7 @@ const OnePillarPage = ({ pillar, tagline, description }: Props) => {
       <main className="min-h-screen bg-background pt-28 pb-24">
         <div className="max-w-5xl mx-auto px-6 lg:px-10">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
-            Phaos ONE
+            Phaos Research
           </p>
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
             {title}

@@ -7,7 +7,7 @@ import {
 } from "@/components/phaos";
 
 /**
- * Additive homepage sections introducing Phaos ONE and the financial
+ * Additive homepage sections introducing Phaos Research and the financial
  * intelligence ecosystem. Renders BELOW the existing homepage content —
  * the original sections are untouched.
  */
