@@ -1057,19 +1057,38 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
   const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
   const learnedDims = new Set(dimensionsAfterPasses(maxPasses));
   const [year, setYear] = useState<number>(VALIDATION_YEARS[0]);
-  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar">(null);
+  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-prices">(null);
 
   async function ingest(kind: "prices" | "gdelt" | "edgar") {
     setBusy(kind);
     try {
       const { data, error } = await supabase.functions.invoke(`foundry-ingest-${kind}`, { body: { year } });
       if (error) throw error;
+      const writtenCount = (data?.written ?? []).length;
+      const failedCount = (data?.failed ?? []).length;
       toast({
         title: `✓ Ingested ${kind} for ${year}`,
-        description: `Wrote ${(data?.written ?? []).length} corpus rows. ${data?.failed?.length ? `Failed: ${data.failed.length}.` : ""}`.trim(),
+        description: `Wrote ${writtenCount} corpus rows.${failedCount ? ` Failed: ${failedCount} (${(data.failed ?? []).slice(0, 2).map((f: { id?: string; err?: string }) => f.id ?? f.err).join("; ")}…)` : ""}`,
       });
     } catch (e) {
-      toast({ title: `Ingest ${kind} failed`, description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+      const err = e as { message?: string; details?: string };
+      toast({ title: `Ingest ${kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  }
+
+  async function ingestAllYears() {
+    setBusy("all-prices");
+    const years = [...Array.from({ length: 5 }, (_, i) => 2006 + i), ...VALIDATION_YEARS];
+    try {
+      const { data, error } = await supabase.functions.invoke("foundry-ingest-prices", { body: { years } });
+      if (error) throw error;
+      toast({
+        title: `✓ Backfilled prices · ${years.length} years`,
+        description: `Wrote ${data?.written_count ?? 0} corpus rows. Failed: ${data?.failed_count ?? 0}. Reload the page to refresh real OHLCV anchors.`,
+      });
+    } catch (e) {
+      const err = e as { message?: string };
+      toast({ title: "Backfill failed", description: err?.message ?? String(e), variant: "destructive" });
     } finally { setBusy(null); }
   }
 
@@ -1100,6 +1119,10 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
           </Button>
           <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("edgar")}>
             {busy === "edgar" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest EDGAR
+          </Button>
+          <Button size="sm" disabled={busy !== null} onClick={ingestAllYears} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
+            {busy === "all-prices" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
+            Ingest all years (prices)
           </Button>
         </div>
       </header>
