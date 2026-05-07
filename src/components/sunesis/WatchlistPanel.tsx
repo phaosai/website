@@ -288,18 +288,49 @@ export const WatchlistPanel = ({ refreshKey, fullPage = false }: Props) => {
         </div>
       </div>
 
-      {/* Hero combined WLH-ROI */}
-      <div className="rounded-xl border border-border bg-background/40 p-6 text-center">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Combined WLH-ROI · all groups</p>
-        <div className={`text-6xl font-bold tabular-nums ${colorFor(aggregateRoi)}`}>
-          {rows.length === 0 ? "—" : fmtPct(aggregateRoi)}
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {rows.length === 0
-            ? "Add results to your watchlist to begin tracking."
-            : `Across ${rows.length} watched instrument${rows.length === 1 ? "" : "s"} in ${groups.length} group${groups.length === 1 ? "" : "s"}.`}
-        </p>
-      </div>
+      {/* Hero combined stats — WLH-ROI on the far left, supporting metrics fill the row */}
+      {(() => {
+        const n = rows.length;
+        const wins = rows.filter((r) => itemRoi(r) > 0).length;
+        const losses = rows.filter((r) => itemRoi(r) < 0).length;
+        const winRate = n === 0 ? 0 : (wins / n) * 100;
+        const best = n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) >= itemRoi(b) ? a : b));
+        const worst = n === 0 ? null : rows.reduce((a, b) => (itemRoi(a) <= itemRoi(b) ? a : b));
+        const avgPciNow = n === 0 ? 0 : rows.reduce((s, r) => s + (r.last_pci ?? r.pci_at_add), 0) / n;
+        const avgPciDelta = n === 0 ? 0 : rows.reduce((s, r) => s + ((r.last_pci ?? r.pci_at_add) - r.pci_at_add), 0) / n;
+        const totalNotional = rows.reduce((s, r) => s + Number(r.last_price ?? r.price_at_add ?? 0), 0);
+        const oldestDays = n === 0 ? 0 : Math.max(...rows.map((r) => Math.floor((Date.now() - new Date(r.added_at).getTime()) / (1000 * 60 * 60 * 24))));
+
+        const Stat = ({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) => (
+          <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+            <p className={`mt-1 text-lg font-bold tabular-nums ${tone ?? "text-foreground"}`}>{value}</p>
+            {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+          </div>
+        );
+
+        return (
+          <div className="rounded-xl border border-border bg-background/40 p-5 grid gap-4 md:grid-cols-12 items-stretch">
+            <div className="md:col-span-4 flex flex-col justify-center rounded-lg border border-border/60 bg-background/60 p-5">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Combined WLH-ROI · all groups</p>
+              <div className={`text-5xl md:text-6xl font-bold tabular-nums ${colorFor(aggregateRoi)}`}>
+                {n === 0 ? "—" : fmtPct(aggregateRoi)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {n === 0 ? "Add results to begin tracking." : `${n} instrument${n === 1 ? "" : "s"} across ${groups.length} group${groups.length === 1 ? "" : "s"}.`}
+              </p>
+            </div>
+            <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Stat label="Win rate" value={n === 0 ? "—" : `${winRate.toFixed(0)}%`} sub={`${wins}W · ${losses}L`} tone={winRate >= 50 ? "text-pci-go" : winRate > 0 ? "text-pci-warning" : "text-foreground"} />
+              <Stat label="Best performer" value={best ? best.ticker : "—"} sub={best ? fmtPct(itemRoi(best)) : undefined} tone="text-pci-go" />
+              <Stat label="Worst drawdown" value={worst ? worst.ticker : "—"} sub={worst ? fmtPct(itemRoi(worst)) : undefined} tone="text-pci-no-go" />
+              <Stat label="Avg PCI (now)" value={n === 0 ? "—" : avgPciNow.toFixed(0)} sub={n === 0 ? undefined : `${avgPciDelta >= 0 ? "+" : ""}${avgPciDelta.toFixed(1)} since add`} />
+              <Stat label="Notional tracked" value={n === 0 ? "—" : `$${totalNotional.toFixed(2)}`} sub={`${n} symbol${n === 1 ? "" : "s"}`} />
+              <Stat label="Oldest hold" value={n === 0 ? "—" : `${oldestDays}d`} sub="since first add" />
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="space-y-3">
         {groups.map(renderGroup)}
