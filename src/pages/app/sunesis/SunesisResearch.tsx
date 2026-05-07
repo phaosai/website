@@ -120,6 +120,8 @@ export default function SunesisResearch() {
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [quantumManual, setQuantumManual] = useState(false);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
+  const [emptyReason, setEmptyReason] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -164,6 +166,8 @@ export default function SunesisResearch() {
     if (!canRun) return;
     setRunning(true);
     setResults(null);
+    setEmptyReason(null);
+    setErrorMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
         body: {
@@ -174,13 +178,23 @@ export default function SunesisResearch() {
           quantum_enabled: quantumActive,
         },
       });
-      if (error) throw error;
+      if (error) {
+        const ctx = (error as { context?: unknown }).context;
+        let detail = error.message;
+        if (ctx instanceof Response) {
+          const body = await ctx.clone().json().catch(() => null);
+          if (body?.error) detail = body.error + (body.detail ? ` — ${body.detail}` : "");
+        }
+        throw new Error(detail);
+      }
       let final = (data?.results ?? []) as Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>;
       if (tierMode === "elite") final = final.slice(0, 10);
       setResults(final);
+      setEmptyReason(data?.empty_reason ?? null);
     } catch (e) {
       console.error("sunesis-live-research failed", e);
       setResults([]);
+      setErrorMsg(e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
     }
