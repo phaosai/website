@@ -237,15 +237,23 @@ export default function SunesisResearch() {
       toast({ title: "Could not add", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
     }
   };
+
+  const summary = useMemo(() => {
     if (!results || results.length === 0) return null;
     const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
     return { avg, top: results[0], phaosChoice: results.filter((r) => r.pci >= 96).length, go: results.filter((r) => r.pci >= 90 && r.pci < 96).length };
   }, [results]);
 
+  const platformNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of platforms) m[p.slug] = p.name;
+    return m;
+  }, [platforms]);
+
   return (
     <PageShell
       title="Sunesis · Research"
-      description="The Sunesis brain returns the top 10 instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade."
+      description="The Sunesis brain ranks instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade. Click any result for the full PCI rationale."
       minTier="sunesis"
     >
       <SunesisModuleNav />
