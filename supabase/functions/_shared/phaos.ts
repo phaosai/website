@@ -37,16 +37,6 @@ export function requireServiceRole(req: Request): Response | null {
   return null;
 }
 
-// Allow only service-role calls (used by internal warmup, cron, and inter-function calls).
-export function requireServiceRole(req: Request): Response | null {
-  const auth = req.headers.get("Authorization") ?? "";
-  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-  if (!expected || auth !== expected) {
-    return json({ error: "Forbidden" }, 403);
-  }
-  return null;
-}
-
 // Require either an authenticated end-user OR the service role (for inter-function calls).
 // Returns null when allowed, or a Response when blocked.
 export async function requireUserOrService(req: Request): Promise<Response | null> {
