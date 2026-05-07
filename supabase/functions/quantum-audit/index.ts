@@ -575,14 +575,32 @@ Deno.serve(async (req) => {
           usedAddon,
         });
       } catch (err) {
-        // Rollback: restore credit if used, mark failed
+        // Graceful fallback: IBM hardware path failed (bad creds, no minutes,
+        // network, etc.). Don't block the Foundry pipeline — record the run
+        // on the internal simulator so the workflow keeps moving and the
+        // Quantum Reports table shows an honest "simulator" badge.
         const detail = err instanceof Error ? err.message : "IBM submission failed";
-        if (usedAddon) await restoreAddonCredit(svc, user.id);
+        console.warn("quantum-audit · IBM submit failed, falling back to simulator:", detail);
+        const simWorkloadId = `qa_sim_${crypto.randomUUID()}`;
+        const simBackend = "phaos_internal_simulator";
         await svc
           .from("quantum_audits")
-          .update({ status: "failed", error_message: detail.slice(0, 1000) })
+          .update({
+            ibm_workload_id: simWorkloadId,
+            ibm_backend: simBackend,
+            status: "queued",
+            error_message: `Fell back to simulator: ${detail}`.slice(0, 1000),
+          })
           .eq("id", inserted.id);
-        return json(502, { error: detail });
+        return json(200, {
+          auditId: inserted.id,
+          workloadId: simWorkloadId,
+          backend: simBackend,
+          status: "queued",
+          usedAddon,
+          fallback: true,
+          fallbackReason: detail,
+        });
       }
     }
 
