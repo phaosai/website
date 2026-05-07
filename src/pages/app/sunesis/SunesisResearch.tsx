@@ -503,67 +503,123 @@ export default function SunesisResearch() {
               {emptyReason ?? "No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes."}
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-x-auto max-h-[70vh] overflow-y-auto">
-              <table className="w-full text-sm min-w-[720px]">
-                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground sticky top-0">
-                  <tr>
-                    <th className="text-left p-3 w-10">#</th>
-                    <th className="text-left p-3">Ticker</th>
-                    <th className="text-left p-3">Name</th>
-                    <th className="text-left p-3">Class</th>
-                    <th className="text-left p-3">PCI</th>
-                    <th className="text-left p-3">Tier</th>
-                    <th className="text-left p-3">Top signal</th>
-                    <th className="text-right p-3">Watch</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((r, idx) => {
-                    const t = TIER(r.pci);
-                    const watched = watchlistTickers.has(r.ticker);
-                    return (
-                      <tr
-                        key={r.ticker}
-                        className="border-t border-border hover:bg-accent/30 cursor-pointer"
-                        onClick={() => setActiveResult(r)}
-                      >
-                        <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-3 font-mono font-semibold text-purple-deep">{r.ticker}</td>
-                        <td className="p-3">{r.name}</td>
-                        <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-base font-bold tabular-nums ${t.text}`}>{r.pci}</span>
-                            <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
-                              <div className={`h-full ${t.bar}`} style={{ width: `${r.pci}%` }} />
+            <>
+              {bulkSelected.size > 0 && (
+                <div className="sticky top-0 z-10 rounded-xl border border-primary/40 bg-primary/10 p-3 flex items-center justify-between flex-wrap gap-3">
+                  <p className="text-sm font-semibold">
+                    {bulkSelected.size} selected · bulk add to watchlist
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={bulkGroupId}
+                      onChange={(e) => setBulkGroupId(e.target.value)}
+                      className="rounded-md border border-border bg-background/80 px-2 py-1 text-xs"
+                    >
+                      {groupChoices.length === 0 && <option value="">Default group</option>}
+                      {groupChoices.map((g) => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setBulkSelected(new Set())}
+                      className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card"
+                    >Clear</button>
+                    <button
+                      type="button"
+                      onClick={bulkAddSelected}
+                      disabled={bulkBusy}
+                      className="rounded-full bg-gradient-purple text-primary-foreground px-3 py-1 text-xs font-semibold glow-purple hover:opacity-90 disabled:opacity-50"
+                    >{bulkBusy ? "Adding…" : `Add ${bulkSelected.size}`}</button>
+                  </div>
+                </div>
+              )}
+              <div className="rounded-xl border border-border overflow-x-auto max-h-[70vh] overflow-y-auto">
+                <table className="w-full text-sm min-w-[760px]">
+                  <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground sticky top-0">
+                    <tr>
+                      <th className="text-left p-3 w-8">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all"
+                          checked={results.length > 0 && results.every((r) => bulkSelected.has(r.ticker) || watchlistTickers.has(r.ticker))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setBulkSelected(new Set(results.filter((r) => !watchlistTickers.has(r.ticker)).map((r) => r.ticker)));
+                            } else {
+                              setBulkSelected(new Set());
+                            }
+                          }}
+                        />
+                      </th>
+                      <th className="text-left p-3 w-10">#</th>
+                      <th className="text-left p-3">Ticker</th>
+                      <th className="text-left p-3">Name</th>
+                      <th className="text-left p-3">Class</th>
+                      <th className="text-left p-3">PCI</th>
+                      <th className="text-left p-3">Tier</th>
+                      <th className="text-left p-3">Top signal</th>
+                      <th className="text-right p-3">Watch</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, idx) => {
+                      const t = TIER(r.pci);
+                      const watched = watchlistTickers.has(r.ticker);
+                      const checked = bulkSelected.has(r.ticker);
+                      return (
+                        <tr
+                          key={r.ticker}
+                          className="border-t border-border hover:bg-accent/30 cursor-pointer"
+                          onClick={() => setActiveResult(r)}
+                        >
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${r.ticker}`}
+                              checked={checked}
+                              disabled={watched}
+                              onChange={() => toggleBulk(r.ticker)}
+                            />
+                          </td>
+                          <td className="p-3 text-muted-foreground">{idx + 1}</td>
+                          <td className="p-3 font-mono font-semibold text-purple-deep">{r.ticker}</td>
+                          <td className="p-3">{r.name}</td>
+                          <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-base font-bold tabular-nums ${t.text}`}>{r.pci}</span>
+                              <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                                <div className={`h-full ${t.bar}`} style={{ width: `${r.pci}%` }} />
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${t.border} ${t.bg} ${t.text}`}>
-                            {t.label}
-                          </span>
-                        </td>
-                        <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
-                        <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => addToWatchlist(r)}
-                            disabled={watched}
-                            className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
-                              watched ? "text-pci-go cursor-default" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            }`}
-                            aria-label={watched ? "In watchlist" : "Add to watchlist"}
-                          >
-                            {watched ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${t.border} ${t.bg} ${t.text}`}>
+                              {t.label}
+                            </span>
+                          </td>
+                          <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
+                          <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => addToWatchlist(r)}
+                              disabled={watched}
+                              className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
+                                watched ? "text-pci-go cursor-default" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              }`}
+                              aria-label={watched ? "In watchlist" : "Add to watchlist"}
+                            >
+                              {watched ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </>
       )}
