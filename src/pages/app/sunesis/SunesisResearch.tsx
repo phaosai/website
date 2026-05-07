@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Sparkles, Check, Atom } from "lucide-react";
+import { Sparkles, Check, Atom, Bookmark, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { SunesisModuleNav } from "@/components/phaos";
@@ -10,6 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
+import { PciBreakdownModal, type PciResult } from "@/components/sunesis/PciBreakdownModal";
+import { WatchlistPanel } from "@/components/sunesis/WatchlistPanel";
+import { toast } from "@/hooks/use-toast";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
