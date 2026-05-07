@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") ?? "";
   const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
   if (auth !== expected) return json({ error: "Forbidden" }, 403);
-  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+
 
   const svc = serviceClient();
   const { data: tickersRow } = await svc
