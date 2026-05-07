@@ -57,6 +57,11 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (returnUrl && !isAllowedReturnUrl(returnUrl)) {
+      return new Response(JSON.stringify({ error: "returnUrl not allowed" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: sub } = await supabase
       .from("user_subscriptions")
