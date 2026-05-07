@@ -67,7 +67,7 @@ const StyleTile = () => {
 
             <FadeIn delay={0.2}>
               <p className="text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed">
-                Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation.
+                Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation. Strategically leveraging the power of quantum computing
               </p>
             </FadeIn>
 
