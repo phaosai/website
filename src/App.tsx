@@ -66,6 +66,7 @@ const SunesisWorkflow = lazy(() => import("./pages/app/sunesis/SunesisWorkflow.t
 const SunesisCompliance = lazy(() => import("./pages/app/sunesis/SunesisCompliance.tsx"));
 const SunesisLedger = lazy(() => import("./pages/app/sunesis/SunesisLedger.tsx"));
 const SunesisWatchlists = lazy(() => import("./pages/app/sunesis/SunesisWatchlists.tsx"));
+const SunesisLeaderboard = lazy(() => import("./pages/app/sunesis/SunesisLeaderboard.tsx"));
 const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
 const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
 const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
@@ -191,6 +192,7 @@ const AppInner = () => {
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<SunesisWatchlists />} />
+              <Route path="leaderboard" element={<SunesisLeaderboard />} />
                <Route path="simulations" element={<AionSimulate />} />
                <Route path="security" element={<AionSecurity />} />
                <Route path="audit" element={<AionAudit />} />

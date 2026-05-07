@@ -46,24 +46,38 @@ export default function SunesisLeaderboard() {
   const [windowKey, setWindowKey] = useState<WindowKey>("current_year");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string>("total_return_percentage");
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    supabase.functions.invoke("sunesis-leaderboard", { body: null, method: "GET" as any })
-      .then(async () => {
-        // invoke doesn't pass query params; do raw fetch instead
+    setError(null);
+    (async () => {
+      try {
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sunesis-leaderboard?category=${category}&window=${windowKey}`;
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(url, { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} });
+        const res = await fetch(url, {
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+        if (!res.ok) throw new Error(`Request failed (${res.status})`);
         const json = await res.json();
         if (cancelled) return;
+        if (json.error) throw new Error(json.error);
         setRows(json.rows ?? []);
         setSortKey(json.sort_key ?? "total_return_percentage");
-      })
-      .catch(() => { if (!cancelled) setRows([]); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      } catch (e: any) {
+        if (!cancelled) {
+          setRows([]);
+          setError(e?.message ?? "Failed to load leaderboard.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, [category, windowKey]);
 
@@ -127,7 +141,10 @@ export default function SunesisLeaderboard() {
               {loading && (
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
               )}
-              {!loading && rows.length === 0 && (
+              {!loading && error && (
+                <tr><td colSpan={7} className="p-6 text-center text-pci-no-go">Couldn't load leaderboard: {error}</td></tr>
+              )}
+              {!loading && !error && rows.length === 0 && (
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No public watchlists in this category yet.</td></tr>
               )}
               {!loading && rows.map((r, idx) => (
