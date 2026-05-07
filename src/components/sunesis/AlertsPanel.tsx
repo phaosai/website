@@ -10,7 +10,7 @@ type TierMode = "elite" | "pro" | "sovereign";
 interface Props { tierMode: TierMode }
 
 interface Schedule {
-  channels: { email: boolean; sms: boolean; push: boolean };
+  channels: { email: boolean; sms: boolean; save: boolean };
   frequency: "daily" | "weekly" | "custom";
   custom_slots: string[];
   quantum_enabled: boolean;
@@ -19,7 +19,7 @@ interface Schedule {
 }
 
 const DEFAULTS: Schedule = {
-  channels: { email: true, sms: false, push: false },
+  channels: { email: false, sms: false, save: false },
   frequency: "daily",
   custom_slots: [],
   quantum_enabled: false,
@@ -38,8 +38,14 @@ export function AlertsPanel({ tierMode }: Props) {
       if (!user) { setLoaded(true); return; }
       const { data } = await supabase.from("alert_schedules").select("*").eq("user_id", user.id).maybeSingle();
       if (data) {
+        const ch = (data.channels as Record<string, boolean>) ?? {};
         setS({
-          channels: data.channels as Schedule["channels"],
+          channels: {
+            email: !!ch.email,
+            sms: !!ch.sms,
+            // Migrate legacy push → save
+            save: !!(ch.save ?? ch.push),
+          },
           frequency: data.frequency as Schedule["frequency"],
           custom_slots: (data.custom_slots as string[]) ?? [],
           quantum_enabled: data.quantum_enabled,
@@ -110,8 +116,8 @@ export function AlertsPanel({ tierMode }: Props) {
             SMS
           </label>
           <label className="inline-flex items-center gap-2">
-            <Switch checked={s.channels.push} onCheckedChange={(v) => setS({ ...s, channels: { ...s.channels, push: v } })} />
-            Push
+            <Switch checked={s.channels.save} onCheckedChange={(v) => setS({ ...s, channels: { ...s.channels, save: v } })} />
+            Save
           </label>
         </div>
         {s.channels.sms && (

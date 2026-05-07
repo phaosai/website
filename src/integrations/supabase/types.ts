@@ -1457,11 +1457,42 @@ export type Database = {
           },
         ]
       }
+      sunesis_saved_searches: {
+        Row: {
+          created_at: string
+          id: string
+          inputs: Json
+          label: string
+          results: Json
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          label: string
+          results?: Json
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          label?: string
+          results?: Json
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sunesis_watchlist: {
         Row: {
           added_at: string
           asset_class: string
           created_at: string
+          group_id: string | null
           id: string
           last_pci: number | null
           last_price: number | null
@@ -1477,6 +1508,7 @@ export type Database = {
           added_at?: string
           asset_class: string
           created_at?: string
+          group_id?: string | null
           id?: string
           last_pci?: number | null
           last_price?: number | null
@@ -1492,6 +1524,7 @@ export type Database = {
           added_at?: string
           asset_class?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           last_pci?: number | null
           last_price?: number | null
@@ -1500,6 +1533,30 @@ export type Database = {
           pci_at_add?: number
           price_at_add?: number
           ticker?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sunesis_watchlist_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           updated_at?: string
           user_id?: string
         }
@@ -1593,6 +1650,7 @@ export type Database = {
         Row: {
           asset_classes: Json
           created_at: string
+          display_order: number
           name: string
           region: string | null
           retail_access: boolean
@@ -1601,6 +1659,7 @@ export type Database = {
         Insert: {
           asset_classes?: Json
           created_at?: string
+          display_order?: number
           name: string
           region?: string | null
           retail_access?: boolean
@@ -1609,6 +1668,7 @@ export type Database = {
         Update: {
           asset_classes?: Json
           created_at?: string
+          display_order?: number
           name?: string
           region?: string | null
           retail_access?: boolean

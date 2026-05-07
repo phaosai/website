@@ -23,7 +23,7 @@ export function SunesisModuleNav() {
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80 px-1">
         <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
-        Sunesis · Research Operating System
+        Sunesis · Research Operating System SQC v1
       </div>
       <nav className="rounded-xl border border-border bg-card/40 backdrop-blur p-1.5 flex flex-wrap gap-1">
         {MODULES.map((m) => (

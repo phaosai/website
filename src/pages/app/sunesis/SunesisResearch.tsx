@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Check, Atom, Bookmark, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
-import { SunesisModuleNav } from "@/components/phaos";
+// SunesisModuleNav intentionally not rendered on the Research page.
 import type { AssetClass } from "@/data/simulationCandidates";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Slider } from "@/components/ui/slider";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
 import { PciBreakdownModal, type PciResult } from "@/components/sunesis/PciBreakdownModal";
 import { WatchlistPanel } from "@/components/sunesis/WatchlistPanel";
+import { SavedSearchesPanel, type SavedSearch } from "@/components/sunesis/SavedSearchesPanel";
 import { toast } from "@/hooks/use-toast";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
@@ -113,8 +114,8 @@ export default function SunesisResearch() {
     : ent.has("aion") ? "pro"
     : "elite";
 
-  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["robinhood"]);
   const [platforms, setPlatforms] = useState<Array<PlatformMeta & { assetClasses: string[] }>>(
     FALLBACK.map((p) => ({ ...p, assetClasses: [] }))
   );
@@ -127,6 +128,7 @@ export default function SunesisResearch() {
   const [activeResult, setActiveResult] = useState<PciResult | null>(null);
   const [watchlistTickers, setWatchlistTickers] = useState<Set<string>>(new Set());
   const [watchlistRefreshKey, setWatchlistRefreshKey] = useState(0);
+  const [savedSearchKey, setSavedSearchKey] = useState(0);
 
   // Hydrate the user's existing watchlist tickers so the UI reflects state.
   useEffect(() => {
@@ -138,7 +140,7 @@ export default function SunesisResearch() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes").order("name");
+      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes,display_order").order("display_order").order("name");
       if (data && data.length) {
         setPlatforms(data.map((d) => ({
           slug: d.slug,
@@ -203,6 +205,30 @@ export default function SunesisResearch() {
       const final = (data?.results ?? []) as PciResult[];
       setResults(final);
       setEmptyReason(data?.empty_reason ?? null);
+
+      // Auto-save the search so the user can revisit it later.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && final.length > 0) {
+          const label = `${selectedClasses.slice(0, 2).join(", ")}${selectedClasses.length > 2 ? "…" : ""} · ${selectedPlatforms.length} platform${selectedPlatforms.length === 1 ? "" : "s"} · ${new Date().toLocaleDateString()}`;
+          await supabase.from("sunesis_saved_searches").insert([{
+            user_id: user.id,
+            label,
+            inputs: {
+              asset_classes: selectedClasses,
+              platforms: selectedPlatforms,
+              pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
+              pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
+              quantum_enabled: quantumActive,
+            },
+            results: JSON.parse(JSON.stringify(final)),
+            source: "manual",
+          }] as never);
+          setSavedSearchKey((k) => k + 1);
+        }
+      } catch (saveErr) {
+        console.warn("save search failed", saveErr);
+      }
     } catch (e) {
       console.error("sunesis-live-research failed", e);
       setResults([]);
@@ -256,7 +282,10 @@ export default function SunesisResearch() {
       description="The Sunesis brain ranks instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade. Click any result for the full PCI rationale."
       minTier="sunesis"
     >
-      <SunesisModuleNav />
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80 px-1">
+        <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
+        Sunesis · Research Operating System SQC v1
+      </div>
 
       {/* Step 1 — Asset classes */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
@@ -497,6 +526,21 @@ export default function SunesisResearch() {
       <WatchlistPanel refreshKey={watchlistRefreshKey} />
 
       <AlertsPanel tierMode={tierMode} />
+
+      <SavedSearchesPanel
+        refreshKey={savedSearchKey}
+        onLoad={(s: SavedSearch) => {
+          if (s.inputs?.asset_classes) setSelectedClasses(s.inputs.asset_classes);
+          if (s.inputs?.platforms) setSelectedPlatforms(s.inputs.platforms);
+          if (typeof s.inputs?.pci_min === "number" && typeof s.inputs?.pci_max === "number") {
+            setPciRange([s.inputs.pci_min, s.inputs.pci_max]);
+          }
+          setResults(s.results ?? []);
+          setEmptyReason(null);
+          setErrorMsg(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
 
       <Disclaimer>PCI is a research confidence framework. Not a prediction of returns.</Disclaimer>
     </PageShell>
