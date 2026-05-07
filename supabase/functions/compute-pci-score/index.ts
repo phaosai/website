@@ -42,6 +42,12 @@ Deno.serve(async (req) => {
     const t = ticker.toUpperCase();
     const authHeader = req.headers.get("Authorization")!;
 
+    // If org-scoped persistence is requested, verify caller is a member of that org.
+    if (organization_id) {
+      const { data: isMember, error: memberErr } = await auth.supa.rpc("is_org_member", { _org_id: organization_id });
+      if (memberErr || !isMember) return json({ error: "Forbidden: not a member of organization" }, 403);
+    }
+
     // Rate limit free-tier users to keep SEC EDGAR/XBRL traffic within polite caps.
     const paid = await isPaidUser(auth.userId);
     if (!paid) {
