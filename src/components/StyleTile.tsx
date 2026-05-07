@@ -61,7 +61,7 @@ const StyleTile = () => {
                 <br />
                 Automation and
                 <br />
-                Quantum Research
+                <span className="text-[85%] text-purple-light">Quantum Research</span>
               </h1>
             </FadeIn>
 

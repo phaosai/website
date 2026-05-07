@@ -26,7 +26,7 @@ const HomePhaosOneSections = () => {
             investors.
           </p>
           <p className="mt-4 text-base text-foreground/80 max-w-3xl leading-relaxed">
-            Phaos Phinance is the natural next step: the discipline we apply to operations —
+            Phaos Research is the natural next step: the discipline we apply to operations —
             transparency, governance, evidence — applied to the markets. Same brand, same
             standards, expanded surface area.
           </p>
@@ -35,7 +35,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              Explore Phaos Phinance →
+              Explore Research →
             </Link>
           </div>
         </div>
@@ -80,14 +80,14 @@ const HomePhaosOneSections = () => {
         </div>
       </section>
 
-      {/* SECTION C — Phaos Phinance Ecosystem */}
+      {/* SECTION C — Phaos Research Ecosystem */}
       <section className="py-24 border-t border-border/40">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
             Evidence-First Research. One Conviction Score. Complete Transparency.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            Phaos Phinance is built around Sunesis — filing-backed research and the Phaos
+            Phaos Research is built around Sunesis — filing-backed research and the Phaos
             Conviction Index — for serious investors.
           </p>
 
@@ -105,7 +105,7 @@ const HomePhaosOneSections = () => {
                 className="group rounded-xl border border-border bg-card/60 p-6 hover:bg-card transition-colors"
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                  Phaos Phinance
+                  Phaos Research
                 </p>
                 <h3 className="text-xl font-semibold tracking-tight text-foreground">
                   {p.name}
@@ -123,7 +123,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos Phinance
+              Explore Research
             </Link>
             <Link
               to="/one/run-simulation"
@@ -155,7 +155,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              See Live PCI Scores with Phaos Phinance →
+              See Live PCI Scores with Phaos Research →
             </Link>
           </div>
 
@@ -163,153 +163,6 @@ const HomePhaosOneSections = () => {
         </div>
       </section>
 
-      {/* SECTION E — Signal Coverage */}
-      <section className="py-24 border-t border-border/40">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Built on the Same Signal Categories Institutional Quant Funds Track
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            Phaos Sunesis monitors 60+ publicly accessible signal sources — the same
-            categories that Renaissance Technologies and Two Sigma built empires on, now
-            accessible without an institutional budget.
-          </p>
-
-          <div className="mt-10 grid gap-3 sm:grid-cols-2">
-            {[
-              { label: "Insider Activity" },
-              { label: "Government Contracts" },
-              { label: "Supply Chain" },
-              { label: "Macro Regime" },
-              { label: "Sentiment" },
-              { label: "Options Flow", roadmap: true },
-              { label: "Credit Spreads" },
-              { label: "Earnings Patterns" },
-              { label: "SEC Filings" },
-              { label: "XBRL Financials" },
-              { label: "Patent Velocity" },
-              { label: "Job Posting Trends" },
-              { label: "Technical Indicators" },
-              { label: "Volatility Signals" },
-              { label: "Yield Curve" },
-              { label: "Dark Pool Data", roadmap: true },
-            ].map((c) => (
-              <div
-                key={c.label}
-                className="flex items-center justify-between gap-3 rounded-md border border-border bg-card/50 px-4 py-3"
-              >
-                <span className="text-sm text-foreground/90">{c.label}</span>
-                {c.roadmap && <FeatureStatusBadge status="ROADMAP" />}
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-8 text-sm text-muted-foreground max-w-3xl leading-relaxed">
-            ROADMAP items reflect planned integrations. Current live sources: SEC EDGAR,
-            XBRL, USAspending.gov, Google Trends, Form 4 insider data, FRED macro data,
-            MarineTraffic, Baltic Dry Index, and more.
-          </p>
-        </div>
-      </section>
-
-      {/* SECTION F — Pricing Preview */}
-      <section className="py-24 border-t border-border/40 bg-card/20">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Start Free. Scale with Conviction.
-          </h2>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                tier: "Free",
-                price: "$0",
-                cadence: "",
-                desc: "Get oriented with the platform and explore methodology.",
-              },
-              {
-                tier: "Phaos Phinance",
-                price: "$599",
-                cadence: "/mo",
-                desc: "The evidence-first research environment powered by Sunesis.",
-                featured: true,
-              },
-              {
-                tier: "Pantheon",
-                price: "$999",
-                cadence: "/mo",
-                desc: "Institutional multi-seat bundle for teams.",
-              },
-            ].map((p) => (
-              <div
-                key={p.tier}
-                className={`rounded-xl border p-6 ${
-                  p.featured
-                    ? "border-primary/50 bg-card/80 glow-purple"
-                    : "border-border bg-card/60"
-                }`}
-              >
-                <h3 className="text-lg font-semibold tracking-tight text-foreground">
-                  {p.tier}
-                </h3>
-                <p className="mt-3">
-                  <span className="text-3xl font-semibold tabular-nums text-foreground">
-                    {p.price}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{p.cadence}</span>
-                </p>
-                <p className="mt-3 text-sm text-foreground/80 leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8">
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
-            >
-              See full pricing →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION G — Final CTA */}
-      <section className="py-28 border-t border-border/40">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 text-center">
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
-            The Picks and Shovels Approach to the AI Gold Rush — Before It's Obvious
-          </h2>
-          <p className="mt-5 text-lg text-muted-foreground max-w-3xl mx-auto">
-            From 60+ public signal sources to one conviction score. Built for investors who
-            want evidence, not opinions.
-          </p>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/one/sunesis"
-              className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
-            >
-              Explore Phaos Phinance
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex border border-border bg-card/60 text-foreground text-sm font-medium px-6 py-3 rounded-full hover:bg-card transition-colors"
-            >
-              Schedule a Call
-            </Link>
-          </div>
-
-          <div className="mt-6">
-            <Link
-              to="/one/run-simulation"
-              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
-            >
-              Run the Simulation
-            </Link>
-          </div>
-        </div>
-      </section>
     </>
   );
 };

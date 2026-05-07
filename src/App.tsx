@@ -46,6 +46,7 @@ const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
 const RunSimulation = lazy(() => import("./pages/RunSimulation.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
+const SignIn = lazy(() => import("./pages/SignIn.tsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
@@ -170,6 +171,7 @@ const AppInner = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/signin" element={<SignIn />} />
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/app" element={<AppLayout />}>

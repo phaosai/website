@@ -29,7 +29,7 @@ const PhaosOne = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos ONE — Unified Financial Intelligence Environment"
-        description="Phaos Phinance unifies Sunesis research and Run Simulation into a single environment. One subscription."
+        description="Phaos Research unifies Sunesis research and Run Simulation into a single environment. One subscription."
         canonical="/one"
       />
       <Navigation />
@@ -73,7 +73,7 @@ const PhaosOne = () => {
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-xs font-semibold tracking-[0.2em] uppercase text-purple-light mb-5">What Phaos ONE Is</p>
           <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light">
-            Phaos Phinance is the unified operating environment for Sunesis research and live simulation. One subscription. Top-10 PCI candidates filtered to your selected asset classes and brokers, with full audit trail and conviction intelligence.
+            Phaos Research is the unified operating environment for Sunesis research and live simulation. One subscription. Top-10 PCI candidates filtered to your selected asset classes and brokers, with full audit trail and conviction intelligence.
           </p>
         </div>
       </section>
@@ -211,7 +211,7 @@ const PhaosOne = () => {
               </div>
             ))}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/40 bg-muted/20">
-              <span className="text-foreground font-semibold">Sovereign unlocks every Phinance capability</span>
+              <span className="text-foreground font-semibold">Sovereign unlocks every Research capability</span>
               <span className="font-mono text-sm text-foreground opacity-70">All-inclusive</span>
             </div>
             <div className="flex items-center justify-between px-6 py-5 bg-purple-deep/10">
