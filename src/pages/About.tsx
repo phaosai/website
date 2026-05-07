@@ -425,7 +425,7 @@ const About = () => {
               intelligence environment that treats financial signals with the same precision
               and accountability found in the world's most advanced industrial workflows. By
               merging deep research (Sunesis) and live simulation into a single command
-              center (Phaos Phinance), we empower our
+              center (Phaos Research), we empower our
               users to move past the "guesswork" of the retail market and step into a new era
               of evidence-backed financial confidence.
             </p>
