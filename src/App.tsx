@@ -64,6 +64,7 @@ const SunesisLanguage = lazy(() => import("./pages/app/sunesis/SunesisLanguage.t
 const SunesisWorkflow = lazy(() => import("./pages/app/sunesis/SunesisWorkflow.tsx"));
 const SunesisCompliance = lazy(() => import("./pages/app/sunesis/SunesisCompliance.tsx"));
 const SunesisLedger = lazy(() => import("./pages/app/sunesis/SunesisLedger.tsx"));
+const SunesisWatchlists = lazy(() => import("./pages/app/sunesis/SunesisWatchlists.tsx"));
 const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
 const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
 const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
@@ -187,7 +188,7 @@ const AppInner = () => {
               <Route path="foundry" element={<FoundryAdmin />} />
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
-              <Route path="watchlists" element={<AppSection title="Watchlists" description="Track tickers and PCI signals." minTier="free" emptyState="Add your first ticker to start tracking PCI signals →" />} />
+              <Route path="watchlists" element={<SunesisWatchlists />} />
                <Route path="simulations" element={<AionSimulate />} />
                <Route path="security" element={<AionSecurity />} />
                <Route path="audit" element={<AionAudit />} />
