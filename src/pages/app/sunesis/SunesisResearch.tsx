@@ -527,6 +527,21 @@ export default function SunesisResearch() {
 
       <AlertsPanel tierMode={tierMode} />
 
+      <SavedSearchesPanel
+        refreshKey={savedSearchKey}
+        onLoad={(s: SavedSearch) => {
+          if (s.inputs?.asset_classes) setSelectedClasses(s.inputs.asset_classes);
+          if (s.inputs?.platforms) setSelectedPlatforms(s.inputs.platforms);
+          if (typeof s.inputs?.pci_min === "number" && typeof s.inputs?.pci_max === "number") {
+            setPciRange([s.inputs.pci_min, s.inputs.pci_max]);
+          }
+          setResults(s.results ?? []);
+          setEmptyReason(null);
+          setErrorMsg(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
+
       <Disclaimer>PCI is a research confidence framework. Not a prediction of returns.</Disclaimer>
     </PageShell>
   );
