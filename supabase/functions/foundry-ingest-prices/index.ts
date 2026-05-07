@@ -1,9 +1,7 @@
-// Foundry · price ingester
-// Pulls daily OHLCV per-ticker for a target year from Yahoo Finance and
-// daily closes for crypto from CoinGecko. Writes one row per (year,
-// dimension="price", source_id="yahoo:{TICKER}" | "coingecko:{coin}").
-//
-// Auth: admin only. Body: { year: number, tickers?: string[], coins?: string[] }.
+// Foundry · price ingester (Stooq + CoinGecko).
+// Pulls daily closes for each ticker for the target year. Stores the FULL
+// closes array in payload.closes so loadRealizedAnchors() can compute Q1/Q2/Q3
+// checkpoints. Stooq is free, public, and requires no API key.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
@@ -14,32 +12,59 @@ const corsHeaders = {
 
 const DEFAULT_TICKERS = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "JPM", "BAC", "XOM",
-  "SPY", "QQQ", "DIA", "IWM", "VTI", "TLT", "GLD", "SLV", "USO", "VIX",
+  "SPY", "QQQ", "DIA", "IWM", "VTI", "TLT", "GLD", "SLV", "USO",
+  // Indices/proxies for Foundry's ASSET_SAMPLES
+  "SPX", "NDX", "RUT", "DJI", "CVX", "JNJ", "UNH", "WMT", "PG",
+  "TIP", "LQD", "HYG", "MUB", "EMB",
 ];
 const DEFAULT_COINS = ["bitcoin", "ethereum", "solana", "binancecoin", "ripple"];
 
-async function fetchYahoo(ticker: string, year: number) {
-  const start = Math.floor(Date.UTC(year, 0, 1) / 1000);
-  const end = Math.floor(Date.UTC(year, 11, 31, 23, 59, 59) / 1000);
-  const url = `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${start}&period2=${end}&interval=1d&events=history`;
-  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0 (foundry@phaosai.com)" } });
-  if (!r.ok) throw new Error(`Yahoo ${ticker} ${year}: HTTP ${r.status}`);
+// Stooq uses lowercase tickers. US equities/ETFs need ".us" suffix.
+// Indices use ^prefix (e.g., ^spx). We map a few common ones.
+const STOOQ_OVERRIDES: Record<string, string> = {
+  SPX: "^spx", NDX: "^ndx", RUT: "^rut", DJI: "^dji", VIX: "^vix",
+};
+function stooqSymbol(ticker: string): string {
+  if (STOOQ_OVERRIDES[ticker]) return STOOQ_OVERRIDES[ticker];
+  return `${ticker.toLowerCase()}.us`;
+}
+
+async function fetchStooq(ticker: string, year: number) {
+  const sym = stooqSymbol(ticker);
+  const d1 = `${year}0101`;
+  const d2 = `${year}1231`;
+  const url = `https://stooq.com/q/d/l/?s=${sym}&d1=${d1}&d2=${d2}&i=d`;
+  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
+  if (!r.ok) throw new Error(`Stooq ${ticker} ${year}: HTTP ${r.status}`);
   const text = await r.text();
+  if (!text || text.startsWith("No data") || text.length < 50) {
+    throw new Error(`Stooq ${ticker} ${year}: no data`);
+  }
   const lines = text.trim().split("\n").slice(1);
-  const closes = lines.map((l) => {
+  const closes: number[] = [];
+  const dates: string[] = [];
+  for (const l of lines) {
     const c = l.split(",");
-    return { date: c[0], close: Number(c[4]) };
-  }).filter((d) => Number.isFinite(d.close));
-  if (closes.length === 0) throw new Error(`Yahoo ${ticker} ${year}: empty`);
-  const first = closes[0].close, last = closes[closes.length - 1].close;
+    const close = Number(c[4]);
+    if (Number.isFinite(close)) {
+      dates.push(c[0]);
+      closes.push(close);
+    }
+  }
+  if (closes.length < 5) throw new Error(`Stooq ${ticker} ${year}: too few rows (${closes.length})`);
+  const first = closes[0], last = closes[closes.length - 1];
   return {
     points: closes.length,
     first_close: first,
     last_close: last,
+    annual_return: (last - first) / first,
     annual_return_pct: Number((((last - first) / first) * 100).toFixed(2)),
-    high: Math.max(...closes.map((c) => c.close)),
-    low: Math.min(...closes.map((c) => c.close)),
-    sample: closes.slice(0, 5).concat(closes.slice(-5)),
+    high: Math.max(...closes),
+    low: Math.min(...closes),
+    closes,
+    first_date: dates[0],
+    last_date: dates[dates.length - 1],
+    source: "stooq",
   };
 }
 
@@ -53,13 +78,17 @@ async function fetchCoinGecko(coin: string, year: number) {
   const prices: [number, number][] = j.prices ?? [];
   if (prices.length === 0) throw new Error(`CoinGecko ${coin} ${year}: empty`);
   const first = prices[0][1], last = prices[prices.length - 1][1];
+  const closes = prices.map((p) => p[1]);
   return {
-    points: prices.length,
+    points: closes.length,
     first_close: first,
     last_close: last,
+    annual_return: (last - first) / first,
     annual_return_pct: Number((((last - first) / first) * 100).toFixed(2)),
-    high: Math.max(...prices.map((p) => p[1])),
-    low: Math.min(...prices.map((p) => p[1])),
+    high: Math.max(...closes),
+    low: Math.min(...closes),
+    closes,
+    source: "coingecko",
   };
 }
 
@@ -76,49 +105,55 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: auth } }, auth: { persistSession: false } },
     );
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    const { data: userData } = await userClient.auth.getUser();
+    if (!userData?.user) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
     if (!isAdmin) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json().catch(() => ({}));
-    const year = Number(body.year);
-    if (!Number.isInteger(year) || year < 2006 || year > 2025)
-      return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const years: number[] = Array.isArray(body.years) && body.years.length
+      ? body.years.map(Number).filter((y: number) => Number.isInteger(y) && y >= 2006 && y <= 2025)
+      : (Number.isInteger(body.year) ? [Number(body.year)] : []);
+    if (years.length === 0)
+      return new Response(JSON.stringify({ error: "year (2006-2025) or years[] is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const tickers: string[] = Array.isArray(body.tickers) && body.tickers.length ? body.tickers : DEFAULT_TICKERS;
     const coins: string[] = Array.isArray(body.coins) && body.coins.length ? body.coins : DEFAULT_COINS;
 
     const written: string[] = [];
-    const failed: { id: string; err: string }[] = [];
+    const failed: { id: string; year: number; err: string }[] = [];
 
-    for (const t of tickers) {
-      try {
-        const payload = await fetchYahoo(t, year);
-        await supabase.from("foundry_year_corpus").upsert({
-          year, dimension: "price", source_id: `yahoo:${t}`,
-          source_url: `yahoo:${t}:${year}`, payload,
-        });
-        written.push(`yahoo:${t}`);
-      } catch (e) { failed.push({ id: `yahoo:${t}`, err: String(e) }); }
-      await new Promise((r) => setTimeout(r, 700));
-    }
-
-    if (year >= 2014) {
-      for (const c of coins) {
+    for (const year of years) {
+      for (const t of tickers) {
         try {
-          const payload = await fetchCoinGecko(c, year);
-          await supabase.from("foundry_year_corpus").upsert({
-            year, dimension: "price", source_id: `coingecko:${c}`,
-            source_url: `coingecko:${c}:${year}`, payload,
+          const payload = await fetchStooq(t, year);
+          const { error } = await supabase.from("foundry_year_corpus").upsert({
+            year, dimension: "price", source_id: `stooq:${t}`,
+            source_url: `https://stooq.com/q/d/?s=${stooqSymbol(t)}`, payload,
           });
-          written.push(`coingecko:${c}`);
-        } catch (e) { failed.push({ id: `coingecko:${c}`, err: String(e) }); }
-        await new Promise((r) => setTimeout(r, 2000));
+          if (error) throw error;
+          written.push(`${year}:stooq:${t}`);
+        } catch (e) { failed.push({ id: `stooq:${t}`, year, err: String(e instanceof Error ? e.message : e) }); }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+
+      if (year >= 2014) {
+        for (const c of coins) {
+          try {
+            const payload = await fetchCoinGecko(c, year);
+            const { error } = await supabase.from("foundry_year_corpus").upsert({
+              year, dimension: "price", source_id: `coingecko:${c}`,
+              source_url: `https://www.coingecko.com/en/coins/${c}`, payload,
+            });
+            if (error) throw error;
+            written.push(`${year}:coingecko:${c}`);
+          } catch (e) { failed.push({ id: `coingecko:${c}`, year, err: String(e instanceof Error ? e.message : e) }); }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, year, written, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, years, written_count: written.length, failed_count: failed.length, written, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
