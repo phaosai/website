@@ -221,9 +221,9 @@ export default function SunesisResearch() {
               pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
               quantum_enabled: quantumActive,
             },
-            results: final as unknown as object[],
+            results: JSON.parse(JSON.stringify(final)),
             source: "manual",
-          }]);
+          }] as never);
           setSavedSearchKey((k) => k + 1);
         }
       } catch (saveErr) {
