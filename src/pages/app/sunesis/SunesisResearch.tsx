@@ -282,6 +282,41 @@ export default function SunesisResearch() {
     }
   };
 
+  const toggleBulk = (ticker: string) =>
+    setBulkSelected((s) => {
+      const n = new Set(s);
+      if (n.has(ticker)) n.delete(ticker); else n.add(ticker);
+      return n;
+    });
+
+  const bulkAddSelected = async () => {
+    if (!results || bulkSelected.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    for (const r of results) {
+      if (!bulkSelected.has(r.ticker)) continue;
+      if (watchlistTickers.has(r.ticker)) continue;
+      try {
+        const { data, error } = await supabase.functions.invoke("sunesis-watchlist-add", {
+          body: { ticker: r.ticker, name: r.name, asset_class: r.assetClass, pci: r.pci, group_id: bulkGroupId || null },
+        });
+        if (error || !data?.ok) throw new Error(error?.message ?? data?.error ?? "failed");
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkSelected(new Set());
+    setWatchlistRefreshKey((k) => k + 1);
+    setBulkBusy(false);
+    toast({
+      title: `Added ${ok} to watchlist`,
+      description: fail > 0 ? `${fail} failed.` : `Assigned to "${groupChoices.find((g) => g.id === bulkGroupId)?.name ?? "default group"}".`,
+      variant: fail > 0 ? "destructive" : "default",
+    });
+  };
+
   const summary = useMemo(() => {
     if (!results || results.length === 0) return null;
     const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
