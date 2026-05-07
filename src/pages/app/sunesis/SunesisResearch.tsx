@@ -120,6 +120,8 @@ export default function SunesisResearch() {
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [quantumManual, setQuantumManual] = useState(false);
   const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
+  const [emptyReason, setEmptyReason] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -164,6 +166,8 @@ export default function SunesisResearch() {
     if (!canRun) return;
     setRunning(true);
     setResults(null);
+    setEmptyReason(null);
+    setErrorMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
         body: {
@@ -174,13 +178,23 @@ export default function SunesisResearch() {
           quantum_enabled: quantumActive,
         },
       });
-      if (error) throw error;
+      if (error) {
+        const ctx = (error as { context?: unknown }).context;
+        let detail = error.message;
+        if (ctx instanceof Response) {
+          const body = await ctx.clone().json().catch(() => null);
+          if (body?.error) detail = body.error + (body.detail ? ` — ${body.detail}` : "");
+        }
+        throw new Error(detail);
+      }
       let final = (data?.results ?? []) as Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>;
       if (tierMode === "elite") final = final.slice(0, 10);
       setResults(final);
+      setEmptyReason(data?.empty_reason ?? null);
     } catch (e) {
       console.error("sunesis-live-research failed", e);
       setResults([]);
+      setErrorMsg(e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
     }
@@ -336,6 +350,12 @@ export default function SunesisResearch() {
           `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
 
+      {errorMsg && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-4 text-sm text-red-300">
+          <span className="font-semibold">Sunesis research failed:</span> {errorMsg}
+        </div>
+      )}
+
       {results && (
         <>
           {summary && (
@@ -348,7 +368,7 @@ export default function SunesisResearch() {
           )}
           {results.length === 0 ? (
             <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
-              No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes.
+              {emptyReason ?? "No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes."}
             </div>
           ) : (
             <div className="rounded-xl border border-border overflow-x-auto">
