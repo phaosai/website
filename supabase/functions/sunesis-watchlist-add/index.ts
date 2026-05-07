@@ -83,6 +83,27 @@ Deno.serve(async (req) => {
     const price = await fetchPrice(ticker, asset_class);
     const safePrice = price ?? 1; // never block add on a missing price; default to 1 so ROI = (now-1)/1
 
+    // Resolve target group: explicit body.group_id, else user's first group, else create "My Watchlist".
+    let groupId: string | null = body?.group_id ?? null;
+    if (!groupId) {
+      const { data: existingGroups } = await supabase
+        .from("sunesis_watchlist_groups")
+        .select("id")
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (existingGroups && existingGroups.length > 0) {
+        groupId = existingGroups[0].id;
+      } else {
+        const { data: newGroup } = await supabase
+          .from("sunesis_watchlist_groups")
+          .insert({ user_id: userData.user.id, name: "My Watchlist" })
+          .select("id")
+          .maybeSingle();
+        groupId = newGroup?.id ?? null;
+      }
+    }
+
     const { data: row, error: iErr } = await supabase
       .from("sunesis_watchlist")
       .insert({
@@ -93,6 +114,7 @@ Deno.serve(async (req) => {
         last_pci: Math.round(pci),
         last_price: safePrice,
         last_refreshed_at: new Date().toISOString(),
+        group_id: groupId,
       })
       .select()
       .maybeSingle();
