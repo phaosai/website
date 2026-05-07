@@ -26,7 +26,7 @@ const HomePhaosOneSections = () => {
             investors.
           </p>
           <p className="mt-4 text-base text-foreground/80 max-w-3xl leading-relaxed">
-            Phaos Phinance is the natural next step: the discipline we apply to operations —
+            Phaos Research is the natural next step: the discipline we apply to operations —
             transparency, governance, evidence — applied to the markets. Same brand, same
             standards, expanded surface area.
           </p>
@@ -35,7 +35,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              Explore Phaos Phinance →
+              Explore Research →
             </Link>
           </div>
         </div>
@@ -80,14 +80,14 @@ const HomePhaosOneSections = () => {
         </div>
       </section>
 
-      {/* SECTION C — Phaos Phinance Ecosystem */}
+      {/* SECTION C — Phaos Research Ecosystem */}
       <section className="py-24 border-t border-border/40">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
             Evidence-First Research. One Conviction Score. Complete Transparency.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            Phaos Phinance is built around Sunesis — filing-backed research and the Phaos
+            Phaos Research is built around Sunesis — filing-backed research and the Phaos
             Conviction Index — for serious investors.
           </p>
 
@@ -105,7 +105,7 @@ const HomePhaosOneSections = () => {
                 className="group rounded-xl border border-border bg-card/60 p-6 hover:bg-card transition-colors"
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                  Phaos Phinance
+                  Phaos Research
                 </p>
                 <h3 className="text-xl font-semibold tracking-tight text-foreground">
                   {p.name}
@@ -123,7 +123,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Explore Phaos Phinance
+              Explore Research
             </Link>
             <Link
               to="/one/run-simulation"
@@ -155,7 +155,7 @@ const HomePhaosOneSections = () => {
               to="/one/sunesis"
               className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline underline-offset-4"
             >
-              See Live PCI Scores with Phaos Phinance →
+              See Live PCI Scores with Phaos Research →
             </Link>
           </div>
 
