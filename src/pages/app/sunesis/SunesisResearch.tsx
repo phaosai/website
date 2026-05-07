@@ -113,8 +113,8 @@ export default function SunesisResearch() {
     : ent.has("aion") ? "pro"
     : "elite";
 
-  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["robinhood"]);
   const [platforms, setPlatforms] = useState<Array<PlatformMeta & { assetClasses: string[] }>>(
     FALLBACK.map((p) => ({ ...p, assetClasses: [] }))
   );
