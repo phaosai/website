@@ -5,7 +5,7 @@
 // universe below. Returns a real PCI-ranked list scored by the currently-
 // promoted Foundry brain.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -197,13 +197,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      console.error("auth.getUser failed", userErr);
+      return new Response(JSON.stringify({ error: "Unauthorized", detail: userErr?.message }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const userId = claimsData.claims.sub;
-    const userEmail = (claimsData.claims.email ?? "").toLowerCase();
+    const userId = userData.user.id;
+    const userEmail = (userData.user.email ?? "").toLowerCase();
 
     const body = await req.json() as Body;
     const assetClasses = Array.isArray(body.asset_classes) ? body.asset_classes : [];
