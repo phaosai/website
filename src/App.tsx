@@ -192,6 +192,7 @@ const AppInner = () => {
               <Route path="themes" element={<SunesisThemes />} />
               <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
               <Route path="watchlists" element={<SunesisWatchlists />} />
+              <Route path="leaderboard" element={<SunesisLeaderboard />} />
                <Route path="simulations" element={<AionSimulate />} />
                <Route path="security" element={<AionSecurity />} />
                <Route path="audit" element={<AionAudit />} />
