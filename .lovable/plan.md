@@ -1,85 +1,83 @@
+## Sunesis updates — scope
 
-## Goal
+### 1. Platforms list (top of grid + expand to ~40)
 
-Make Sunesis Research feel like a real workspace: pick everything fast, see deep results, click a row to read *why* the PCI is what it is, and save winners to a watchlist that tracks live hypothetical performance.
+- Reorder so the **first row (top-to-bottom-left-to-right) is**: Robinhood, Fidelity, Webull, Charles Schwab / Thinkorswim. Implemented via a `displayOrder` numeric on `trading_platforms` (lower = earlier). DB migration adds the column with defaults; we set 1–4 for these four, then 100+ for the rest by name.
+- Expand the platform universe up to **40 brokerages/exchanges** (publicly known asset-class coverage only). New rows added (with vetted asset-class lists):
+  - **US brokers**: E*TRADE, Merrill Edge, Vanguard, Ally Invest, J.P. Morgan Self-Directed, SoFi Invest, Public, Stash, M1 Finance, Wealthfront (where applicable).
+  - **Global brokers**: Questrade (CA), Wealthsimple (CA), Revolut, XTB, Plus500, CMC Markets, Lightspeed, AvaTrade.
+  - **Crypto/exchange**: Gemini, Crypto.com, Bitstamp, KuCoin, Bitfinex, MEXC, dYdX, Curve.
+  - Total kept ≤ 40. Each row carries an explicit `asset_classes` array (we only include classes the platform publicly supports).
+- Asset-class universe is reviewed; **add** these classes if missing in `AssetClass` enum and the asset groups: **Closed-End Fund (CEF)**, **Money Market**, **Convertible Bond**, **Inverse / Leveraged ETF**, **NFT (collectible)**. Each is mapped only to platforms that actually offer it.
 
-## Scope
+### 2. First-load defaults
 
-### 1. "Select all" for asset classes
-- Add a header row to the asset-class card matching the platforms card: `Select all` + `Clear` + count.
-- "Select all" selects every asset class across all five groups. "Clear" empties the selection.
+- `selectedClasses` initial state → `["stock"]` (was `["stock","etf"]`).
+- `selectedPlatforms` initial state → `["robinhood"]` (was `[]`).
 
-### 2. Up to 100 results per asset class
-- Edge function `sunesis-live-research`: expand `INSTRUMENTS` to a much wider universe (target ~100 per asset class for the major classes — equities, ETFs, crypto; fewer where the public universe is smaller, e.g. major_crypto, stablecoin).
-- After scoring & filtering, cap the response to **100 results per selected asset class** (not 100 total). So a Stock+ETF search can return up to 200 rows.
-- Remove the client-side `slice(0, 10)` for Elite — keep tier limits only via PCI range filter, not row count. (Confirm: leave Elite cap as-is, or also lift to 100? — see open question.)
+### 3. Module nav row removal
 
-### 3. PCI breakdown modal (click any result row)
-Recreate the earlier single-result layout, now triggered from a row click in the results table.
+- Delete the `Research / Scenario Sandbox / Language-to-Circuit / Workflow / Compliance / Truth Ledger / Truth Machine` bar (`SunesisModuleNav` is removed from `SunesisResearch.tsx`; the component file stays in case other pages reference it, but the row is no longer rendered on Research).
+- Header label (the small uppercase line above the page) changes from `Sunesis · Research Operating System` → `Sunesis · Research Operating System SQC v1`.
 
-- Large centered Dialog with an **X** in the top-right (uses existing `@/components/ui/dialog`).
-- Header: ticker, name, asset class chip, large PCI number with tier badge (PHAOS CHOICE / GO / Potential / Warning / NO GO) using the `TIER()` color tokens.
-- Body sections:
-  - **Why this PCI** — up to 3 bullet "reasons", each with a short narrative + 1–3 supporting links (news article, data source, filing, macro chart).
-  - **Evidence sources** — uses the existing `EvidenceDrawer` component (already in codebase) for sources + methodology + "How this was built".
-  - **Compatible platforms** — list of the user's selected brokerages that support this instrument.
-  - **Add to watchlist** button (primary) and **Close** secondary.
-- Reasons + links come from the edge function. We extend the response shape per result with `reasons: [{ headline, narrative, links: [{label, url}] }]` and `evidence_sources: [...]` derived from the brain's enabled dimensions + corpus rows. Where we don't yet have a real source, we fall back to deterministic, methodology-correct placeholders (FRED series, SEC EDGAR filing URL by ticker, GDELT query URL, Yahoo/Stooq chart URL) so every link is a real public page.
+### 4. Alerts panel changes
 
-### 4. One-click "Add to Watchlist" on every row
-- Small bookmark/plus icon button in the rightmost cell of each results row, in addition to the modal CTA.
-- Clicking immediately inserts into the watchlist and toggles to a filled "✓ In watchlist" state. Idempotent.
+- Default channel toggles all **off** (`email: false, sms: false, save: false`).
+- Replace `Push` with **`Save`**: when enabled, the scheduled run writes its result-set into the new "Saved searches" store at the chosen frequency/time slot, instead of pushing a notification.
+- DB: rename `channels.push` → `channels.save` in defaults; existing rows are migrated by mapping `push → save` once at save time (no destructive migration needed since `channels` is a free-form jsonb).
 
-### 5. Watchlist + WLH-ROI (Watch List Hypothetical ROI)
-New tab/section on the Sunesis Research page (or a dedicated `/app/sunesis/watchlist` route — see open question) that shows:
+### 5. Saved searches (research history)
 
-- **Hero number:** combined WLH-ROI across all watchlist items as one giant percentage. Green if ≥ 0, red if < 0. Computed as the equal-weighted average of each item's individual return since add date.
-- **Table of watchlist items**, each row showing:
-  - Ticker · Name · Asset class
-  - **PCI at add** (locked) and **PCI now** (live, refreshed each visit)
-  - **Add date** and **Add price**
-  - **Current price**
-  - **Item WLH-ROI** as a colored percentage (red <0, green ≥0)
-  - Remove button
+- New table `sunesis_saved_searches` (per-user, RLS owner-only):
+  - `id`, `user_id`, `created_at`, `label` (auto-generated like "Stock · Robinhood · Apr 7"), `inputs` jsonb (asset classes, platforms, pci range, quantum flag), `results` jsonb (the full PCI result rows), `source` text (`'manual'` | `'scheduled'`).
+- After every successful `generate()`, insert one row.
+- A new "Saved searches" section is rendered at the bottom of `SunesisResearch.tsx` (above the disclaimer). Shows latest 25 searches as a collapsible list — click to re-hydrate `results` and `selectedClasses/Platforms` on the page. Includes delete + rerun buttons.
 
-#### Data model
-New table `sunesis_watchlist`:
-- `id uuid pk`, `user_id uuid` (auth.uid), `ticker text`, `name text`, `asset_class text`
-- `pci_at_add int`, `price_at_add numeric`, `added_at timestamptz default now()`
-- `last_pci int`, `last_price numeric`, `last_refreshed_at timestamptz`
-- Unique on (`user_id`, `ticker`). RLS: users CRUD their own rows only.
+### 6. Watchlist groups + Watchlists tab fixes
 
-#### Refresh logic
-On loading the watchlist view, call a new edge function `sunesis-watchlist-refresh` that:
-- For each row, fetches the latest close (Stooq for equities/ETFs, CoinGecko for crypto — same sources already wired into `foundry-ingest-prices`).
-- Recomputes current PCI using the same brain logic as `sunesis-live-research`.
-- Updates `last_pci`, `last_price`, `last_refreshed_at`.
-- Returns the refreshed rows so the UI renders WLH-ROI immediately.
+- DB additions:
+  - `sunesis_watchlist_groups` table: `id`, `user_id`, `name` (default "My Watchlist"), `created_at`. RLS owner-only.
+  - Add nullable `group_id uuid` column to `sunesis_watchlist`. Backfill: every existing user gets a default "My Watchlist" group and all current rows are assigned to it.
+- The sidebar **"Watchlists"** route (`/app/watchlists`) is replaced with a real page (`SunesisWatchlists.tsx`) that:
+  - Lists all groups for the current user with rename + delete + create-new.
+  - For each group, shows the same per-item table the inline `WatchlistPanel` shows, plus a **per-group combined WLH-ROI** number at the top.
+  - Shows an overall **All-groups WLH-ROI** at the very top.
+  - Pulls all rows by calling `sunesis-watchlist-refresh` (which is updated to return rows for **all** groups, not filtered).
+- Inline `WatchlistPanel` on the Research page is updated to:
+  - Always pull and show ALL the user's watchlist items (the bug where not everything was populating is fixed by removing any incidental filter and not paginating).
+  - Show a **group selector** when adding from the results table — "Add to watchlist" opens a small popover to pick the target group (default = current default group).
+  - Show per-group combined WLH-ROI sub-totals in addition to the overall combined number, and per-item WLH-ROI as today.
 
-#### Add flow
-When the user adds from a result row, we already know `pci`, ticker, name, asset class. We call `sunesis-watchlist-add` (or directly insert client-side) which:
-- Fetches the current price from Stooq/CoinGecko, stores it as `price_at_add`.
-- Stores `pci_at_add = current pci`, `added_at = now()`.
+### 7. Edge function changes
 
-## Technical Details
+- `sunesis-watchlist-add`: accepts optional `group_id`; if omitted, falls back to the user's default group (auto-create one named "My Watchlist" on first add).
+- `sunesis-watchlist-refresh`: returns `groups: [{id,name,rows:[…]}]` and `aggregateRoi`. UI consumes both shapes (back-compat for old `rows` is preserved).
+- `sunesis-live-research`: no behavior change; we just call it the same way and persist the result on the client into `sunesis_saved_searches`.
+- A new `sunesis-saved-search-run` edge function runs on cron when the user has the **Save** alert channel enabled, executing the user's most recent search-shape and writing a `source='scheduled'` row into `sunesis_saved_searches`.
 
-**Files touched / created**
-- `src/pages/app/sunesis/SunesisResearch.tsx` — Select-all for asset classes, result-row click handler, add-to-watchlist button, watchlist tab.
-- `src/components/sunesis/PciBreakdownModal.tsx` *(new)* — the modal layout with reasons, evidence, links.
-- `src/components/sunesis/WatchlistPanel.tsx` *(new)* — hero WLH-ROI + per-item table.
-- `supabase/functions/sunesis-live-research/index.ts` — wider universe, 100/class cap, return `reasons` + `evidence_sources` per result.
-- `supabase/functions/sunesis-watchlist-refresh/index.ts` *(new)* — pulls latest price + recomputes PCI.
-- `supabase/functions/sunesis-watchlist-add/index.ts` *(new)* — fetches price-at-add and inserts row.
-- DB migration: create `sunesis_watchlist` with RLS.
+### Files touched / created
 
-**Color tokens**
-Reuse existing `--pci-choice / go / potential / warning / no-go` semantic tokens. WLH-ROI green/red uses the existing `pci-go` / `pci-no-go` tokens to stay on-brand.
+- DB migrations:
+  - `trading_platforms` add `display_order int default 1000` + seed updates and 18 new platform rows.
+  - New `AssetClass` values added (enum or text-list update) + groups in UI.
+  - New `sunesis_watchlist_groups` table + RLS + default-group backfill.
+  - `sunesis_watchlist` add `group_id` + backfill.
+  - New `sunesis_saved_searches` table + RLS.
+- Edits:
+  - `src/pages/app/sunesis/SunesisResearch.tsx` (defaults, remove ModuleNav, header text, saved searches section, group-aware add).
+  - `src/components/phaos/SunesisModuleNav.tsx` (no longer rendered on Research; header label updated where it still appears).
+  - `src/components/sunesis/AlertsPanel.tsx` (defaults all off, Push → Save).
+  - `src/components/sunesis/WatchlistPanel.tsx` (groups, combined per-group ROI, ensure all rows shown).
+  - `supabase/functions/sunesis-watchlist-add/index.ts` (group_id support + default group).
+  - `supabase/functions/sunesis-watchlist-refresh/index.ts` (return grouped shape).
+- New:
+  - `src/pages/app/sunesis/SunesisWatchlists.tsx` (full Watchlists tab with grouping + rename + combined ROI).
+  - `src/components/sunesis/SavedSearchesPanel.tsx`.
+  - `supabase/functions/sunesis-saved-search-run/index.ts` (cron-driven save channel).
+- `src/App.tsx`: replace the `/app/watchlists` placeholder with the new `SunesisWatchlists` route.
 
-**Performance**
-Up to 200+ rows render fine in the existing table; we'll add `max-h-[70vh] overflow-y-auto` to keep the page tidy. Watchlist refresh is bounded by user's saved rows (small).
+### Open questions
 
-## Open questions
-
-1. Do you want **Elite tier** (Sunesis-only members) to also see up to 100 results, or keep their cap at 10 and only lift it for Pro/Sovereign?
-2. Watchlist placement — a new **tab inside the Research page**, or its own **/app/sunesis/watchlist** route in the sidebar?
-3. For the breakdown modal's "links" — okay to use the deterministic public-source pattern (FRED chart for the relevant macro series, SEC EDGAR filings index for the ticker, GDELT search, Stooq/Yahoo chart) until we wire richer per-instrument curated links from the corpus?
+1. For the new asset classes (CEF, Money Market, Convertible Bond, Inverse/Leveraged ETF, NFT), do you want them shown by default in the Asset Class picker, or hidden behind a "More" disclosure to keep the picker uncluttered?
+2. For the **Save** delivery channel, should the saved row appear under "Saved searches" (research history) **or** under a new "Scheduled saves" section so it's separate from manual runs?
+3. Should we keep the Sunesis module nav (`Research / Sandbox / Language-to-Circuit / …`) on **the other Sunesis sub-pages** (Sandbox, Workflow, Compliance, Ledger) so users can still navigate between them, and only remove it from the Research page — or remove it everywhere?
