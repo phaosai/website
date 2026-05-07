@@ -121,9 +121,20 @@ export default function SunesisResearch() {
   const [running, setRunning] = useState(false);
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [quantumManual, setQuantumManual] = useState(false);
-  const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
+  const [results, setResults] = useState<null | PciResult[]>(null);
   const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [activeResult, setActiveResult] = useState<PciResult | null>(null);
+  const [watchlistTickers, setWatchlistTickers] = useState<Set<string>>(new Set());
+  const [watchlistRefreshKey, setWatchlistRefreshKey] = useState(0);
+
+  // Hydrate the user's existing watchlist tickers so the UI reflects state.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("sunesis_watchlist").select("ticker");
+      if (data) setWatchlistTickers(new Set(data.map((r) => r.ticker)));
+    })();
+  }, [watchlistRefreshKey]);
 
   useEffect(() => {
     (async () => {
