@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Check, Atom, Bookmark, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
-import { SunesisModuleNav } from "@/components/phaos";
+// SunesisModuleNav intentionally not rendered on the Research page.
 import type { AssetClass } from "@/data/simulationCandidates";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Slider } from "@/components/ui/slider";
@@ -256,7 +256,10 @@ export default function SunesisResearch() {
       description="The Sunesis brain ranks instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade. Click any result for the full PCI rationale."
       minTier="sunesis"
     >
-      <SunesisModuleNav />
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80 px-1">
+        <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
+        Sunesis · Research Operating System SQC v1
+      </div>
 
       {/* Step 1 — Asset classes */}
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
