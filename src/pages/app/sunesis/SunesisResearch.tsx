@@ -421,9 +421,9 @@ export default function SunesisResearch() {
               {emptyReason ?? "No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes."}
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-xl border border-border overflow-x-auto max-h-[70vh] overflow-y-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground sticky top-0">
                   <tr>
                     <th className="text-left p-3 w-10">#</th>
                     <th className="text-left p-3">Ticker</th>
@@ -432,17 +432,21 @@ export default function SunesisResearch() {
                     <th className="text-left p-3">PCI</th>
                     <th className="text-left p-3">Tier</th>
                     <th className="text-left p-3">Top signal</th>
+                    <th className="text-right p-3">Watch</th>
                   </tr>
                 </thead>
                 <tbody>
                   {results.map((r, idx) => {
                     const t = TIER(r.pci);
+                    const watched = watchlistTickers.has(r.ticker);
                     return (
-                      <tr key={r.ticker} className="border-t border-border hover:bg-accent/30">
+                      <tr
+                        key={r.ticker}
+                        className="border-t border-border hover:bg-accent/30 cursor-pointer"
+                        onClick={() => setActiveResult(r)}
+                      >
                         <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-3 font-mono font-semibold">
-                          <Link to={`/app/sunesis/ticker/${r.ticker}`} className="text-purple-deep hover:underline">{r.ticker}</Link>
-                        </td>
+                        <td className="p-3 font-mono font-semibold text-purple-deep">{r.ticker}</td>
                         <td className="p-3">{r.name}</td>
                         <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
                         <td className="p-3">
@@ -459,6 +463,19 @@ export default function SunesisResearch() {
                           </span>
                         </td>
                         <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
+                        <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => addToWatchlist(r)}
+                            disabled={watched}
+                            className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
+                              watched ? "text-pci-go cursor-default" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            }`}
+                            aria-label={watched ? "In watchlist" : "Add to watchlist"}
+                          >
+                            {watched ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -468,6 +485,16 @@ export default function SunesisResearch() {
           )}
         </>
       )}
+
+      <PciBreakdownModal
+        result={activeResult}
+        platformNames={platformNameMap}
+        inWatchlist={activeResult ? watchlistTickers.has(activeResult.ticker) : false}
+        onClose={() => setActiveResult(null)}
+        onAddToWatchlist={(r) => addToWatchlist(r)}
+      />
+
+      <WatchlistPanel refreshKey={watchlistRefreshKey} />
 
       <AlertsPanel tierMode={tierMode} />
 
