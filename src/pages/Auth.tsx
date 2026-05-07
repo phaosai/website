@@ -35,6 +35,8 @@ const Auth = () => {
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
   const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
+  const portal = (new URLSearchParams(location.search).get("portal") || "").toLowerCase();
+  const portalLabel = portal === "workflow" ? "Workflow" : portal === "research" ? "Research" : portal === "voice" ? "Voice" : "";
   const selectedPlanName = planNames[selectedPlan] || "your plan";
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
 
