@@ -350,6 +350,12 @@ export default function SunesisResearch() {
           `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
 
+      {errorMsg && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-4 text-sm text-red-300">
+          <span className="font-semibold">Sunesis research failed:</span> {errorMsg}
+        </div>
+      )}
+
       {results && (
         <>
           {summary && (
@@ -362,7 +368,7 @@ export default function SunesisResearch() {
           )}
           {results.length === 0 ? (
             <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
-              No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes.
+              {emptyReason ?? "No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes."}
             </div>
           ) : (
             <div className="rounded-xl border border-border overflow-x-auto">
