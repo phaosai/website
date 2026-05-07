@@ -141,7 +141,10 @@ export default function SunesisLeaderboard() {
               {loading && (
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
               )}
-              {!loading && rows.length === 0 && (
+              {!loading && error && (
+                <tr><td colSpan={7} className="p-6 text-center text-pci-no-go">Couldn't load leaderboard: {error}</td></tr>
+              )}
+              {!loading && !error && rows.length === 0 && (
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No public watchlists in this category yet.</td></tr>
               )}
               {!loading && rows.map((r, idx) => (
