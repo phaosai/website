@@ -1457,6 +1457,54 @@ export type Database = {
           },
         ]
       }
+      sunesis_watchlist: {
+        Row: {
+          added_at: string
+          asset_class: string
+          created_at: string
+          id: string
+          last_pci: number | null
+          last_price: number | null
+          last_refreshed_at: string | null
+          name: string
+          pci_at_add: number
+          price_at_add: number
+          ticker: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          asset_class: string
+          created_at?: string
+          id?: string
+          last_pci?: number | null
+          last_price?: number | null
+          last_refreshed_at?: string | null
+          name: string
+          pci_at_add: number
+          price_at_add: number
+          ticker: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          asset_class?: string
+          created_at?: string
+          id?: string
+          last_pci?: number | null
+          last_price?: number | null
+          last_refreshed_at?: string | null
+          name?: string
+          pci_at_add?: number
+          price_at_add?: number
+          ticker?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Sparkles, Check, Atom } from "lucide-react";
+import { Sparkles, Check, Atom, Bookmark, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { SunesisModuleNav } from "@/components/phaos";
@@ -10,6 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
+import { PciBreakdownModal, type PciResult } from "@/components/sunesis/PciBreakdownModal";
+import { WatchlistPanel } from "@/components/sunesis/WatchlistPanel";
+import { toast } from "@/hooks/use-toast";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -119,9 +121,20 @@ export default function SunesisResearch() {
   const [running, setRunning] = useState(false);
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
   const [quantumManual, setQuantumManual] = useState(false);
-  const [results, setResults] = useState<null | Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>>(null);
+  const [results, setResults] = useState<null | PciResult[]>(null);
   const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [activeResult, setActiveResult] = useState<PciResult | null>(null);
+  const [watchlistTickers, setWatchlistTickers] = useState<Set<string>>(new Set());
+  const [watchlistRefreshKey, setWatchlistRefreshKey] = useState(0);
+
+  // Hydrate the user's existing watchlist tickers so the UI reflects state.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("sunesis_watchlist").select("ticker");
+      if (data) setWatchlistTickers(new Set(data.map((r) => r.ticker)));
+    })();
+  }, [watchlistRefreshKey]);
 
   useEffect(() => {
     (async () => {
@@ -187,8 +200,7 @@ export default function SunesisResearch() {
         }
         throw new Error(detail);
       }
-      let final = (data?.results ?? []) as Array<{ ticker: string; name: string; assetClass: AssetClass; pci: number; topSignal: string; platforms: string[] }>;
-      if (tierMode === "elite") final = final.slice(0, 10);
+      const final = (data?.results ?? []) as PciResult[];
       setResults(final);
       setEmptyReason(data?.empty_reason ?? null);
     } catch (e) {
@@ -200,16 +212,48 @@ export default function SunesisResearch() {
     }
   };
 
+  const allAssetValues = useMemo<AssetClass[]>(
+    () => ASSET_GROUPS.flatMap((g) => g.items.map((i) => i.value)),
+    [],
+  );
+  const selectAllClasses = () => setSelectedClasses(allAssetValues);
+  const clearAllClasses = () => setSelectedClasses([]);
+
+  const addToWatchlist = async (r: PciResult) => {
+    if (watchlistTickers.has(r.ticker)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("sunesis-watchlist-add", {
+        body: { ticker: r.ticker, name: r.name, asset_class: r.assetClass, pci: r.pci },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        setWatchlistTickers((s) => new Set(s).add(r.ticker));
+        setWatchlistRefreshKey((k) => k + 1);
+        toast({ title: "Added to watchlist", description: `${r.ticker} · PCI ${r.pci} locked at ${new Date().toLocaleDateString()}` });
+      } else {
+        throw new Error(data?.error ?? "unknown");
+      }
+    } catch (e) {
+      toast({ title: "Could not add", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    }
+  };
+
   const summary = useMemo(() => {
     if (!results || results.length === 0) return null;
     const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
     return { avg, top: results[0], phaosChoice: results.filter((r) => r.pci >= 96).length, go: results.filter((r) => r.pci >= 90 && r.pci < 96).length };
   }, [results]);
 
+  const platformNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of platforms) m[p.slug] = p.name;
+    return m;
+  }, [platforms]);
+
   return (
     <PageShell
       title="Sunesis · Research"
-      description="The Sunesis brain returns the top 10 instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade."
+      description="The Sunesis brain ranks instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade. Click any result for the full PCI rationale."
       minTier="sunesis"
     >
       <SunesisModuleNav />
@@ -218,7 +262,13 @@ export default function SunesisResearch() {
       <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm font-semibold">1. Select asset classes</p>
-          <span className="text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+            <button type="button" onClick={selectAllClasses} className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card">Select all</button>
+            {selectedClasses.length > 0 && (
+              <button type="button" onClick={clearAllClasses} className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold text-muted-foreground hover:bg-card">Clear</button>
+            )}
+          </div>
         </div>
         <div className="space-y-4">
           {ASSET_GROUPS.map((g) => (
@@ -345,7 +395,7 @@ export default function SunesisResearch() {
       >
         <Sparkles className="w-5 h-5" />
         {running ? "Scanning your investable universe…" :
-          tierMode === "elite" ? "Generate Top 10" :
+          tierMode === "elite" ? "Generate results" :
           tierMode === "pro" ? "Generate full results" :
           `Generate full results · PCI ${pciRange[0]}–${pciRange[1]}`}
       </button>
@@ -371,9 +421,9 @@ export default function SunesisResearch() {
               {emptyReason ?? "No instruments matched the intersection of your selected asset classes and platforms. Add more platforms or include additional asset classes."}
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-xl border border-border overflow-x-auto max-h-[70vh] overflow-y-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground sticky top-0">
                   <tr>
                     <th className="text-left p-3 w-10">#</th>
                     <th className="text-left p-3">Ticker</th>
@@ -382,17 +432,21 @@ export default function SunesisResearch() {
                     <th className="text-left p-3">PCI</th>
                     <th className="text-left p-3">Tier</th>
                     <th className="text-left p-3">Top signal</th>
+                    <th className="text-right p-3">Watch</th>
                   </tr>
                 </thead>
                 <tbody>
                   {results.map((r, idx) => {
                     const t = TIER(r.pci);
+                    const watched = watchlistTickers.has(r.ticker);
                     return (
-                      <tr key={r.ticker} className="border-t border-border hover:bg-accent/30">
+                      <tr
+                        key={r.ticker}
+                        className="border-t border-border hover:bg-accent/30 cursor-pointer"
+                        onClick={() => setActiveResult(r)}
+                      >
                         <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-3 font-mono font-semibold">
-                          <Link to={`/app/sunesis/ticker/${r.ticker}`} className="text-purple-deep hover:underline">{r.ticker}</Link>
-                        </td>
+                        <td className="p-3 font-mono font-semibold text-purple-deep">{r.ticker}</td>
                         <td className="p-3">{r.name}</td>
                         <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
                         <td className="p-3">
@@ -409,6 +463,19 @@ export default function SunesisResearch() {
                           </span>
                         </td>
                         <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
+                        <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => addToWatchlist(r)}
+                            disabled={watched}
+                            className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors ${
+                              watched ? "text-pci-go cursor-default" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            }`}
+                            aria-label={watched ? "In watchlist" : "Add to watchlist"}
+                          >
+                            {watched ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -418,6 +485,16 @@ export default function SunesisResearch() {
           )}
         </>
       )}
+
+      <PciBreakdownModal
+        result={activeResult}
+        platformNames={platformNameMap}
+        inWatchlist={activeResult ? watchlistTickers.has(activeResult.ticker) : false}
+        onClose={() => setActiveResult(null)}
+        onAddToWatchlist={(r) => addToWatchlist(r)}
+      />
+
+      <WatchlistPanel refreshKey={watchlistRefreshKey} />
 
       <AlertsPanel tierMode={tierMode} />
 
