@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
 import { PciBreakdownModal, type PciResult } from "@/components/sunesis/PciBreakdownModal";
 import { WatchlistPanel } from "@/components/sunesis/WatchlistPanel";
+import { SavedSearchesPanel, type SavedSearch } from "@/components/sunesis/SavedSearchesPanel";
 import { toast } from "@/hooks/use-toast";
 
 const ASSET_GROUPS: { group: string; items: { value: AssetClass; label: string }[] }[] = [
@@ -127,6 +128,7 @@ export default function SunesisResearch() {
   const [activeResult, setActiveResult] = useState<PciResult | null>(null);
   const [watchlistTickers, setWatchlistTickers] = useState<Set<string>>(new Set());
   const [watchlistRefreshKey, setWatchlistRefreshKey] = useState(0);
+  const [savedSearchKey, setSavedSearchKey] = useState(0);
 
   // Hydrate the user's existing watchlist tickers so the UI reflects state.
   useEffect(() => {
