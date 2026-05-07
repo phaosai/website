@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Microscope, Sparkles, ListChecks, FlaskConical, Workflow,
-  Users, ShieldAlert, Receipt, Settings, Lock, Crown, Hammer,
+  Users, ShieldAlert, Receipt, Settings, Lock, Crown, Hammer, Trophy,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
