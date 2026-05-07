@@ -23,6 +23,7 @@ const ITEMS: NavItem[] = [
   { title: "Sunesis", url: "/app/sunesis", icon: Microscope, min: "sunesis" },
   { title: "Investment Themes", url: "/app/themes", icon: Sparkles, min: "sunesis" },
   { title: "Watchlists", url: "/app/watchlists", icon: ListChecks, min: "free" },
+  { title: "Leaderboard", url: "/app/leaderboard", icon: Trophy, min: "free" },
   { title: "Simulations", url: "/app/simulations", icon: FlaskConical, min: "aion" },
   { title: "Pantheon", url: "/app/pantheon", icon: Crown, min: "pantheon" },
   { title: "Billing", url: "/app/billing", icon: Receipt, min: "free" },
