@@ -138,7 +138,7 @@ export default function SunesisResearch() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes").order("name");
+      const { data } = await supabase.from("trading_platforms").select("slug,name,asset_classes,display_order").order("display_order").order("name");
       if (data && data.length) {
         setPlatforms(data.map((d) => ({
           slug: d.slug,
