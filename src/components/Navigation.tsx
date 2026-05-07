@@ -203,15 +203,13 @@ const Navigation = () => {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="hidden md:inline-flex items-center gap-1.5 border border-pci-choice/40 bg-pci-choice/10 text-pci-choice text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full hover:bg-pci-choice/20 transition-colors"
-              aria-label="Admin dashboard"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" /> Admin
-            </Link>
-          )}
+          <Link
+            to="/signin"
+            className="hidden md:inline-flex items-center gap-1.5 border border-border bg-background/60 text-foreground text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full hover:bg-card transition-colors"
+            aria-label="Sign in"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> Sign In
+          </Link>
           <Link
             to="/contact"
             className="hidden md:inline-flex bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
