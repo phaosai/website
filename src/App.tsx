@@ -1,17 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useErrorReporter } from "@/hooks/useErrorReporter";
-import { useLoginTracker } from "@/hooks/useLoginTracker";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
 const WorkflowTeardownPopup = lazy(() => import("./components/WorkflowTeardownPopup"));
@@ -37,50 +34,6 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage.tsx"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe.tsx"));
 const AdminPurge = lazy(() => import("./pages/AdminPurge.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
-const OnePillarPage = lazy(() => import("./pages/OnePillarPage.tsx"));
-const PhaosOne = lazy(() => import("./pages/PhaosOne.tsx"));
-const PhaosSunesis = lazy(() => import("./pages/PhaosSunesis.tsx"));
-const PhaosKyrios = lazy(() => import("./pages/PhaosKyrios.tsx"));
-const PhaosAion = lazy(() => import("./pages/PhaosAion.tsx"));
-const RunSimulation = lazy(() => import("./pages/RunSimulation.tsx"));
-const Pricing = lazy(() => import("./pages/Pricing.tsx"));
-const Auth = lazy(() => import("./pages/Auth.tsx"));
-const SignIn = lazy(() => import("./pages/SignIn.tsx"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
-const AppDashboard = lazy(() => import("./pages/AppDashboard.tsx"));
-const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn.tsx"));
-const Billing = lazy(() => import("./pages/Billing.tsx"));
-const AppLayout = lazy(() => import("./components/app/AppLayout.tsx"));
-const CommandCenter = lazy(() => import("./pages/app/CommandCenter.tsx"));
-const AppSection = lazy(() => import("./pages/app/AppSectionPlaceholder.tsx"));
-const AppSettings = lazy(() => import("./pages/app/Settings.tsx"));
-const SunesisResearch = lazy(() => import("./pages/app/sunesis/SunesisResearch.tsx"));
-const SunesisTicker = lazy(() => import("./pages/app/sunesis/SunesisTicker.tsx"));
-const SunesisThemes = lazy(() => import("./pages/app/sunesis/SunesisThemes.tsx"));
-const SunesisThemeDetail = lazy(() => import("./pages/app/sunesis/SunesisThemeDetail.tsx"));
-const SunesisSandbox = lazy(() => import("./pages/app/sunesis/SunesisSandbox.tsx"));
-const SunesisLanguage = lazy(() => import("./pages/app/sunesis/SunesisLanguage.tsx"));
-const SunesisWorkflow = lazy(() => import("./pages/app/sunesis/SunesisWorkflow.tsx"));
-const SunesisCompliance = lazy(() => import("./pages/app/sunesis/SunesisCompliance.tsx"));
-const SunesisLedger = lazy(() => import("./pages/app/sunesis/SunesisLedger.tsx"));
-const SunesisWatchlists = lazy(() => import("./pages/app/sunesis/SunesisWatchlists.tsx"));
-const SunesisLeaderboard = lazy(() => import("./pages/app/sunesis/SunesisLeaderboard.tsx"));
-const KyriosQueue = lazy(() => import("./pages/app/kyrios/KyriosQueue.tsx"));
-const KyriosWorkflow = lazy(() => import("./pages/app/kyrios/KyriosWorkflow.tsx"));
-const KyriosPortals = lazy(() => import("./pages/app/kyrios/KyriosPortals.tsx"));
-const AionMonitor = lazy(() => import("./pages/app/aion/AionMonitor.tsx"));
-const AionChanges = lazy(() => import("./pages/app/aion/AionChanges.tsx"));
-const AionSimulate = lazy(() => import("./pages/app/aion/AionSimulate.tsx"));
-const AionSecurity = lazy(() => import("./pages/app/aion/AionSecurity.tsx"));
-const AionAudit = lazy(() => import("./pages/app/aion/AionAudit.tsx"));
-const PantheonDashboard = lazy(() => import("./pages/app/pantheon/PantheonDashboard.tsx"));
-const PantheonTeam = lazy(() => import("./pages/app/pantheon/PantheonTeam.tsx"));
-const PantheonLogos = lazy(() => import("./pages/app/pantheon/PantheonLogos.tsx"));
-const PantheonAudit = lazy(() => import("./pages/app/pantheon/PantheonAudit.tsx"));
-const PantheonEntities = lazy(() => import("./pages/app/pantheon/PantheonEntities.tsx"));
-const FoundryAdmin = lazy(() => import("./pages/app/foundry/FoundryAdmin.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -127,19 +80,10 @@ const DeferredGlobalUI = () => {
   );
 };
 
-const BrowserRouterAuthWrapper = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
-  </BrowserRouter>
-);
-
 const AppInner = () => {
   useErrorReporter();
-  useLoginTracker();
   return (
-    <>
+    <BrowserRouter>
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <ErrorBoundary>
           <Routes>
@@ -162,59 +106,14 @@ const AppInner = () => {
             <Route path="/solutions/:industry" element={<SolutionsPage />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/purge" element={<AdminPurge />} />
-            <Route path="/one" element={<PhaosOne />} />
-             <Route path="/one/aion" element={<Navigate to="/one" replace />} />
-             <Route path="/one/sunesis" element={<PhaosSunesis />} />
-             <Route path="/one/kyrios" element={<Navigate to="/one" replace />} />
-            <Route path="/one/run-simulation" element={<RunSimulation />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout/return" element={<CheckoutReturn />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-            <Route path="/app" element={<AppLayout />}>
-              <Route index element={<CommandCenter />} />
-              <Route path="billing" element={<Billing />} />
-              <Route path="settings" element={<AppSettings />} />
-              <Route path="sunesis" element={<SunesisResearch />} />
-              <Route path="sunesis/ticker/:symbol" element={<SunesisTicker />} />
-              <Route path="sunesis/themes" element={<SunesisThemes />} />
-              <Route path="sunesis/themes/:themeId" element={<SunesisThemeDetail />} />
-              <Route path="sunesis/sandbox" element={<SunesisSandbox />} />
-              <Route path="sunesis/language" element={<SunesisLanguage />} />
-              <Route path="sunesis/workflow" element={<SunesisWorkflow />} />
-              <Route path="sunesis/compliance" element={<SunesisCompliance />} />
-              <Route path="sunesis/ledger" element={<SunesisLedger />} />
-              <Route path="foundry" element={<FoundryAdmin />} />
-              <Route path="themes" element={<SunesisThemes />} />
-              <Route path="themes/:themeId" element={<SunesisThemeDetail />} />
-              <Route path="watchlists" element={<SunesisWatchlists />} />
-              <Route path="leaderboard" element={<SunesisLeaderboard />} />
-               <Route path="simulations" element={<AionSimulate />} />
-               <Route path="security" element={<AionSecurity />} />
-               <Route path="audit" element={<AionAudit />} />
-               <Route path="kyrios" element={<Navigate to="/app" replace />} />
-               <Route path="kyrios/*" element={<Navigate to="/app" replace />} />
-               <Route path="aion" element={<Navigate to="/app" replace />} />
-               <Route path="aion/*" element={<Navigate to="/app" replace />} />
-               <Route path="portals" element={<Navigate to="/app" replace />} />
-              <Route path="pantheon" element={<PantheonDashboard />} />
-              <Route path="pantheon/team" element={<PantheonTeam />} />
-              <Route path="pantheon/logos" element={<PantheonLogos />} />
-              <Route path="pantheon/audit" element={<PantheonAudit />} />
-              <Route path="pantheon/entities" element={<PantheonEntities />} />
-            </Route>
-            <Route path="/app/legacy" element={<ProtectedRoute><AppDashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>
       </Suspense>
       <DeferredGlobalUI />
-    </>
+    </BrowserRouter>
   );
 };
 
@@ -224,7 +123,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouterAuthWrapper />
+        <AppInner />
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>

@@ -25,17 +25,6 @@ const RECIPIENT = "daniel@phaosai.com";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Restrict to service-role callers (pg_cron) or the admin token.
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const adminToken = req.headers.get("x-admin-token") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const purgeToken = Deno.env.get("PURGE_ADMIN_TOKEN");
-  const isService = serviceKey && authHeader === `Bearer ${serviceKey}`;
-  const isAdmin = purgeToken && adminToken === purgeToken;
-  if (!isService && !isAdmin) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) return json({ error: "Server misconfiguration" }, 500);

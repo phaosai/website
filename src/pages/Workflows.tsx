@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { workflowPageSchema } from "@/lib/seo-schemas";
 import WorkflowDiagram from "@/components/WorkflowDiagram";
-import { FeatureStatusBadge } from "@/components/phaos";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -118,8 +117,6 @@ const Workflows = () => {
           </motion.div>
         </div>
       </section>
-
-      {/* Section intentionally removed */}
 
       <section className="py-20 px-6 border-t border-border/30" aria-label="Call to Action">
         <div className="max-w-4xl mx-auto text-center">

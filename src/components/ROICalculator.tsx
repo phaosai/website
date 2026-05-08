@@ -515,11 +515,6 @@ const ROICalculator = ({ embedded = false }: ROICalculatorProps) => {
             </button>
           </div>
         </FadeIn>
-
-        <p className="mt-6 text-xs text-muted-foreground italic text-center max-w-2xl mx-auto">
-          These estimates illustrate potential efficiency gains only. Phaos AI does not predict
-          investment returns.
-        </p>
       </div>
     </Wrapper>
   );

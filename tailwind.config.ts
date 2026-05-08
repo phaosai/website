@@ -59,13 +59,6 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
-        pci: {
-          "no-go": "hsl(var(--pci-no-go))",
-          warning: "hsl(var(--pci-warning))",
-          potential: "hsl(var(--pci-potential))",
-          go: "hsl(var(--pci-go))",
-          choice: "hsl(var(--pci-choice))",
-        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -107,15 +100,6 @@ export default {
           "0%, 100%": { backgroundPosition: "-200% 0" },
           "50%": { backgroundPosition: "200% 0" },
         },
-        "ledger-reveal": {
-          "0%": { opacity: "0", transform: "translateY(4px)", filter: "blur(2px)" },
-          "100%": { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
-        },
-        "stamp-in": {
-          "0%": { opacity: "0", transform: "scale(0.6) rotate(-8deg)" },
-          "60%": { opacity: "1", transform: "scale(1.08) rotate(-4deg)" },
-          "100%": { opacity: "1", transform: "scale(1) rotate(-4deg)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -124,8 +108,6 @@ export default {
         "fade-out": "fade-out 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         shimmer: "shimmer 4s ease-in-out infinite",
-        "ledger-reveal": "ledger-reveal 0.45s ease-out both",
-        "stamp-in": "stamp-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both",
       },
     },
   },

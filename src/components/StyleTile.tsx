@@ -16,7 +16,6 @@ import SEOHead from "@/components/SEOHead";
 import FadeIn from "@/components/FadeIn";
 
 import LazyViewport from "@/components/LazyViewport";
-import HomePhaosOneSections from "@/components/HomePhaosOneSections";
 import { homeGraphSchema } from "@/lib/seo-schemas";
 
 const StyleTile = () => {
@@ -40,7 +39,7 @@ const StyleTile = () => {
             alt=""
             width={1449}
             height={710}
-            {...({ fetchpriority: "high" } as any)}
+            fetchPriority="high"
             loading="eager"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
@@ -55,19 +54,17 @@ const StyleTile = () => {
           <div className="max-w-2xl">
             <FadeIn delay={0.1}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
-                <span className="text-gradient-purple">AI-Powered</span> Voice,
+                <span className="text-gradient-purple">AI-Powered</span> Voice &
                 <br />
                 Agentic Workflow
                 <br />
-                Automation and
-                <br />
-                <span className="text-[85%] text-purple-light">Quantum Research</span>
+                Automation
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.2}>
               <p className="text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed">
-                Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation. Strategically leveraging the power of quantum computing.
+                Deploy intelligent AI agents to manage your inbound call volume while utilizing agentic workflows to eliminate your operation's manual grind. We replace multi-step, paper-heavy processes and excessive touchpoints with streamlined, human-free automation.
               </p>
             </FadeIn>
 
@@ -201,8 +198,6 @@ const StyleTile = () => {
           />
         </div>
       </section>
-
-      <HomePhaosOneSections />
 
       </main>
       <Footer />
