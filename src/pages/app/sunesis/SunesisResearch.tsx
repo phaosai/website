@@ -335,9 +335,28 @@ export default function SunesisResearch() {
       description="The Sunesis brain ranks instruments by Phaos Conviction Index, restricted to what's actually available on the platforms you trade. Click any result for the full PCI rationale."
       minTier="sunesis"
     >
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80 px-1">
-        <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
-        Sunesis · Research Operating System SQC v1
+      <div className="flex items-center justify-between flex-wrap gap-3 px-1">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/80">
+          <span className="w-1 h-1 rounded-full bg-purple-deep animate-pulse" />
+          Sunesis · Research Operating System SQC v1
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { selectAllClasses(); setSelectedPlatforms(platforms.map((p) => p.slug)); }}
+            className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
+          >Select all (asset classes + brokerages)</button>
+          <button
+            type="button"
+            onClick={selectAllClasses}
+            className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card"
+          >All asset classes</button>
+          <button
+            type="button"
+            onClick={() => setSelectedPlatforms(platforms.map((p) => p.slug))}
+            className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs font-semibold hover:bg-card"
+          >All brokerages</button>
+        </div>
       </div>
 
       {/* Step 1 — Asset classes */}

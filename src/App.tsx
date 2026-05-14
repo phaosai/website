@@ -165,6 +165,9 @@ const AppInner = () => {
             <Route path="/checkout/return" element={<CheckoutReturn />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/signin" element={<SignIn />} />
+            <Route path="/login" element={<Navigate to="/signin" replace />} />
+            <Route path="/sign-in" element={<Navigate to="/signin" replace />} />
+            <Route path="/log-in" element={<Navigate to="/signin" replace />} />
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/app" element={<AppLayout />}>
