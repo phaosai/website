@@ -2,13 +2,24 @@ import { useState, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
+import { z } from "zod";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import MagneticButton from "@/components/MagneticButton";
 import { supabase } from "@/integrations/supabase/client";
 
+const contactSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be under 100 characters"),
+  email: z.string().trim().email("Please enter a valid email").max(255),
+  phone: z.string().trim().max(40, "Phone must be under 40 characters").optional().or(z.literal("")),
+  reason: z.string().trim().min(1, "Message is required").max(1000, "Message must be under 1000 characters"),
+});
+
 const Contact = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [reason, setReason] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -16,7 +27,13 @@ const Contact = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (honeypot || !reason.trim() || submitting || Date.now() - mountedAt.current < 3000) return;
+    if (honeypot || submitting || Date.now() - mountedAt.current < 3000) return;
+
+    const parsed = contactSchema.safeParse({ name, email, phone, reason });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Please check your input.");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -29,13 +46,15 @@ const Contact = () => {
           idempotencyKey: `contact-${id}`,
           templateData: {
             source: "Contact Form",
-            name: "Website Visitor",
-            message: reason.trim(),
+            name: parsed.data.name,
+            email: parsed.data.email,
+            phone: parsed.data.phone || undefined,
+            message: parsed.data.reason,
           },
         },
       });
       toast.success("Message sent successfully. Our team will reach out shortly.");
-      setReason("");
+      setName(""); setEmail(""); setPhone(""); setReason("");
     } catch {
       toast.error("We couldn't send your message right now. Please try again in a moment.");
     } finally {
@@ -77,13 +96,59 @@ const Contact = () => {
                   </div>
 
                   <div>
+                    <label htmlFor="contact-name" className="block text-sm font-medium text-foreground mb-2">Name</label>
+                    <input
+                      id="contact-name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      maxLength={100}
+                      autoComplete="name"
+                      placeholder="Your full name"
+                      className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="contact-email" className="block text-sm font-medium text-foreground mb-2">Email</label>
+                    <input
+                      id="contact-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      maxLength={255}
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="contact-phone" className="block text-sm font-medium text-foreground mb-2">
+                      Phone <span className="text-muted-foreground font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="contact-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      maxLength={40}
+                      autoComplete="tel"
+                      placeholder="+1 (555) 555-5555"
+                      className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+
+                  <div>
                     <label htmlFor="contact-reason" className="block text-sm font-medium text-foreground mb-2">Reason for Contacting Phaos AI</label>
                     <textarea
                       id="contact-reason"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       required
-                      rows={8}
+                      rows={6}
                       maxLength={1000}
                       placeholder="Tell us how we can help — whether it's a product demo, technical question, partnership opportunity, or anything else..."
                       className="w-full rounded-xl bg-secondary border border-border/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
@@ -93,7 +158,7 @@ const Contact = () => {
                   <MagneticButton className="w-full">
                     <button
                       type="submit"
-                      disabled={submitting || !reason}
+                      disabled={submitting || !reason || !name || !email}
                       className="w-full bg-gradient-purple text-primary-foreground font-semibold py-3.5 rounded-full glow-purple hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       data-interactive
                     >
