@@ -1,61 +1,66 @@
-# Implementation Plan
+# Full Site QA, Security & SEO Audit Plan
 
-## 1. Brand purge — visible UI only, zero behavioral risk
-Run a UI-text-only sweep. Internal identifiers (`tier: "aion"|"kyrios"|"phaos_one"`, route paths under `/one/*`, page filenames `PhaosOne.tsx`, `OnePillarPage.tsx`, `useEntitlements` keys, gating like `ent.has("aion")`) stay untouched to keep entitlements, Stripe price mappings, and existing routes working.
+Goal: Get phaosai.com to investor-grade — zero broken links, buttons, flows, or security gaps — before VC review. All aesthetic / branding / functional changes are surfaced for your approval before I touch them.
 
-Replace user-visible strings only:
-- `src/pages/PhaosOne.tsx`: every visible "Phaos ONE" → "Phaos Research"; "Two Pillars. One Environment." → "Two Pillars. One Subscription." rewording removes "ONE" branding. Keep route `/one`.
-- `src/components/HomePhaosOneSections.tsx`: visible "Phaos ONE" labels → "Phaos Research"; copy already says "Research" in most spots.
-- `src/components/Navigation.tsx`: dropdown labels — "Sunesis", "Run Simulation" stay; nothing references Aion/Kyrios visibly. Verify and remove any visible Aion/Kyrios labels if found.
-- `src/pages/AppDashboard.tsx`, `src/pages/RunSimulation.tsx`: visible "Phaos ONE" → "Phaos Research".
-- `src/pages/OnePillarPage.tsx`: visible "Phaos ONE" header and "Phaos {pillar}" titles for Aion/Kyrios → keep file but no longer linked from nav; replace visible labels with "Phaos Research".
-- Any remaining "Phinance" → "Research" (already done last pass; re-run grep to confirm).
-Routes, lazy-imports, tier strings, and Stripe IDs are NOT touched.
+## Phase 1 — Automated Sweeps (no code changes)
 
-## 2. Sign-in portal verification
-- `/signin` → tiles already route to `https://voice.phaosai.com/login`, `/auth?portal=workflow`, `/auth?portal=research`.
-- Update `src/pages/Auth.tsx` to read `portal` from query string, display a small "Signing in to Phaos {Portal}" banner, and persist it through OAuth via `localStorage`. After successful sign-in, redirect to `/app` for both research and workflow (current behavior).
-- No portal-specific gating yet — Daniel will be admin everywhere.
+1. **Static link & route audit**
+   - Grep every `<Link to="...">`, `<a href="...">`, `navigate(...)`, and `window.location` across `src/` and confirm each target route exists in `App.tsx` (or is a valid external URL).
+   - Flag legacy refs to Aion, Kyrios, ONE, Phinance, Kratos, FSHS, Lumen anywhere in user-facing strings.
+   - Confirm CTA copy is "Schedule a Call" everywhere (never "Book a Demo").
 
-## 3. Admin account
-You create `daniel@phaosai.com` / `Evangelizor1981!` manually in Cloud → Users. After it exists, I'll run a one-line data insert granting `admin` in `user_roles`. (No code change needed to grant cross-product access — admin role + presence of subscription rows controls visibility.)
+2. **Backend / edge-function health**
+   - Run `supabase--linter` for RLS + schema warnings.
+   - Run `security--run_security_scan` and pull `security--get_scan_results`.
+   - Spot-check edge functions used by public pages (`capture-lead`, `phaos-chat`, `sunesis-leaderboard`, `customer-portal`, `create-checkout`, `quantum-audit`, `compute-pci-score`) via `supabase--curl_edge_functions` for happy-path + auth-required behavior.
+   - Pull recent `supabase--edge_function_logs` for any 5xx noise.
 
-## 4. Homepage copy fix
-`src/components/StyleTile.tsx` line 70: append a period after "quantum computing".
+3. **SEO check**
+   - `seo_chat--list_findings` for failing items.
+   - Verify `index.html` head, `robots.txt`, `sitemap.xml`, per-page `<SEOHead>` titles/descriptions/canonicals/JSON-LD on About, VoiceAI, Workflows, PhaosOne (Research), Contact, SignIn, Pricing, Blog.
+   - Confirm `<h1>` uniqueness, alt text on hero images, lazy-load hygiene.
 
-## 5. Watchlist per-group hero
-In `src/components/sunesis/WatchlistPanel.tsx` `renderGroup`, replace the small right-aligned "Group WLH-ROI" badge with the same 1-large-stat + 6-mini-stats layout used for the combined hero, scoped to that group's rows. Same calculations: WLH-ROI, Win rate, Best, Worst, Avg PCI, Notional, Oldest hold.
+## Phase 2 — Browser E2E (desktop 1440 + mobile 390)
 
-## 6. Watchlist privacy & public-handle opt-in
-Schema additions (migration):
-- `users`: add `country_code text`, `public_handle text`, `handle_is_public boolean default false`.
-- `sunesis_watchlist_groups`: add `is_public boolean default false`. When the parent user toggles public, all their groups inherit; we expose a single per-user toggle stored on `users.handle_is_public` and groups inherit via join.
-- New SECURITY DEFINER view `public_watchlist_leaderboard_v` exposing only: `group_id`, `group_name`, `display_name` (handle if `handle_is_public` else `null`), `country_code`, aggregated metrics (computed in the view from `sunesis_watchlist`). Profanity is masked at write-time on `public_handle` via a trigger using a server-side wordlist; matched substrings → `****`.
-- RLS on the view: `SELECT` to `authenticated` only when group's user has `handle_is_public = true` OR row anonymized (always anonymized rows readable; identified rows readable when toggle on).
-- UI: in `WatchlistPanel` add a "Make watchlist public" toggle next to the create/refresh buttons (writes `users.handle_is_public`). Profile section in Settings gains `country_code` (dropdown) and `public_handle` (text).
+For each route, I'll navigate, screenshot, and exercise key interactions:
 
-## 7. Watchlist Leaderboard page
-New route `/app/leaderboard` + sidebar entry "Leaderboard".
-- Tabs (per your spec): **Equities & Funds**, **Fixed Income**, **Derivatives**, **FX & Commodities**, **Next-Gen / Crypto**, **Quantum Elite** (filter: groups whose creator triggered quantum_cross_validation), **Conviction Accuracy** (PCI Correlation Score).
-- Time-window selector for each tab: Best Single Day YTD · Best Single Week YTD · Best Single Month YTD · Current Week (Mon–Sun) · Current Month · Current Quarter · Current Year.
-- Per-platform sub-filter dropdown (e.g., "Top Interactive Brokers Users") sourced from `trading_platforms`.
-- Sort keys per category: `total_return_percentage` (equities, crypto, FX), `yield_to_maturity` (fixed income), `profit_factor` (derivatives), `sharpe_ratio` (Quantum Elite), `pci_correlation_score` (Conviction Accuracy).
-- Column display: rank · handle-or-anonymous · country flag · group name · metric · age (days active) · # instruments · top asset class.
-- Edge function `sunesis-leaderboard` computes everything from `sunesis_watchlist` + price snapshots; cached 60s in `signal_cache`.
+- `/` Home — every nav link, hero CTAs ("Schedule a Call", "Learn More"), each section card, footer links, theme toggle, Phaos Navigator floating UI, Workflow Teardown popup (open/close/submit empty + valid email).
+- `/about` — team cards, links.
+- `/voice-ai` — CTAs, embedded forms.
+- `/workflows` — CTAs, ROI calculator entry.
+- `/one` (Research) and `/one/sunesis` — pillar nav, "Run Simulation", Sunesis brain interactions.
+- `/contact` — form validation (empty, invalid email, valid submit → confirm `capture-lead` edge function 200), bot honeypot.
+- `/signin` — Voice / Workflow / Research portal selection → `/auth?portal=...` redirect, banner shown, sign-in error states, "Forgot password" link, password reset flow round-trip.
+- `/auth/forgot-password` + `/auth/reset-password` — token handling.
+- `/pricing` → `/checkout/return` — Stripe embedded checkout in test mode (no real charge).
+- `/integrations`, `/roi-calculator`, `/blog`, `/investor-relations`, `/careers`, `/partners`, `/investors`, `/security`, `/privacy`, `/terms`, `/unsubscribe` — render + key CTAs.
+- `/app/*` (logged in as daniel@phaosai.com) — sidebar links, Sunesis Watchlists incl. "Make Public" toggle, Leaderboard tabs/timeframes, Settings (country + handle), Pantheon, Foundry.
+- 404 path — confirm NotFound renders.
 
-## 8. Platform & asset-class expansion (up to 100 platforms)
-Migration adds platforms in `trading_platforms` to reach ~100 — only platforms whose published asset menu we can verify (Interactive Brokers, IBKR Lite, Charles Schwab, Fidelity, Robinhood, Webull, E*TRADE, Merrill Edge, Vanguard, Public, M1, SoFi, TastyTrade, TradeStation, Tradier, Lightspeed, Cobra, Centerpoint, Stash, Acorns, Wealthfront, Betterment, Coinbase, Coinbase Advanced, Kraken, Kraken Pro, Gemini, Crypto.com, Binance.US, Bitstamp, Bitfinex, KuCoin, OKX, Bybit, BitGo, Uniswap, dYdX, GMX, Hyperliquid, eToro, Trading 212, DEGIRO, Saxo, Revolut, Lightyear, Trade Republic, Scalable Capital, comdirect, Flatex, Swissquote, Plus500, IG, CMC Markets, City Index, Pepperstone, OANDA, Forex.com, Forexware, Exness, ICMarkets, FXCM, AvaTrade, ThinkMarkets, FBS, XM, Tickmill, FP Markets, Vantage, Axos Self-Directed, Ally Invest, Firstrade, JPMorgan Self-Directed, Wells Fargo WellsTrade, Edward Jones, Raymond James, Stockpile, Cash App Investing, MEXC, BingX, BitFlyer, Bitso, Mercado Bitcoin, NDAX, Newton, Wealthsimple, Questrade, CIBC Investor's Edge, RBC Direct Investing, BMO InvestorLine, TD Direct Investing, National Bank Direct Brokerage, CommSec, SelfWealth, Stake, Sharesies, Hatch, Tiger Brokers, Futubull, ZuluTrade, NinjaTrader, AMP Futures).
-Plus extra asset classes added to enum / typing (`AssetClass`): `precious_metal`, `agricultural_future`, `livestock_future`, `weather_derivative`, `prediction_market`, `municipal_revenue_bond`, `sovereign_bond`, `convertible_bond`, `preferred_stock`, `closed_end_fund`, `business_development_company`, `master_limited_partnership`, `spac`, `ipo_allocation`, `green_bond`, `inflation_linked_bond`, `bitcoin_etf`, `ether_etf`, `nft_index`, `tokenized_treasury`, `restaking_token`. Each new platform's `asset_classes` array references only what is publicly verifiable on its product page.
-Update `ASSET_GROUPS` in `SunesisResearch.tsx` and `simulationCandidates.ts` to include the new classes, and add a small smoke test that every `asset_classes` value used in DB exists in the front-end label map.
+Each viewport: tap targets ≥ 44px, no horizontal scroll, sticky elements don't trap focus, modals close on Esc + backdrop, focus-visible rings present.
 
-## Technical Notes
-- All schema changes via single migration; `users.handle_is_public` toggle is read by edge function, never by client direct join.
-- Profanity trigger uses a 200-word static list; we don't ship a model — `replace(public_handle, word, repeat('*', length(word)))`.
-- Leaderboard ranking computed from `sunesis_watchlist` price snapshots already maintained by `sunesis-watchlist-refresh`. PCI correlation = corr( pci_at_add bucket midpoint, realized return ) per group.
-- `country_code` collected on first login via a small modal on `/app` (skippable); falls back to Cloudflare `cf-ipcountry` header captured by `research-visitor` edge function.
-- No removal of `framer-motion`/`recharts` constraints; leaderboard uses CSS-only bar fills.
+## Phase 3 — Triage & Approval Gate
 
-## Out of Scope
-- Removing `/one` routes or renaming internal tier identifiers (would break Stripe price → tier mapping).
-- Building a profanity ML model — static wordlist only.
-- Cross-product SSO bridge to `voice.phaosai.com` (it stays a separate login link).
+I'll classify every finding as:
+
+- **A. Safe auto-fix** — broken `to="/foo"` typos, dead imports, missing alt text, missing canonical, console errors, failing edge function CORS, RLS gap, security scan finding. Fixed without asking.
+- **B. Needs your approval** — anything that changes wording, CTA placement, layout, color/branding, removed/added sections, copy on legal pages, pricing display, or user-visible flow. Presented as a list with proposed change + rationale; I wait.
+- **C. Out of scope / data needed** — e.g. real Stripe keys, social auth provider creds, missing logo assets. Flagged with what's needed from you.
+
+## Phase 4 — Execute & Verify
+
+- Apply Bucket A immediately, then Bucket B items you approve.
+- Re-run security scan + SEO findings + targeted browser checks on changed routes.
+- Deliver a final report: issues found, severity, fix applied (or pending), and a green/amber/red checklist per page.
+
+## Technical notes
+
+- Browser tool will be used at 1440x900 and 390x844; session state is preserved across resizes.
+- I will NOT submit real payment, real email signups (use `qa+timestamp@phaosai.com`), or destructive admin actions on Daniel's account.
+- All edge-function calls go through `supabase--curl_edge_functions` so auth tokens stay scoped to the preview session.
+- No new dependencies; no `framer-motion` / `recharts` introduced (per project rules).
+- Memory rules respected: "Schedule a Call" CTA, no Aos/FSHS/Kratos/Lumen/Phinance, PCI is the only user-facing score, SIMULATED labels preserved.
+
+## Estimated output
+
+A single triage report grouped by page, plus a Bucket B approval checklist before any branding/UX edits land.
