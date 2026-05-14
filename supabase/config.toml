@@ -26,3 +26,24 @@ verify_jwt = false
 
 [functions.healthz]
 verify_jwt = false
+
+[functions.payments-webhook]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.set-stripe-tax-codes]
+verify_jwt = false
+
+[functions.run-simulation]
+verify_jwt = false
+
+[functions.warmup-signal-cache]
+verify_jwt = false
+
+[functions.signal-cache-health]
+verify_jwt = false

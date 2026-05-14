@@ -229,25 +229,27 @@ const AdminPurge = () => {
     if (!error && data) setSystemState(data as SystemState);
   }
 
-  // Kill-switch second-factor passphrase. Required for EVERY toggle (on or off).
-  // Client-side gate is intentional: it prevents accidental clicks by an authenticated admin.
-  // True security still rests on Supabase Auth + admin role + RLS on system_state.
-  const KILL_SWITCH_PASSPHRASE = "onlyjesus";
-
+  // Kill-switch second-factor: require the admin to type their own logged-in email.
+  // This is not a secret — it's a friction gate to prevent accidental clicks.
+  // True security rests on Supabase Auth + admin role + RLS on system_state.
   async function toggleSystemState(field: keyof SystemState, value: boolean) {
     if (stateBusy) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const expectedEmail = (session?.user.email ?? "").trim().toLowerCase();
+    if (!expectedEmail) {
+      toast.error("Session expired. Please sign in again.");
+      return;
+    }
     const entered = window.prompt(
-      `Confirm kill-switch change:\n\n  ${field} → ${value ? "ENABLE" : "DISABLE"}\n\nEnter the kill-switch passphrase to proceed.`
+      `Confirm kill-switch change:\n\n  ${field} → ${value ? "ENABLE" : "DISABLE"}\n\nType your admin email to proceed:`
     );
-    if (entered === null) return; // user cancelled — no-op, switch will revert via state
-    if (entered !== KILL_SWITCH_PASSPHRASE) {
-      toast.error("Incorrect passphrase. Kill switch unchanged.");
-      // Force re-render so the Switch reflects unchanged state
+    if (entered === null) return;
+    if (entered.trim().toLowerCase() !== expectedEmail) {
+      toast.error("Email did not match. Kill switch unchanged.");
       setSystemState((s) => (s ? { ...s } : s));
       return;
     }
     setStateBusy(true);
-    const { data: { session } } = await supabase.auth.getSession();
     const { error } = await supabase
       .from("system_state")
       .update({ [field]: value, updated_by: session?.user.id, updated_at: new Date().toISOString() })

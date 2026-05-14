@@ -66,7 +66,7 @@ const About = () => {
             </div>
             <h2 className="text-2xl font-bold mb-4 text-foreground">Our Mission</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To develop and deploy cutting-edge conversational AI that sets new benchmarks for natural interaction, deep contextual understanding, and self-improving intelligence — enabling businesses to scale customer satisfaction, optimize resource allocation, and unlock unprecedented growth.
+              Phaos AI began as an AI-powered voice and workflow automation company serving B2B businesses. We have expanded that same commitment to operational intelligence into a full financial research environment—because the same discipline that improves how a business handles inbound calls also improves how an investor handles inbound signals. We don't just process information; we architect conviction.
             </p>
           </motion.div>
         </div>
@@ -394,6 +394,132 @@ const About = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
+        </div>
+      </section>
+
+      {/* The Phinancial Mission */}
+      <section className="py-24 border-t border-border/40">
+        <div className="max-w-4xl mx-auto px-6 lg:px-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+            Our Mission
+          </p>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
+            The Phinancial Mission
+          </h2>
+          <div className="mt-6 space-y-5 text-foreground/85 leading-relaxed">
+            <p>
+              Phaos AI was founded on a single, unshakeable premise: that the world's most
+              critical decisions deserve an environment built on deterministic truth rather
+              than speculative noise. Whether optimizing high-stakes B2B workflows or
+              navigating global financial markets, the core requirement remains the same —
+              operational intelligence.
+            </p>
+            <p>
+              We are bringing this high-level discipline to the financial sector because we
+              identified a dangerous void in the market. While most tools offer "data dumps"
+              and "AI-generated summaries," they lack the auditable logic, verifiable
+              "receipts," and rigorous governance required for true investment conviction.
+            </p>
+            <p>
+              Our mission is to bridge this gap. We are excited to offer a unified
+              intelligence environment that treats financial signals with the same precision
+              and accountability found in the world's most advanced industrial workflows. By
+              merging deep research (Sunesis) and live simulation into a single command
+              center (Phaos Research), we empower our
+              users to move past the "guesswork" of the retail market and step into a new era
+              of evidence-backed financial confidence.
+            </p>
+            <p className="text-foreground font-medium">
+              At Phaos AI, we don't just process information; we architect conviction.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Product Philosophy */}
+      <section className="py-24 border-t border-border/40 bg-card/20">
+        <div className="max-w-5xl mx-auto px-6 lg:px-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+            How We Build
+          </p>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
+            Our Product Philosophy
+          </h2>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {[
+              "Evidence over opinion",
+              "Explainability over black-box outputs",
+              "Governance over guessing",
+              "Resilience over complacency",
+            ].map((p) => (
+              <div
+                key={p}
+                className="rounded-lg border border-border bg-card/60 px-5 py-4 text-foreground/90"
+              >
+                {p}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Our Commitment to You */}
+      <section className="py-24 border-t border-border/40">
+        <div className="max-w-4xl mx-auto px-6 lg:px-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+            Standing Promises
+          </p>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
+            Our Commitment to You
+          </h2>
+          <ul className="mt-8 space-y-3 text-foreground/90">
+            {[
+              "We will tell you what we do not know.",
+              "We will show you our sources.",
+              "We will never claim certainty we cannot demonstrate.",
+              "We will never tell you what to buy or sell.",
+            ].map((c) => (
+              <li
+                key={c}
+                className="flex gap-3 rounded-md border border-border bg-card/60 px-5 py-4"
+              >
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Christian Founding Principles */}
+      <section className="py-24 border-t border-border/40 bg-card/20">
+        <div className="max-w-4xl mx-auto px-6 lg:px-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+            Foundation
+          </p>
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-primary">
+            Christian Founding Principles
+          </h2>
+          <p className="mt-5 text-muted-foreground max-w-3xl leading-relaxed">
+            Phaos AI is built on a foundation of faith and servant-leadership. These
+            principles are not branding — they are the standards we hold every product
+            decision against.
+          </p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {[
+              "Transparent pricing",
+              "Truth-first research outputs",
+              "Stewardship over speculation",
+              "Integrity in every product decision",
+            ].map((p) => (
+              <div
+                key={p}
+                className="rounded-lg border border-border bg-card/60 px-5 py-4 text-foreground/90"
+              >
+                {p}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
