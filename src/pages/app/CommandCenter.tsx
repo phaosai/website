@@ -208,7 +208,7 @@ export default function CommandCenter() {
         </Panel>
 
         <Panel title="Signal Alerts" subtitle="What changed since last visit" icon={Bell}
-          locked={!ent.has("aion")} lockedTier="Aion">
+          locked={!ent.has("phaos_one")} lockedTier="Research">
           <p className="text-muted-foreground">No new material signal changes.</p>
         </Panel>
 
@@ -236,14 +236,14 @@ export default function CommandCenter() {
         </Panel>
 
         <Panel title="Simulation Queue" icon={FlaskConical}
-          locked={!ent.has("aion")} lockedTier="Aion"
+          locked={!ent.has("phaos_one")} lockedTier="Research"
           cta={{ label: "Run new simulation", to: "/one/run-simulation" }}>
           <p className="text-muted-foreground">Run a free simulation to see scenario analysis →</p>
         </Panel>
 
         <Panel title="Workflow Queue" icon={Workflow}
-          locked={!ent.has("kyrios")} lockedTier="Kyrios"
-          cta={{ label: "Go to Workflows", to: "/app/kyrios" }}>
+          locked={!ent.has("phaos_one")} lockedTier="Research"
+          cta={{ label: "Go to Workflows", to: "/app/sunesis/workflow" }}>
           <p className="text-muted-foreground">Your research review queue is clear.</p>
         </Panel>
 
