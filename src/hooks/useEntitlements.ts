@@ -33,8 +33,8 @@ export interface Entitlements {
 const TIER_LABEL: Record<Tier, string> = {
   free: "Phaos Free",
   sunesis: "Phaos Sunesis",
-  aion: "Phaos Aion",
-  kyrios: "Phaos Kyrios",
+  aion: "Phaos Research",
+  kyrios: "Phaos Research",
   phaos_one: "Phaos ONE",
   pantheon: "Pantheon",
 };
