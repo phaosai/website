@@ -1,11 +1,23 @@
 // Public health check for signal_cache. Reports counts, freshness, and warm-up status
 // per source_type so monitors can confirm the cache is never empty in normal runs.
-import { corsHeaders, json, serviceClient } from "../_shared/phaos.ts";
+import { corsHeaders, json, serviceClient, requireUserOrService } from "../_shared/phaos.ts";
 
 const SOURCE_TYPES = [
   "sec-filings",
   "xbrl-facts",
   "insider-transactions",
+  "government-contracts",
+  "google-trends",
+  "macro-data",
+];
+
+// Per-source freshness SLO in minutes — older than this counts as stale.
+const FRESHNESS_SLO_MIN = 24 * 60;
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const blocked = await requireUserOrService(req);
+  if (blocked) return blocked;
   "government-contracts",
   "google-trends",
   "macro-data",
