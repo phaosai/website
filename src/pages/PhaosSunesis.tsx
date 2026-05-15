@@ -81,7 +81,7 @@ const PhaosSunesis = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos Sunesis — Evidence-First Financial Research Engine"
-        description="Phaos Sunesis synthesizes 60+ public signal sources into structured, explainable research outputs with full source transparency. $149/month."
+        description="Phaos Sunesis synthesizes 60+ public signal sources into structured, explainable research outputs with full source transparency."
         canonical="/one/sunesis"
       />
       <Navigation />
