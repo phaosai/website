@@ -100,20 +100,15 @@ const PhaosSunesis = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
             Phaos Sunesis synthesizes 60+ public signal sources into structured, explainable research outputs with full source transparency.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/auth?mode=signup&plan=sunesis_monthly"
-              className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setSignupOpen(true)}
+              className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-8 py-4 rounded-full glow-purple hover:opacity-90 transition-all"
             >
-              Start with Sunesis — $149/month
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/auth?mode=signup&plan=phaos_one_monthly"
-              className="inline-flex items-center gap-2 border border-border bg-card/60 text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
-            >
-              Explore Phaos Research — $599/month
-            </Link>
+              Sign Up Now!
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </section>
