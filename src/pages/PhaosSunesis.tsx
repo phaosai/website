@@ -294,6 +294,7 @@ const PhaosSunesis = () => {
       </section>
 
       <Footer />
+      <SunesisSignupModal open={signupOpen} onClose={() => setSignupOpen(false)} />
     </div>
   );
 };
