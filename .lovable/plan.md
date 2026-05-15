@@ -1,66 +1,106 @@
-# Full Site QA, Security & SEO Audit Plan
+## Scope
 
-Goal: Get phaosai.com to investor-grade — zero broken links, buttons, flows, or security gaps — before VC review. All aesthetic / branding / functional changes are surfaced for your approval before I touch them.
+Three changes, all confirmed by your answers:
 
-## Phase 1 — Automated Sweeps (no code changes)
+1. **Asset class section** — add "Select all / Clear" controls matching the platform section, and change the default selection from `[Stock, ETF]` to `[Stock]` only.
+2. **Platform list cleanup** — remove platforms with regulatory/AML/breach/grey-zone or poor public reputations; add a proposed list of reputable additions for your approval before insert.
+3. **Quantum removal** — remove the "Run Quantum Audit" button **and** every other user-facing Quantum surface outside the Foundry.
 
-1. **Static link & route audit**
-   - Grep every `<Link to="...">`, `<a href="...">`, `navigate(...)`, and `window.location` across `src/` and confirm each target route exists in `App.tsx` (or is a valid external URL).
-   - Flag legacy refs to Aion, Kyrios, ONE, Phinance, Kratos, FSHS, Lumen anywhere in user-facing strings.
-   - Confirm CTA copy is "Schedule a Call" everywhere (never "Book a Demo").
+---
 
-2. **Backend / edge-function health**
-   - Run `supabase--linter` for RLS + schema warnings.
-   - Run `security--run_security_scan` and pull `security--get_scan_results`.
-   - Spot-check edge functions used by public pages (`capture-lead`, `phaos-chat`, `sunesis-leaderboard`, `customer-portal`, `create-checkout`, `quantum-audit`, `compute-pci-score`) via `supabase--curl_edge_functions` for happy-path + auth-required behavior.
-   - Pull recent `supabase--edge_function_logs` for any 5xx noise.
+## 1. Asset class — Select All + default
 
-3. **SEO check**
-   - `seo_chat--list_findings` for failing items.
-   - Verify `index.html` head, `robots.txt`, `sitemap.xml`, per-page `<SEOHead>` titles/descriptions/canonicals/JSON-LD on About, VoiceAI, Workflows, PhaosOne (Research), Contact, SignIn, Pricing, Blog.
-   - Confirm `<h1>` uniqueness, alt text on hero images, lazy-load hygiene.
+In `src/pages/RunSimulation.tsx`:
+- Default state changes from `useState<AssetClass[]>(["stock", "etf"])` → `useState<AssetClass[]>(["stock"])`.
+- Step 1 header gets the same right-aligned "Select all / Clear" pill buttons as Step 2 (Select all = every value from `investmentGroups`; Clear = `[]`). Identical styling, same `flex items-center gap-2` cluster.
 
-## Phase 2 — Browser E2E (desktop 1440 + mobile 390)
+No logic changes downstream — `canRun` already handles 1+ selection.
 
-For each route, I'll navigate, screenshot, and exercise key interactions:
+---
 
-- `/` Home — every nav link, hero CTAs ("Schedule a Call", "Learn More"), each section card, footer links, theme toggle, Phaos Navigator floating UI, Workflow Teardown popup (open/close/submit empty + valid email).
-- `/about` — team cards, links.
-- `/voice-ai` — CTAs, embedded forms.
-- `/workflows` — CTAs, ROI calculator entry.
-- `/one` (Research) and `/one/sunesis` — pillar nav, "Run Simulation", Sunesis brain interactions.
-- `/contact` — form validation (empty, invalid email, valid submit → confirm `capture-lead` edge function 200), bot honeypot.
-- `/signin` — Voice / Workflow / Research portal selection → `/auth?portal=...` redirect, banner shown, sign-in error states, "Forgot password" link, password reset flow round-trip.
-- `/auth/forgot-password` + `/auth/reset-password` — token handling.
-- `/pricing` → `/checkout/return` — Stripe embedded checkout in test mode (no real charge).
-- `/integrations`, `/roi-calculator`, `/blog`, `/investor-relations`, `/careers`, `/partners`, `/investors`, `/security`, `/privacy`, `/terms`, `/unsubscribe` — render + key CTAs.
-- `/app/*` (logged in as daniel@phaosai.com) — sidebar links, Sunesis Watchlists incl. "Make Public" toggle, Leaderboard tabs/timeframes, Settings (country + handle), Pantheon, Foundry.
-- 404 path — confirm NotFound renders.
+## 2. Platform list — removals + proposed additions
 
-Each viewport: tap targets ≥ 44px, no horizontal scroll, sticky elements don't trap focus, modals close on Esc + backdrop, focus-visible rings present.
+### Removals (queued as a single DB migration)
 
-## Phase 3 — Triage & Approval Gate
+Crypto exchanges with regulatory/AML/breach issues:
+- **Binance**, **Binance.US** (Nov 2023 DOJ $4.3B settlement, CZ guilty plea)
+- **Bitfinex** (NY AG settlement, reserve disclosure history)
+- **BingX** (July 2024 hot-wallet hack)
+- **KuCoin** (2024 DOJ indictment, $300M+ AML settlement)
+- **MEXC** (no major-jurisdiction licensing, consumer warnings)
+- **Bybit** (Feb 2025 $1.4B hack, multi-jurisdiction restrictions)
+- **OKX** (Feb 2025 DOJ guilty plea, $500M+ in penalties)
+- **Crypto.com** (FTC scrutiny, undisclosed 2022 hack)
 
-I'll classify every finding as:
+Permissionless perp DEXs (no KYC, regulatory grey zone):
+- **Hyperliquid**, **GMX**, **dYdX**, **Jupiter** (perps)
+- *(Uniswap, Raydium, PancakeSwap retained — spot AMMs, core DeFi infra)*
 
-- **A. Safe auto-fix** — broken `to="/foo"` typos, dead imports, missing alt text, missing canonical, console errors, failing edge function CORS, RLS gap, security scan finding. Fixed without asking.
-- **B. Needs your approval** — anything that changes wording, CTA placement, layout, color/branding, removed/added sections, copy on legal pages, pricing display, or user-visible flow. Presented as a list with proposed change + rationale; I wait.
-- **C. Out of scope / data needed** — e.g. real Stripe keys, social auth provider creds, missing logo assets. Flagged with what's needed from you.
+CFD/FX brokers with poor reputations or weak regulation:
+- **FXCM** (2017 NFA ban — US misleading-customer order)
+- **Exness** (offshore, no tier-1 regulator)
+- **AvaTrade** (multiple regulator fines, retention practices)
+- **ZuluTrade** (signal-copy reputation issues)
+- **XM** (offshore, mixed reputation)
+- **Vantage** (offshore-leaning, marketing scrutiny)
+- **ThinkMarkets** (mixed regulator history)
 
-## Phase 4 — Execute & Verify
+Other:
+- **bitFlyer** retained (Japan FSA regulated)
+- **Bitso**, **Mercado Bitcoin**, **NDAX**, **Newton** retained (regional regulated)
+- **Robinhood** retained (FINRA fines but tier-1 regulated, mainstream — flag if you want it removed)
 
-- Apply Bucket A immediately, then Bucket B items you approve.
-- Re-run security scan + SEO findings + targeted browser checks on changed routes.
-- Deliver a final report: issues found, severity, fix applied (or pending), and a green/amber/red checklist per page.
+### Proposed additions (for your approval — nothing inserted until you OK)
 
-## Technical notes
+All tier-1 regulated, broad asset-class coverage, strong public reputation, alphabetical fit:
 
-- Browser tool will be used at 1440x900 and 390x844; session state is preserved across resizes.
-- I will NOT submit real payment, real email signups (use `qa+timestamp@phaosai.com`), or destructive admin actions on Daniel's account.
-- All edge-function calls go through `supabase--curl_edge_functions` so auth tokens stay scoped to the preview session.
-- No new dependencies; no `framer-motion` / `recharts` introduced (per project rules).
-- Memory rules respected: "Schedule a Call" CTA, no Aos/FSHS/Kratos/Lumen/Phinance, PCI is the only user-facing score, SIMULATED labels preserved.
+1. **AJ Bell** (UK, FCA — equities, funds, bonds)
+2. **Bitpanda** (EU, BaFin/MFSA — crypto + equities + metals)
+3. **Boursorama** (FR, ACPR — equities, ETFs, funds)
+4. **Charles Stanley Direct** (UK, FCA — equities, funds)
+5. **DBS Vickers** (SG, MAS — global equities, bonds)
+6. **Hargreaves Lansdown** (UK, FCA — equities, funds, SIPP)
+7. **Interactive Investor** (UK, FCA — multi-asset)
+8. **Lynx Broker** (EU IBKR partner — futures, options, equities)
+9. **Sygnum Bank** (CH, FINMA — regulated crypto + tokenized RWAs)
+10. **TradeZero** (BS, regulated — equities, OTC)
+11. **Zerodha** (IN, SEBI — equities, F&O — large reputable retail base)
 
-## Estimated output
+→ **Confirm which additions to include**, then I'll write one migration that does the deletes + inserts atomically, and update `FALLBACK_PLATFORMS` in `RunSimulation.tsx` so the fallback matches the DB.
 
-A single triage report grouped by page, plus a Bucket B approval checklist before any branding/UX edits land.
+---
+
+## 3. Quantum surfaces — Foundry-only
+
+### Remove
+| File | What goes |
+|------|-----------|
+| `src/pages/RunSimulation.tsx` | "Run Quantum Audit" button, `QuantumAuditModal` import + render, `quantumOpen`/`quantumPrompt` state, the `requiresQuantum` gate in `runSimulation` (cross-class runs become free), `AlertDialog` quantum prompt, `Cpu` icon import |
+| `src/pages/app/sunesis/SunesisResearch.tsx` | "Quantum cross-validation" toggle block (lines ~465–490), `quantumManual`/`quantumAuto`/`quantumActive` state, `quantum_enabled` payload fields (send `false`), `Atom` icon import |
+| `src/components/sunesis/AlertsPanel.tsx` | "Quantum auto-alerts" switch block (~327–349), `tryQuantum`, `quantum_enabled` in default state + persisted writes (always `false`) |
+| `src/pages/app/sunesis/SunesisLeaderboard.tsx` | "Quantum Elite" category from `Category` union + `TABS` array |
+| `src/pages/app/sunesis/SunesisLedger.tsx` | The "Quantum Audit completed" sample row + remove "quantum_audits" from footer disclaimer |
+| `src/components/phaos/SunesisMoatStrip.tsx` | Drop the `{ Icon: Cpu, label: "Quantum Audit" }` strip item |
+| `src/pages/app/sunesis/SunesisTicker.tsx` | Remove `<QRRGauge>` render + import |
+| `src/components/phaos/index.ts` | Remove `QRRGauge`/`QRRBadge` exports |
+
+### Keep
+- `QuantumAuditModal.tsx`, `QRRGauge.tsx`, `QRRBadge.tsx` files stay on disk (used by Foundry / future Foundry tooling).
+- `FoundryAdmin.tsx` retains everything (admin-gated already).
+- DB columns `quantum_enabled` on `saved_searches` / `alert_settings` stay (backward-compat); UI just never sets `true`.
+
+---
+
+## Verification
+- `bun run build` after each file group.
+- Manual check on `/one/run-simulation` (Select all/Clear works on Step 1; Stock pre-selected; no Quantum button); `/app/sunesis/research`, `/app/sunesis/leaderboard`, `/app/sunesis/ledger`, `/app/sunesis/ticker/AAPL` (no quantum surfaces); `/app/foundry` (admin) still has everything.
+
+---
+
+## What I need from you before building
+
+1. Approve the **proposed additions list** (or strike any).
+2. Confirm **Robinhood** stays (default) or should be removed.
+3. Anything else to remove that I didn't flag.
+
+Once you confirm, I'll execute all three changes in one pass.

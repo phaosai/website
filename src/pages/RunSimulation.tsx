@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Check, Cpu } from "lucide-react";
+import { ArrowRight, Sparkles, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
-import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -80,11 +75,10 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
   { slug: "ig", name: "IG Group" },
   { slug: "oanda", name: "OANDA" },
   { slug: "saxo", name: "Saxo Bank" },
-  { slug: "binance", name: "Binance" },
   { slug: "coinbase", name: "Coinbase" },
   { slug: "kraken", name: "Kraken" },
-  { slug: "okx", name: "OKX" },
-  { slug: "bybit", name: "Bybit" },
+  { slug: "gemini", name: "Gemini" },
+  { slug: "bitstamp", name: "Bitstamp" },
   { slug: "uniswap", name: "Uniswap" },
   { slug: "raydium", name: "Raydium" },
   { slug: "pancakeswap", name: "PancakeSwap" },
@@ -132,13 +126,12 @@ const TOP_SIGNALS = [
 const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 const RunSimulation = () => {
-  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
+  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
-  const [quantumOpen, setQuantumOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -155,6 +148,11 @@ const RunSimulation = () => {
   const togglePlatform = (slug: string) =>
     setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
 
+  const allAssetValues = useMemo<AssetClass[]>(
+    () => investmentGroups.flatMap((g) => g.items.map((i) => i.value)),
+    [],
+  );
+
   const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
 
   const summary = useMemo(() => {
@@ -166,15 +164,8 @@ const RunSimulation = () => {
     return { avg, top, phaosChoice, go };
   }, [results]);
 
-  const requiresQuantum = selectedClasses.length > 1;
-  const [quantumPrompt, setQuantumPrompt] = useState(false);
-
-  const runSimulation = async (quantumApproved = false) => {
+  const runSimulation = async () => {
     if (!canRun) return;
-    if (requiresQuantum && !quantumApproved) {
-      setQuantumPrompt(true);
-      return;
-    }
     setResults(null);
     setLoading(true);
     setProgress(0);
@@ -213,8 +204,7 @@ const RunSimulation = () => {
     // Sandbox always shows the global Top 10 across the selected universe.
     const top10 = scored.slice(0, 10);
 
-    // Hypothetical "quantum cross-asset cycle" delay if engaged.
-    await new Promise((r) => setTimeout(r, requiresQuantum && quantumApproved ? 2200 : 1400));
+    await new Promise((r) => setTimeout(r, 1400));
 
     window.clearInterval(progressInterval);
     setProgress(100);
@@ -252,11 +242,30 @@ const RunSimulation = () => {
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
             {/* Step 1 — Asset classes (multi-select) */}
             <div>
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
                 <p className="text-lg font-semibold">Select the asset classes to consider</p>
-                <span className="ml-auto text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedClasses(allAssetValues)}
+                    className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold hover:bg-card transition-colors"
+                  >
+                    Select all
+                  </button>
+                  {selectedClasses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClasses([])}
+                      className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold text-muted-foreground hover:bg-card transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
+
               <div className="space-y-5">
                 {investmentGroups.map((g) => (
                   <div key={g.group}>
@@ -335,74 +344,16 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-[1fr_auto] gap-3">
-              <button
-                type="button"
-                onClick={() => runSimulation()}
-                disabled={!canRun || loading}
-                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                <Sparkles className="w-5 h-5" />
-                Generate Top 10
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuantumOpen(true)}
-                disabled={!canRun}
-                className="relative inline-flex items-center justify-center gap-2 rounded-full border border-purple-deep/50 bg-purple-deep/10 text-foreground text-base font-semibold px-6 py-4 hover:bg-purple-deep/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_30px_-10px_hsl(var(--primary)/0.5)]"
-              >
-                <Cpu className="w-5 h-5 text-primary" />
-                Run Quantum Audit
-                <span className="absolute -top-2 -right-2 text-[9px] font-bold tracking-wider uppercase text-primary border border-primary/50 bg-background px-1.5 py-0.5 rounded-full">
-                  Premium
-                </span>
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground -mt-4">
-              Premium advanced-compute validation re-prices the Top 10 with quantum-assisted optimization. Free and entry-tier users see a hypothetical preview.
-            </p>
+            <button
+              type="button"
+              onClick={() => runSimulation()}
+              disabled={!canRun || loading}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <Sparkles className="w-5 h-5" />
+              Generate Top 10
+            </button>
           </div>
-
-          <QuantumAuditModal
-            open={quantumOpen}
-            onOpenChange={setQuantumOpen}
-            ticker={results?.[0]?.ticker ?? "TOP10"}
-            investmentType={selectedClasses.join(", ") || "multi-asset"}
-            platforms={selectedPlatforms}
-            simulationMode="Top 10 Generator"
-          />
-
-          <AlertDialog open={quantumPrompt} onOpenChange={setQuantumPrompt}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-primary" /> Quantum processor required
-                </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <span className="block">
-                    You selected <span className="text-foreground font-semibold">{selectedClasses.length} asset classes</span>. Cross-correlating multiple classes simultaneously is a combinatorial workload — Sunesis has to engage the quantum processor (hypothetically, in this sandbox) to evaluate every instrument across every class in parallel.
-                  </span>
-                  <span className="block">
-                    Click OK to simulate the quantum cycle. The brain will then return the global Top 10 across the union of your selected classes — restricted to what's actually tradable on the platforms you chose.
-                  </span>
-                  <span className="block text-xs italic">
-                    SIMULATED — sandbox preview. Live quantum execution is reserved for Pro and Sovereign tiers.
-                  </span>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    setQuantumPrompt(false);
-                    runSimulation(true);
-                  }}
-                >
-                  OK — engage quantum
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
 
           {/* Working indicator */}
           {loading && (

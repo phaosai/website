@@ -3,7 +3,7 @@ import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy } from "lucide-react";
 
-type Category = "equities_funds" | "fixed_income" | "derivatives" | "fx_commodities" | "next_gen_crypto" | "quantum_elite" | "conviction_accuracy";
+type Category = "equities_funds" | "fixed_income" | "derivatives" | "fx_commodities" | "next_gen_crypto" | "conviction_accuracy";
 type WindowKey = "best_day_ytd" | "best_week_ytd" | "best_month_ytd" | "current_week" | "current_month" | "current_quarter" | "current_year";
 
 const CATEGORIES: { key: Category; label: string }[] = [
@@ -12,7 +12,6 @@ const CATEGORIES: { key: Category; label: string }[] = [
   { key: "derivatives", label: "Derivatives" },
   { key: "fx_commodities", label: "FX & Commodities" },
   { key: "next_gen_crypto", label: "Next-Gen / Crypto" },
-  { key: "quantum_elite", label: "Quantum Elite" },
   { key: "conviction_accuracy", label: "Conviction Accuracy" },
 ];
 
