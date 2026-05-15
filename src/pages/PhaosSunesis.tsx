@@ -76,6 +76,7 @@ const signalSources = [
 ];
 
 const PhaosSunesis = () => {
+  const [signupOpen, setSignupOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
