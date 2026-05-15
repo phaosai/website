@@ -66,6 +66,7 @@ Return strict JSON: {"summary":"","bull_case":"","bear_case":"","methodology_not
     if (error) return json({ error: error.message }, 500);
     return json({ memo, pci });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("generate-truth-memo error:", e);
+    return json({ error: "Internal server error" }, 500);
   }
 });
