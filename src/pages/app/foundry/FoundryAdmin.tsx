@@ -27,6 +27,8 @@ import {
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { supabase } from "@/integrations/supabase/client";
+import { Navigate } from "react-router-dom";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
 function loadReports(): QuantumReport[] {
