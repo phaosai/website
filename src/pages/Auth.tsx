@@ -90,7 +90,7 @@ const Auth = () => {
       if (mode === "signup") {
         if (!canSubmitSignup) throw new Error("Please satisfy all password requirements.");
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           options: { emailRedirectTo: `${window.location.origin}/app` },
         });
