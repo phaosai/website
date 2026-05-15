@@ -60,6 +60,9 @@ function StagePill({ n, label, active, done }: { n: number; label: string; activ
 }
 
 export default function FoundryAdmin() {
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  if (adminLoading) return <div className="min-h-screen bg-background" />;
+  if (!isAdmin) return <Navigate to="/app" replace />;
   const [state, setState] = useState<ForgeState>(() => recomputeGates(loadForgeState() ?? initialForgeState()));
   const [quantumToggles, setQuantumToggles] = useState<Record<AssetClassId, boolean>>(
     () => ASSET_CLASSES.reduce((a, c) => ({ ...a, [c.id]: true }), {} as Record<AssetClassId, boolean>),
