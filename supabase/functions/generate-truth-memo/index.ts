@@ -63,7 +63,10 @@ Return strict JSON: {"summary":"","bull_case":"","bear_case":"","methodology_not
       sources: pci.sources,
       status: "draft",
     }).select().single();
-    if (error) return json({ error: error.message }, 500);
+    if (error) {
+      console.error("truth_memos insert error:", error);
+      return json({ error: "Internal server error" }, 500);
+    }
     return json({ memo, pci });
   } catch (e) {
     console.error("generate-truth-memo error:", e);
