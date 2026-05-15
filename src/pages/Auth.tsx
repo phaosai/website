@@ -104,7 +104,7 @@ const Auth = () => {
               : "Confirm your email to finish signing up.",
         });
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
         if (!data.session) throw new Error("Sign in succeeded but the session was not restored. Please try again.");
         toast({ title: "Signed in", description: "Opening your Phaos workspace." });
