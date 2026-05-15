@@ -18,16 +18,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const blocked = await requireUserOrService(req);
   if (blocked) return blocked;
-  "government-contracts",
-  "google-trends",
-  "macro-data",
-];
-
-// Per-source freshness SLO in minutes — older than this counts as stale.
-const FRESHNESS_SLO_MIN = 24 * 60;
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const svc = serviceClient();
   const cutoff = new Date(Date.now() - FRESHNESS_SLO_MIN * 60_000).toISOString();
