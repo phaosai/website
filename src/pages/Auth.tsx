@@ -90,7 +90,7 @@ const Auth = () => {
       if (mode === "signup") {
         if (!canSubmitSignup) throw new Error("Please satisfy all password requirements.");
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           options: { emailRedirectTo: `${window.location.origin}/app` },
         });
@@ -104,7 +104,7 @@ const Auth = () => {
               : "Confirm your email to finish signing up.",
         });
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
         if (!data.session) throw new Error("Sign in succeeded but the session was not restored. Please try again.");
         toast({ title: "Signed in", description: "Opening your Phaos workspace." });
@@ -199,27 +199,40 @@ const Auth = () => {
 
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">EMAIL</label>
+              <label htmlFor="auth-email" className="text-[11px] font-bold tracking-[0.2em] text-white/55">EMAIL</label>
               <Input
+                id="auth-email"
+                name="email"
                 type="email"
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white placeholder:text-white/30 h-11"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="email"
+                className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white placeholder:text-white/30 h-11 text-base"
               />
             </div>
 
             {/* Password */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold tracking-[0.2em] text-white/55">PASSWORD</label>
+              <label htmlFor="auth-password" className="text-[11px] font-bold tracking-[0.2em] text-white/55">PASSWORD</label>
               <div className="relative">
                 <Input
+                  id="auth-password"
+                  name="password"
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11 text-base"
                 />
                 <button
                   type="button"
@@ -275,7 +288,11 @@ const Auth = () => {
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     required
-                    className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11"
+                    autoComplete="new-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11 text-base"
                   />
                   <button
                     type="button"
