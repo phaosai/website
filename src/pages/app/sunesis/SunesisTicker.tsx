@@ -26,21 +26,22 @@ const SIGNAL_CATEGORIES = [
   { key: "macro", label: "Macro & Regime" },
 ];
 
-// Deterministic QRR derivation from PCI + signal density. Research framework only.
+// Deterministic QRR-like derivation from PCI + signal density. Used internally
+// to populate the AuditReceipt's risk-tier letter — not surfaced as a gauge.
 function deriveQRR(pci: number | null | undefined, sourceCount: number, activeCats: number) {
   if (pci == null || sourceCount < 3) {
-    return { score: null as number | null, tier: "—" as QRRTier, stability: "—" as QRRStability, unavailable: true };
+    return { score: null as number | null, tier: "—", stability: "—", unavailable: true };
   }
   const density = Math.min(1, sourceCount / 12) * 0.4 + Math.min(1, activeCats / 5) * 0.6;
   const score = Math.round(pci * 0.6 + density * 100 * 0.4);
-  let tier: QRRTier = "CCC";
+  let tier = "CCC";
   if (score >= 90) tier = "AAA";
   else if (score >= 80) tier = "AA";
   else if (score >= 70) tier = "A";
   else if (score >= 60) tier = "BBB";
   else if (score >= 50) tier = "BB";
   else if (score >= 40) tier = "B";
-  let stability: QRRStability = "Distorted";
+  let stability = "Distorted";
   if (score >= 75) stability = "Stable";
   else if (score >= 55) stability = "Watch";
   else if (score >= 35) stability = "Fragile";
@@ -342,7 +343,6 @@ export default function SunesisTicker() {
 
           <div className="rounded-md border border-border bg-muted/10 p-3 text-[11px] text-muted-foreground space-y-1">
             <p>· PCI is a research confidence framework, not a prediction of returns.</p>
-            <p>· QRR is a supplemental advanced-compute risk interpretation layer; it is not a guarantee.</p>
             <p>· Research outputs are informational and not investment advice.</p>
           </div>
         </>
