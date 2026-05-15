@@ -242,11 +242,30 @@ const RunSimulation = () => {
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
             {/* Step 1 — Asset classes (multi-select) */}
             <div>
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
                 <p className="text-lg font-semibold">Select the asset classes to consider</p>
-                <span className="ml-auto text-xs text-muted-foreground">{selectedClasses.length} selected</span>
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedClasses(allAssetValues)}
+                    className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold hover:bg-card transition-colors"
+                  >
+                    Select all
+                  </button>
+                  {selectedClasses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClasses([])}
+                      className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold text-muted-foreground hover:bg-card transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
+
               <div className="space-y-5">
                 {investmentGroups.map((g) => (
                   <div key={g.group}>
