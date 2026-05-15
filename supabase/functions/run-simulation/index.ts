@@ -297,6 +297,7 @@ Deno.serve(async (req) => {
       disclaimer: "SIMULATED. PCI is a research confidence framework. Not a prediction of returns. Phaos AI is not a registered investment advisor.",
     });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("run-simulation error:", e);
+    return json({ error: "Internal server error" }, 500);
   }
 });
