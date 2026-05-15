@@ -9,7 +9,7 @@ const PORTALS = [
     key: "voice",
     title: "Voice",
     desc: "Sign in to your voice.phaosai.com agent console.",
-    href: "https://voice.phaosai.com/login",
+    href: "https://voice.phaosai.com/",
     external: true,
     icon: Mic,
   },
