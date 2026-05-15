@@ -325,10 +325,6 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-[1fr_auto] gap-3">
-              <button
-                type="button"
-                onClick={() => runSimulation()}
             <button
               type="button"
               onClick={() => runSimulation()}
