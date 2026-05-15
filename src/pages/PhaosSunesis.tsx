@@ -264,44 +264,23 @@ const PhaosSunesis = () => {
         </div>
       </section>
 
-      {/* PRICING */}
+      {/* CTA */}
       <section className="py-20 px-6 border-t border-border bg-card/20">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-10 text-center">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-3">Pricing</p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Start with Sunesis or Get Everything</h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-5">
-            <div className="p-8 rounded-xl border border-border bg-background/60">
-              <div className="flex items-center gap-2 mb-2">
-                <Microscope className="w-4 h-4 text-primary" />
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sunesis Standalone</p>
-              </div>
-              <p className="text-4xl font-bold mb-1">$149<span className="text-base font-normal text-muted-foreground">/month</span></p>
-              <p className="text-sm text-muted-foreground mb-6">Research engine, PCI, Truth Memos, Investment Themes.</p>
-              <Link
-                to="/auth?mode=signup&plan=sunesis_monthly"
-                className="inline-flex w-full items-center justify-center gap-2 border border-border bg-card text-foreground text-sm font-semibold px-5 py-3 rounded-full hover:bg-card/80 transition-colors"
-              >
-                Start with Sunesis
-              </Link>
-            </div>
-            <div className="p-8 rounded-xl border border-primary/40 bg-primary/5">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Phaos Research</span>
-                <FeatureStatusBadge status="LIVE" />
-              </div>
-              <p className="text-4xl font-bold mb-1">$599<span className="text-base font-normal text-muted-foreground">/month</span></p>
-              <p className="text-sm text-muted-foreground mb-6">All Sunesis tiers in one environment, one subscription.</p>
-              <Link
-                to="/auth?mode=signup&plan=phaos_one_monthly"
-                className="inline-flex w-full items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-5 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
-              >
-                Get everything with Phaos Research
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+            Ready to get started with <span className="text-gradient-purple">Sunesis</span>?
+          </h2>
+          <p className="text-base text-muted-foreground mb-8 leading-relaxed">
+            Tell us a little about yourself and our team will reach out to get you onboarded.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSignupOpen(true)}
+            className="inline-flex items-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-8 py-4 rounded-full glow-purple hover:opacity-90 transition-all"
+          >
+            Sign Up Now!
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </section>
 
