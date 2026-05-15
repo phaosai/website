@@ -288,7 +288,11 @@ const Auth = () => {
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     required
-                    className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11"
+                    autoComplete="new-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="bg-[rgba(255,255,255,0.04)] border-[rgba(138,43,226,0.2)] text-white pr-10 h-11 text-base"
                   />
                   <button
                     type="button"
