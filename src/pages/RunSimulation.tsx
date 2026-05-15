@@ -126,13 +126,12 @@ const TOP_SIGNALS = [
 const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 const RunSimulation = () => {
-  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock", "etf"]);
+  const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
-  const [quantumOpen, setQuantumOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -149,6 +148,11 @@ const RunSimulation = () => {
   const togglePlatform = (slug: string) =>
     setSelectedPlatforms((cur) => cur.includes(slug) ? cur.filter((s) => s !== slug) : [...cur, slug]);
 
+  const allAssetValues = useMemo<AssetClass[]>(
+    () => investmentGroups.flatMap((g) => g.items.map((i) => i.value)),
+    [],
+  );
+
   const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
 
   const summary = useMemo(() => {
@@ -160,15 +164,8 @@ const RunSimulation = () => {
     return { avg, top, phaosChoice, go };
   }, [results]);
 
-  const requiresQuantum = selectedClasses.length > 1;
-  const [quantumPrompt, setQuantumPrompt] = useState(false);
-
-  const runSimulation = async (quantumApproved = false) => {
+  const runSimulation = async () => {
     if (!canRun) return;
-    if (requiresQuantum && !quantumApproved) {
-      setQuantumPrompt(true);
-      return;
-    }
     setResults(null);
     setLoading(true);
     setProgress(0);
