@@ -1,12 +1,13 @@
 // TODO(PCI internal tiers): when the engineering tier taxonomy is locked,
 // surface internal designations in the methodology footnote — NEVER as a
 // second user-facing 1–100 score. PCI remains the only public score.
-import { ArrowRight, Microscope, FileText, Activity, Truck, MessageSquare, Globe, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { ArrowRight, FileText, Activity, Truck, MessageSquare, Globe, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, InvestmentThemeCard, HistoricalExampleCard } from "@/components/phaos";
+import SunesisSignupModal from "@/components/sunesis/SunesisSignupModal";
 
 const capabilities = [
   "Ingests and synthesizes institutional-grade market, company, and macro data into one unified research stream",
