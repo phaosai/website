@@ -117,6 +117,7 @@ Deno.serve(async (req) => {
 
     return json({ ticker: t, pci, tier: tier(pci), components, sources, simulated: false });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("compute-pci-score error:", e);
+    return json({ error: "Internal server error" }, 500);
   }
 });
