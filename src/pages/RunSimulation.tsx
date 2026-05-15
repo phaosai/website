@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Check, Cpu } from "lucide-react";
+import { ArrowRight, Sparkles, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
-import QuantumAuditModal from "@/components/phaos/QuantumAuditModal";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -80,11 +75,10 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
   { slug: "ig", name: "IG Group" },
   { slug: "oanda", name: "OANDA" },
   { slug: "saxo", name: "Saxo Bank" },
-  { slug: "binance", name: "Binance" },
   { slug: "coinbase", name: "Coinbase" },
   { slug: "kraken", name: "Kraken" },
-  { slug: "okx", name: "OKX" },
-  { slug: "bybit", name: "Bybit" },
+  { slug: "gemini", name: "Gemini" },
+  { slug: "bitstamp", name: "Bitstamp" },
   { slug: "uniswap", name: "Uniswap" },
   { slug: "raydium", name: "Raydium" },
   { slug: "pancakeswap", name: "PancakeSwap" },
