@@ -8,15 +8,12 @@ import { Button } from "@/components/ui/button";
 import { PageShell, PCITierBadge, Disclaimer } from "@/components/app/PageShell";
 import {
   FormulaMethodologyPanel,
-  QRRGauge,
   TruthLedgerPanel,
   EvidenceTree,
   SourceFreshnessSummary,
   AuditReceiptCard,
   type LedgerEntry,
   type EvidenceNode,
-  type QRRStability,
-  type QRRTier,
 } from "@/components/phaos";
 import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import { toast } from "sonner";
@@ -215,9 +212,9 @@ export default function SunesisTicker() {
         </div>
       ) : (
         <>
-          {/* PCI + QRR side-by-side. PCI remains primary. */}
-          <section className="grid lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-3 rounded-xl border border-border bg-card/50 p-6">
+          {/* PCI command block — QRR gauge removed (Foundry-only surface). */}
+          <section>
+            <div className="rounded-xl border border-border bg-card/50 p-6">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
               <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
               <details className="mt-6 group">
@@ -236,15 +233,6 @@ export default function SunesisTicker() {
                 </p>
               </details>
               <Disclaimer>PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns.</Disclaimer>
-            </div>
-            <div className="lg:col-span-2">
-              <QRRGauge
-                score={qrr.score}
-                tier={qrr.tier}
-                stability={qrr.stability}
-                locked={qrrLocked}
-                unavailable={!qrrLocked && qrr.unavailable}
-              />
             </div>
           </section>
 

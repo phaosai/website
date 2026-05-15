@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Lock, Zap } from "lucide-react";
+import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -67,8 +67,6 @@ interface Schedule {
   channels: { email: boolean; sms: boolean; save: boolean };
   frequency: "daily" | "weekly" | "custom";
   config: ScheduleConfig;
-  quantum_enabled: boolean;
-  auto_replenish: boolean;
   phone_e164: string | null;
 }
 
@@ -90,8 +88,6 @@ const DEFAULTS: Schedule = {
   channels: { email: false, sms: false, save: false },
   frequency: "daily",
   config: defaultConfig(),
-  quantum_enabled: false,
-  auto_replenish: false,
   phone_e164: null,
 };
 
@@ -128,8 +124,6 @@ export function AlertsPanel({ tierMode }: Props) {
           channels: { email: !!ch.email, sms: !!ch.sms, save: !!(ch.save ?? ch.push) },
           frequency: data.frequency as Schedule["frequency"],
           config,
-          quantum_enabled: data.quantum_enabled,
-          auto_replenish: data.auto_replenish,
           phone_e164: data.phone_e164,
         });
       }
@@ -146,8 +140,8 @@ export function AlertsPanel({ tierMode }: Props) {
       channels: s.channels,
       frequency: s.frequency,
       custom_slots: s.config as unknown as never,
-      quantum_enabled: s.quantum_enabled && tierMode === "sovereign",
-      auto_replenish: s.auto_replenish && tierMode === "sovereign",
+      quantum_enabled: false,
+      auto_replenish: false,
       phone_e164: s.phone_e164,
     }, { onConflict: "user_id" });
     setSaving(false);
@@ -155,13 +149,7 @@ export function AlertsPanel({ tierMode }: Props) {
     else toast.success("Alert schedule saved");
   };
 
-  const tryQuantum = (next: boolean) => {
-    if (tierMode !== "sovereign") {
-      toast.error("Quantum auto-alerts require Sovereign");
-      return;
-    }
-    setS({ ...s, quantum_enabled: next });
-  };
+  // Quantum auto-alerts removed — Foundry-only surface.
 
   const updateCfg = (patch: Partial<ScheduleConfig>) =>
     setS({ ...s, config: { ...s.config, ...patch } });
@@ -324,30 +312,7 @@ export function AlertsPanel({ tierMode }: Props) {
         )}
       </div>
 
-      {/* Quantum auto-alerts */}
-      <div className={`rounded-lg border p-4 space-y-3 ${tierMode === "sovereign" ? "border-pci-choice/30 bg-pci-choice/5" : "border-border bg-muted/20"}`}>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            {tierMode === "sovereign" ? <Zap className="w-4 h-4 text-pci-choice" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
-            <p className="text-sm font-semibold">Quantum auto-alerts</p>
-            <Badge variant="outline" className="border-pci-choice/50 bg-pci-choice/10 text-pci-choice text-[10px] uppercase tracking-wider">Sovereign</Badge>
-          </div>
-          <Switch
-            checked={s.quantum_enabled}
-            disabled={tierMode !== "sovereign"}
-            onCheckedChange={tryQuantum}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Run a real IBM Quantum cross-correlation pass automatically per alert cycle (max 1 instance/day included). Additional runs billed via automatic replenishment.
-        </p>
-        {tierMode === "sovereign" && s.quantum_enabled && (
-          <label className="flex items-center gap-2 text-xs">
-            <Switch checked={s.auto_replenish} onCheckedChange={(v) => setS({ ...s, auto_replenish: v })} />
-            Authorize automatic quantum replenishment billing
-          </label>
-        )}
-      </div>
+      {/* Quantum auto-alerts removed — Foundry-only surface. */}
 
       <button
         onClick={save}

@@ -8,7 +8,7 @@ import { linkToSandbox } from "@/lib/researchLinks";
 
 const SEED = [
   { ts: new Date(Date.now() - 36e5).toISOString(),  asset: "NVDA", action: "Truth Machine pass · PCI 78 · QRR AA",                source: "SEC EDGAR + Macro",      category: "Government & Fundamentals", themes: ["ai-infrastructure"],     status: "verified" as const, hash: "0x7f4a9c12ee" },
-  { ts: new Date(Date.now() - 12 * 36e5).toISOString(), asset: "AAPL", action: "Quantum Audit completed · regime stable",          source: "IBM Quantum",            category: "Macro & Regime",             themes: [],                         status: "verified" as const, hash: "0x91b3aa0042" },
+  
   { ts: new Date(Date.now() - 26 * 36e5).toISOString(), asset: "COIN", action: "Evidence stale · refresh scheduled",                source: "Sunesis monitor",        category: "Sentiment",                  themes: ["dynamic-cluster"],        status: "stale"    as const, hash: "0xdd02ee19af" },
   { ts: new Date(Date.now() - 48 * 36e5).toISOString(), asset: "TSLA", action: "Scenario sandbox saved · -100bps Fed",              source: "User",                   category: "Macro & Regime",             themes: [],                         status: "pending"  as const, hash: "0x4422aa8810" },
   { ts: new Date(Date.now() - 4  * 36e5).toISOString(), asset: "PLTR", action: "USAspending award concentration confirmed",         source: "USAspending.gov",        category: "Government & Fundamentals", themes: ["gov-contract-momentum"],  status: "verified" as const, hash: "0x88aa9911ce" },
@@ -73,7 +73,7 @@ export default function SunesisLedger() {
       </div>
 
       <Disclaimer>
-        Ledger entries are SIMULATED placeholders for demonstration. Production records are written by usage_events and quantum_audits.
+        Ledger entries are SIMULATED placeholders for demonstration. Production records are written by usage_events.
       </Disclaimer>
     </PageShell>
   );

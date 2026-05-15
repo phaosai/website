@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Check, Atom, Bookmark, BookmarkCheck } from "lucide-react";
+import { Sparkles, Check, Bookmark, BookmarkCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 // SunesisModuleNav intentionally not rendered on the Research page.
 import type { AssetClass } from "@/data/simulationCandidates";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+// Switch import removed with Quantum cross-validation toggle.
 import { Badge } from "@/components/ui/badge";
 import { AlertsPanel } from "@/components/sunesis/AlertsPanel";
 import { PciBreakdownModal, type PciResult } from "@/components/sunesis/PciBreakdownModal";
@@ -121,7 +121,7 @@ export default function SunesisResearch() {
   );
   const [running, setRunning] = useState(false);
   const [pciRange, setPciRange] = useState<[number, number]>([1, 100]);
-  const [quantumManual, setQuantumManual] = useState(false);
+  // Quantum cross-validation removed from public Sunesis — Foundry-only surface.
   const [results, setResults] = useState<null | PciResult[]>(null);
   const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -189,11 +189,7 @@ export default function SunesisResearch() {
 
   const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
 
-  // Quantum auto-engage: >3 asset classes, >3 brokerages, or >6 total selections.
-  const totalSelections = selectedClasses.length + selectedPlatforms.length;
-  const quantumAuto =
-    selectedClasses.length > 3 || selectedPlatforms.length > 3 || totalSelections > 6;
-  const quantumActive = quantumManual || quantumAuto;
+  // Quantum auto-engage removed — Foundry handles quantum training.
 
   const generate = async () => {
     if (!canRun) return;
@@ -208,7 +204,7 @@ export default function SunesisResearch() {
           platforms: selectedPlatforms,
           pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
           pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
-          quantum_enabled: quantumActive,
+          quantum_enabled: false,
         },
       });
       if (error) {
@@ -237,7 +233,7 @@ export default function SunesisResearch() {
               platforms: selectedPlatforms,
               pci_min: tierMode === "sovereign" ? pciRange[0] : 1,
               pci_max: tierMode === "sovereign" ? pciRange[1] : 100,
-              quantum_enabled: quantumActive,
+              quantum_enabled: false,
             },
             results: JSON.parse(JSON.stringify(final)),
             source: "manual",
@@ -462,32 +458,7 @@ export default function SunesisResearch() {
         </div>
       )}
 
-      {/* Quantum cross-validation toggle */}
-      <div className="rounded-xl border border-border bg-card/50 p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3">
-          <Atom className={`w-5 h-5 mt-0.5 ${quantumActive ? "text-purple-deep" : "text-muted-foreground"}`} />
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-semibold">Quantum cross-validation</p>
-              {quantumAuto && (
-                <Badge variant="outline" className="border-purple-deep/50 bg-purple-deep/10 text-purple-deep text-[10px] uppercase tracking-wider">
-                  Auto-engaged
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Automatically engages when you choose more than 3 asset classes, more than 3 brokerages, or more than 6 total selections.
-            </p>
-          </div>
-        </div>
-        <Switch
-          checked={quantumActive}
-          disabled={quantumAuto}
-          onCheckedChange={setQuantumManual}
-        />
-      </div>
-
-
+      {/* Quantum cross-validation moved to the Foundry — not surfaced in Sunesis UI. */}
       <button
         type="button"
         onClick={generate}

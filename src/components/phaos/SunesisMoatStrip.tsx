@@ -1,22 +1,20 @@
-import { Cpu, ScrollText, ShieldCheck, FlaskConical, Sparkles, Zap } from "lucide-react";
+import { ScrollText, FlaskConical, Sparkles, Zap } from "lucide-react";
 
 const PILLARS = [
   { Icon: Zap,          label: "Truth Machine",     desc: "Source-grounded conviction" },
-  { Icon: Cpu,          label: "Quantum Audit",     desc: "Advanced-compute validation" },
-  { Icon: ShieldCheck,  label: "QRR",               desc: "Risk interpretation layer" },
   { Icon: ScrollText,   label: "Truth Ledger",      desc: "Append-only audit trail" },
   { Icon: FlaskConical, label: "Scenario Sandbox",  desc: "What-if regime stress" },
   { Icon: Sparkles,     label: "Workflow Ready",    desc: "Save · monitor · alert" },
 ];
 
 /**
- * Moat strip — a calm, premium reminder of the six Sunesis pillars. Helps
+ * Moat strip — a calm, premium reminder of the Sunesis pillars. Helps
  * orient new users and reinforces lockout differentiation across modules.
  */
 export function SunesisMoatStrip() {
   return (
     <div className="rounded-xl border border-border bg-gradient-to-r from-purple-deep/[0.04] via-transparent to-purple-deep/[0.04] p-3">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {PILLARS.map(({ Icon, label, desc }) => (
           <div
             key={label}
