@@ -216,8 +216,8 @@ const RunSimulation = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
-        title="Run Simulation — Phaos Sunesis Top 10"
-        description="Free public sandbox. Pick the asset classes and the platforms you trade on — Sunesis returns the top 10 instruments with the highest Phaos Conviction Index, restricted to what's actually available on those platforms."
+        title="Live Conviction Screen — Phaos Sunesis"
+        description="Phaos Sunesis live screen. Pick the asset classes and platforms you actually trade on and Sunesis returns every instrument available to you, ranked by the Phaos Conviction Index."
         canonical="/one/run-simulation"
       />
       <Navigation />
@@ -226,14 +226,14 @@ const RunSimulation = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Public Sandbox</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Live</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            The <span className="text-gradient-purple">Top 10</span> by Conviction
+            Live <span className="text-gradient-purple">Conviction</span> Screen
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            You don't pick the ticker — Sunesis does. Tell us the asset classes you want to consider and the platforms you actually trade on. We return the ten highest-conviction instruments available to you right now, each scored by the Phaos Conviction Index.
+            Pick the asset classes and platforms you actually trade on. Sunesis returns every instrument available to you right now, ranked by the Phaos Conviction Index — generated live by the Foundry.
           </p>
         </div>
       </section>
