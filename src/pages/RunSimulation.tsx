@@ -6,6 +6,9 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
 import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
+import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -133,12 +136,15 @@ const TOP_SIGNALS = [
 const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 const RunSimulation = () => {
+  const { isLive } = useIsLiveAccount();
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [explainerOpen, setExplainerOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
