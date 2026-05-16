@@ -1,62 +1,84 @@
-# Plan
+## Goal
 
-## 1. Mobile Sign In / Sign Up parity
+Replace "sandbox / Top 10" framing with an actually-live Sunesis experience that:
+- For **daniel@phaosai.com (admin role)**: runs real Foundry/Sunesis queries and returns every matching instrument for the selected asset classes × platforms, scored by PCI.
+- For **everyone else** (signed-out, free, or paid): shows the **same live-looking UI**, but every action button opens an explainer dialog ("this is what would happen on a live account") with a Contact Us CTA — no fake results, no fake "Top 10".
 
-**Problem:** The mobile nav drawer only shows menu links and "Schedule a Call." The `Sign In` button (and the 3-portal `/signin` page with Voice / Workflow / Research) is hidden behind `hidden md:inline-flex` and never appears on phones.
+## Scope
 
-**Fix in `src/components/Navigation.tsx`:**
-- Inside the mobile drawer (around lines 232–309), add two prominent buttons just above "Schedule a Call":
-  - `Sign In` → `/signin` (the existing 3-portal chooser page — Voice, Workflow, Research)
-  - `Sign Up` → `/auth?mode=signup`
-- Style them as full-width pill buttons matching the desktop chips so the experience matches the screenshot the user shared.
+1. `src/pages/RunSimulation.tsx` (the page in the screenshots, route `/one/run-simulation`).
+2. All `/app/sunesis/*` modules under `src/components/app/AppLayout.tsx`.
 
-**Verify mobile rendering** of `/signin` and `/auth`:
-- `/signin` (`src/pages/SignIn.tsx`) — already uses `grid md:grid-cols-3`, so it stacks on mobile. Confirm padding/touch targets.
-- `/auth` (`src/pages/Auth.tsx`) — already has mobile keyboard fixes from prior turn; no changes needed unless QA flags something.
+Out of scope: pricing, Stripe, Auth pages, Foundry admin, Pantheon, Aion, marketing pages.
 
-## 2. "Allow all sign-ups, show a shell with explainers"
+## Live-account detection
 
-**Behavior change:** Anyone can sign up. After auth, instead of hitting the gated tiers, every new account is routed into a **demo shell** of Sunesis (the product visible from `/signin → Research`) where:
-- Every button/card is wrapped in a click handler that opens a popover/modal explaining what that button does in detail.
-- Each explainer ends with a **Contact Us** link → opens the existing standard inquiry form (the same `SunesisSignupModal` / `lead-notification` template flow we already use).
-- No real data calls, no Stripe, no entitlement gating for the shell view.
+New hook `src/hooks/useIsLiveAccount.ts`:
+- Returns `{ isLive, loading }`.
+- `isLive = true` only when the signed-in user has `user_roles.role = 'admin'` (uses the existing `has_role` SECURITY DEFINER via a `.from('user_roles')` lookup, matching the pattern in `useIsAdmin.ts`).
+- Signed-out users and all non-admin users return `isLive = false`.
+- This is the single source of truth — no email hardcoding in the client.
 
-**Implementation:**
-- New component `src/components/sunesis/ShellExplainer.tsx` — a generic wrapper:
-  ```tsx
-  <ShellButton title="Truth Machine" description="Runs a multi-source audit against EDGAR, XBRL, GDELT...">
-    <button>Run Audit</button>
-  </ShellButton>
-  ```
-  On click, opens a dialog showing the description + a "Contact Us to activate" CTA that opens the existing lead-capture modal.
-- New page `src/pages/app/sunesis/SunesisShell.tsx` — a static layout mirroring the real Sunesis dashboard (Truth Machine, Watchlists, Themes, Ledger, Leaderboard, Workflow, Sandbox tiles), each wrapped in `ShellButton` with the relevant explainer copy.
-- Routing change in `src/App.tsx` (or wherever Sunesis routes live):
-  - If the authenticated user has **no paid entitlement**, redirect every `/app/sunesis/*` route to `/app/sunesis/shell` instead of showing the real modules or a tier paywall.
-  - Paid users continue to see the real modules.
-- The existing `useEntitlements` hook drives the gate. No DB schema changes needed.
+## Run Simulation page (`/one/run-simulation`)
 
-**Copy for explainers:** I'll write short, plain-English descriptions for each of the ~10 Sunesis surfaces (Research, Watchlists, Themes, Theme Detail, Ledger, Leaderboard, Ticker, Workflow, Sandbox, Compliance, Language). One sentence what it does + one sentence what live data they'd get + Contact Us button.
+Rebrand:
+- Eyebrow: `PHAOS SUNESIS · LIVE` (drop "PUBLIC SANDBOX").
+- H1: `Live Conviction Screen` (drop "Top 10").
+- Subhead rewritten: "Pick the asset classes and platforms you actually trade on. Sunesis returns every instrument available to you right now, ranked by the Phaos Conviction Index."
+- Primary button label: `Run Live Screen` with `Sparkles` icon.
+- SEO `<SEOHead>` title/description updated to match.
+- Remove the "Simulated — Sample Product Execution" badge above results; live runs show a `LIVE · Powered by Foundry` chip instead.
+- Drop the `.slice(0, 10)` Top-10 cap entirely.
 
-## 3. Chatbot speed (currently ~60s replies)
+Behavior split, gated by `useIsLiveAccount`:
 
-**Root cause:** `phaos-chat` uses `google/gemini-3-flash-preview` with a ~6 KB system prompt + up to 1024 output tokens. Under preview-model load that easily explodes to 30–90s. The route already streams, but the model's **time-to-first-token** is the bottleneck — that's why the typing dots sit forever before any text appears.
+- **Live (admin)**: `Run Live Screen` calls `supabase.functions.invoke('sunesis-live-research', { body: { asset_classes, platforms } })` and renders the full ranked list (all returned rows, not capped). Loading state stays. Errors render an inline error card.
+- **Not live**: `Run Live Screen` does NOT call the function. Instead opens a new `LiveExplainerDialog` (see below) describing exactly what would have happened (which asset classes, how many platforms, what Sunesis would do, what PCI means) with a Contact Us CTA. Same dialog opens for any per-row action button.
 
-**Fix in `supabase/functions/phaos-chat/index.ts`:**
-- Swap default model to `google/gemini-2.5-flash-lite` (consistently sub-2s TTFT on the Lovable AI Gateway). It's strong enough for the consultative Q&A this bot handles.
-- Lower `max_tokens` from `1024` → `512`. Replies stay complete but stop faster.
-- Trim `SYSTEM_PROMPT` aggressively: keep persona + security/refusal rules + formatting rule + 8 Wastes summary, drop the long COQ/benchmark sections (or move them behind a "if asked about COQ" line). Smaller prompt = faster first token + cheaper.
-- Keep streaming as-is; the client already renders deltas.
+Loading-state copy stops claiming work is being done unless a live call is actually running.
 
-**Verification:** after deploy, send a test message via `supabase--curl_edge_functions` and confirm first token arrives in <3s.
+## /app/sunesis area
 
-## 4. Out of scope (will not touch)
-- Stripe / pricing pages (user already removed Sunesis pricing in a prior turn).
-- Foundry / Quantum routes.
-- Desktop nav layout.
+In `src/components/app/AppLayout.tsx`:
+- Remove the `tier === "free"` gate. Replace with `useIsLiveAccount`.
+- `showShell = inShellArea && !isLive` — so every non-admin (free OR paid) lands on the explainer shell; only admin sees the real `Outlet` modules.
+- Keep the `SHELL_PREFIXES` list as-is.
 
-## Files to be edited / created
-- edit `src/components/Navigation.tsx` (mobile drawer Sign In / Sign Up)
-- edit `src/App.tsx` (route guard → shell for free accounts)
-- create `src/components/sunesis/ShellExplainer.tsx`
-- create `src/pages/app/sunesis/SunesisShell.tsx`
-- edit `supabase/functions/phaos-chat/index.ts` (model + max_tokens + trimmed prompt)
+In `src/pages/app/sunesis/SunesisShell.tsx`:
+- Rebrand from "demo / preview" tone to "Live Sunesis preview" — every tile still uses `ShellExplainer`, just with copy that says the live account performs the action and walks through what it does. CTA stays `/contact`.
+- Remove any "you don't have a paid plan" / paywall language.
+
+For the real (admin) Sunesis modules (`SunesisResearch`, `SunesisTicker`, `SunesisLedger`, `SunesisLeaderboard`, `SunesisWatchlists`, `SunesisThemes*`, `SunesisWorkflow`, `SunesisSandbox`, `SunesisCompliance`, `SunesisLanguage`): no UI/logic change in this pass beyond removing any "sandbox" labeling already shown on screen. Their existing calls to `sunesis-live-research`, `sunesis-leaderboard`, `sunesis-watchlist-*`, `run-simulation` edge functions remain intact and only fire for admin.
+
+## New shared component
+
+`src/components/sunesis/LiveExplainerDialog.tsx`:
+- Props: `open`, `onOpenChange`, `title`, `whatItDoes`, `selectionSummary?` (e.g. "24 asset classes · 7 platforms").
+- Body: short explanation of what Sunesis does on a live account, the role of PCI, and the role of the Foundry. Closes with a `Contact Us` button linking to `/contact`.
+- Uses existing `Dialog` + `Button` primitives. Themed with existing semantic tokens (no custom colors).
+
+## Wording / brand guardrails
+
+- Use "Phaos Sunesis", "Phaos Conviction Index", "Foundry" exactly.
+- CTA is **Schedule a Call** / **Contact Us**, never "Book a Demo".
+- All result outputs from `sunesis-live-research` keep the existing required `SIMULATED` / `Not investment advice` disclaimers below results (do not remove the compliance footer — only the marketing "Sandbox / Sample Product Execution" framing changes).
+- Do NOT label live admin output as "SIMULATED"; that label only applies to the existing scenario sandbox tools and theme stress tests, which already live elsewhere.
+
+## Files
+
+Created:
+- `src/hooks/useIsLiveAccount.ts`
+- `src/components/sunesis/LiveExplainerDialog.tsx`
+
+Edited:
+- `src/pages/RunSimulation.tsx` — rebrand, gating, real fetch, remove Top-10 cap.
+- `src/components/app/AppLayout.tsx` — swap free-tier gate for live-account gate.
+- `src/pages/app/sunesis/SunesisShell.tsx` — copy refresh to "live preview" tone.
+
+No database migrations. No edge function changes. No Stripe / Auth changes.
+
+## Verification
+
+- Sign in as `daniel@phaosai.com` → `/one/run-simulation` shows "LIVE", `Run Live Screen` calls `sunesis-live-research`, full ranked list renders.
+- Sign in as any other account (or signed-out) → identical UI, button opens `LiveExplainerDialog` with Contact Us CTA, no network call to `sunesis-live-research`.
+- `/app/sunesis/*` as admin → real modules. As any non-admin → `SunesisShell` explainer.

@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEntitlements } from "@/hooks/useEntitlements";
+import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { Button } from "@/components/ui/button";
 
 const SunesisShell = lazy(() => import("@/pages/app/sunesis/SunesisShell"));
@@ -23,12 +23,13 @@ const SHELL_PREFIXES = [
 
 export default function AppLayout() {
   const { user, signOut } = useAuth();
-  const ent = useEntitlements();
+  const { isLive, loading } = useIsLiveAccount();
   const { pathname } = useLocation();
 
   const inShellArea = SHELL_PREFIXES.some((p) => pathname.startsWith(p));
-  const isFree = !ent.loading && ent.tier === "free";
-  const showShell = inShellArea && isFree;
+  // Only admin ("live") accounts see real modules. All others — free or paid —
+  // see the live-looking explainer shell.
+  const showShell = inShellArea && !loading && !isLive;
 
   return (
     <ProtectedRoute>

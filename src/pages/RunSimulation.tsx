@@ -5,7 +5,10 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
-import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import type { AssetClass } from "@/data/simulationCandidates";
+import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
+import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -119,26 +122,16 @@ interface TopRow {
   platforms: string[];
 }
 
-const TOP_SIGNALS = [
-  "Insider clustering · Form 4",
-  "Government & contract pulse · USAspending",
-  "Macro regime · FRED yield curve",
-  "Logistics & supply · MarineTraffic + BDI",
-  "Sentiment · Google Trends + filings",
-  "On-chain flows · DefiLlama TVL",
-  "Fundamentals · XBRL drift",
-  "Positioning · CFTC COT",
-];
-
-const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-
 const RunSimulation = () => {
+  const { isLive } = useIsLiveAccount();
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [explainerOpen, setExplainerOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -173,7 +166,15 @@ const RunSimulation = () => {
 
   const runSimulation = async () => {
     if (!canRun) return;
+
+    // Non-admin accounts: same UI, but action just explains. No fake results.
+    if (!isLive) {
+      setExplainerOpen(true);
+      return;
+    }
+
     setResults(null);
+    setErrorMsg(null);
     setLoading(true);
     setProgress(0);
 
@@ -182,48 +183,41 @@ const RunSimulation = () => {
       180,
     );
 
-    const universe = CANDIDATES.filter(
-      (c) =>
-        selectedClasses.includes(c.assetClass) &&
-        c.platforms.some((p) => selectedPlatforms.includes(p)),
-    );
-
-    const platformKey = [...selectedPlatforms].sort().join("|");
-    const scored: TopRow[] = universe.map((c) => {
-      const seed = seedFor(c.ticker + "::" + platformKey);
-      let baseline = 55 + (seed % 45);
-      if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
-      if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
-      const pci = Math.max(1, Math.min(100, baseline));
-      const sigIdx = seed % TOP_SIGNALS.length;
-      return {
-        ticker: c.ticker,
-        name: c.name,
-        assetClass: c.assetClass,
-        pci,
-        tier: getPciTier(pci),
-        topSignal: TOP_SIGNALS[sigIdx],
-        platforms: c.platforms.filter((p) => selectedPlatforms.includes(p)),
-      };
-    });
-
-    scored.sort((a, b) => b.pci - a.pci);
-    // Sandbox always shows the global Top 10 across the selected universe.
-    const top10 = scored.slice(0, 10);
-
-    await new Promise((r) => setTimeout(r, 1400));
-
-    window.clearInterval(progressInterval);
-    setProgress(100);
-    setResults(top10);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
+        body: { asset_classes: selectedClasses, platforms: selectedPlatforms },
+      });
+      if (error) throw error;
+      const rows: TopRow[] = (data?.results ?? []).map((r: {
+        ticker: string; name: string; assetClass: AssetClass; pci: number;
+        topSignal?: string; platforms: string[];
+      }) => ({
+        ticker: r.ticker,
+        name: r.name,
+        assetClass: r.assetClass,
+        pci: r.pci,
+        tier: getPciTier(r.pci),
+        topSignal: r.topSignal ?? "Macro regime · FRED",
+        platforms: r.platforms ?? [],
+      }));
+      // Show the full live ranked list — no Top-10 cap.
+      setResults(rows);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Live Sunesis call failed.";
+      setErrorMsg(message);
+      setResults([]);
+    } finally {
+      window.clearInterval(progressInterval);
+      setProgress(100);
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
-        title="Run Simulation — Phaos Sunesis Top 10"
-        description="Free public sandbox. Pick the asset classes and the platforms you trade on — Sunesis returns the top 10 instruments with the highest Phaos Conviction Index, restricted to what's actually available on those platforms."
+        title="Live Conviction Screen — Phaos Sunesis"
+        description="Phaos Sunesis live screen. Pick the asset classes and platforms you actually trade on and Sunesis returns every instrument available to you, ranked by the Phaos Conviction Index."
         canonical="/one/run-simulation"
       />
       <Navigation />
@@ -232,14 +226,14 @@ const RunSimulation = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Public Sandbox</span>
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Live</span>
             <FeatureStatusBadge status="LIVE" />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            The <span className="text-gradient-purple">Top 10</span> by Conviction
+            Live <span className="text-gradient-purple">Conviction</span> Screen
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            You don't pick the ticker — Sunesis does. Tell us the asset classes you want to consider and the platforms you actually trade on. We return the ten highest-conviction instruments available to you right now, each scored by the Phaos Conviction Index.
+            Pick the asset classes and platforms you actually trade on. Sunesis returns every instrument available to you right now, ranked by the Phaos Conviction Index — generated live by the Foundry.
           </p>
         </div>
       </section>
@@ -358,7 +352,7 @@ const RunSimulation = () => {
               className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <Sparkles className="w-5 h-5" />
-              Generate Top 10
+              Run Live Screen
             </button>
           </div>
 
@@ -378,12 +372,18 @@ const RunSimulation = () => {
             </div>
           )}
 
-          {/* Results — Top 10 */}
+          {errorMsg && !loading && (
+            <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-5 text-sm text-destructive">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Live results */}
           {results && !loading && (
             <div className="mt-6 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-sm border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
-                  Simulated — Sample Product Execution
+                <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  LIVE · Powered by Foundry
                 </span>
                 {summary && (
                   <span className="text-xs text-muted-foreground">
@@ -472,8 +472,7 @@ const RunSimulation = () => {
           )}
 
           <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
-            <p>SIMULATED — This is a scenario analysis tool, not a financial forecast.</p>
-            <p>PCI is a research confidence framework. Not a prediction of returns.</p>
+            <p>PCI is a research confidence framework — a transparency score, not a prediction of returns.</p>
             <p>Phaos AI is not a registered investment advisor.</p>
             <p>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</p>
           </div>
@@ -481,6 +480,13 @@ const RunSimulation = () => {
       </section>
 
       <Footer />
+
+      <LiveExplainerDialog
+        open={explainerOpen}
+        onOpenChange={setExplainerOpen}
+        title="This is your Live Sunesis screen"
+        selectionSummary={`${selectedClasses.length} asset class${selectedClasses.length === 1 ? "" : "es"} · ${selectedPlatforms.length} platform${selectedPlatforms.length === 1 ? "" : "s"}`}
+      />
     </div>
   );
 };
