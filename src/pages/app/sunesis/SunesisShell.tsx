@@ -76,16 +76,16 @@ export default function SunesisShell() {
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-5 h-5 text-primary" />
           <span className="text-xs font-semibold tracking-[0.15em] uppercase text-primary">
-            Welcome to Phaos Sunesis
+            Phaos Sunesis · Live
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          You're in. Here's what your live account will unlock.
+          Your Sunesis workspace.
         </h1>
         <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
-          You're currently exploring a preview of Phaos Sunesis. Click any tile below
-          to learn what that feature does on a live account. When you're ready to
-          activate, contact us and our team will get you set up.
+          This is exactly what a live Phaos Sunesis account looks like. Click any
+          tile to see precisely what that module does when it's running against
+          the Foundry. Contact us when you're ready to activate live data.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link to="/contact">
@@ -109,9 +109,8 @@ export default function SunesisShell() {
       </div>
 
       <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-3">
-        Preview mode. No live data is being pulled. All figures and signals shown on
-        a live account are research-grade and clearly labeled — Phaos Sunesis does
-        not provide investment advice.
+        Phaos Sunesis surfaces public, auditable signals via the Phaos Conviction
+        Index. It does not provide investment advice and does not execute trades.
       </p>
     </div>
   );
