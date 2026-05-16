@@ -472,8 +472,7 @@ const RunSimulation = () => {
           )}
 
           <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
-            <p>SIMULATED — This is a scenario analysis tool, not a financial forecast.</p>
-            <p>PCI is a research confidence framework. Not a prediction of returns.</p>
+            <p>PCI is a research confidence framework — a transparency score, not a prediction of returns.</p>
             <p>Phaos AI is not a registered investment advisor.</p>
             <p>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</p>
           </div>
