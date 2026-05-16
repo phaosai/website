@@ -122,19 +122,6 @@ interface TopRow {
   platforms: string[];
 }
 
-const TOP_SIGNALS = [
-  "Insider clustering · Form 4",
-  "Government & contract pulse · USAspending",
-  "Macro regime · FRED yield curve",
-  "Logistics & supply · MarineTraffic + BDI",
-  "Sentiment · Google Trends + filings",
-  "On-chain flows · DefiLlama TVL",
-  "Fundamentals · XBRL drift",
-  "Positioning · CFTC COT",
-];
-
-const seedFor = (s: string) => s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-
 const RunSimulation = () => {
   const { isLive } = useIsLiveAccount();
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
