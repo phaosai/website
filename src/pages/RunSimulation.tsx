@@ -481,6 +481,13 @@ const RunSimulation = () => {
       </section>
 
       <Footer />
+
+      <LiveExplainerDialog
+        open={explainerOpen}
+        onOpenChange={setExplainerOpen}
+        title="This is your Live Sunesis screen"
+        selectionSummary={`${selectedClasses.length} asset class${selectedClasses.length === 1 ? "" : "es"} · ${selectedPlatforms.length} platform${selectedPlatforms.length === 1 ? "" : "s"}`}
+      />
     </div>
   );
 };
