@@ -179,7 +179,15 @@ const RunSimulation = () => {
 
   const runSimulation = async () => {
     if (!canRun) return;
+
+    // Non-admin accounts: same UI, but action just explains. No fake results.
+    if (!isLive) {
+      setExplainerOpen(true);
+      return;
+    }
+
     setResults(null);
+    setErrorMsg(null);
     setLoading(true);
     setProgress(0);
 
@@ -188,41 +196,34 @@ const RunSimulation = () => {
       180,
     );
 
-    const universe = CANDIDATES.filter(
-      (c) =>
-        selectedClasses.includes(c.assetClass) &&
-        c.platforms.some((p) => selectedPlatforms.includes(p)),
-    );
-
-    const platformKey = [...selectedPlatforms].sort().join("|");
-    const scored: TopRow[] = universe.map((c) => {
-      const seed = seedFor(c.ticker + "::" + platformKey);
-      let baseline = 55 + (seed % 45);
-      if (c.assetClass === "otc_penny") baseline = Math.min(baseline, 60);
-      if (c.assetClass === "stablecoin") baseline = Math.min(baseline, 55);
-      const pci = Math.max(1, Math.min(100, baseline));
-      const sigIdx = seed % TOP_SIGNALS.length;
-      return {
-        ticker: c.ticker,
-        name: c.name,
-        assetClass: c.assetClass,
-        pci,
-        tier: getPciTier(pci),
-        topSignal: TOP_SIGNALS[sigIdx],
-        platforms: c.platforms.filter((p) => selectedPlatforms.includes(p)),
-      };
-    });
-
-    scored.sort((a, b) => b.pci - a.pci);
-    // Sandbox always shows the global Top 10 across the selected universe.
-    const top10 = scored.slice(0, 10);
-
-    await new Promise((r) => setTimeout(r, 1400));
-
-    window.clearInterval(progressInterval);
-    setProgress(100);
-    setResults(top10);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
+        body: { asset_classes: selectedClasses, platforms: selectedPlatforms },
+      });
+      if (error) throw error;
+      const rows: TopRow[] = (data?.results ?? []).map((r: {
+        ticker: string; name: string; assetClass: AssetClass; pci: number;
+        topSignal?: string; platforms: string[];
+      }) => ({
+        ticker: r.ticker,
+        name: r.name,
+        assetClass: r.assetClass,
+        pci: r.pci,
+        tier: getPciTier(r.pci),
+        topSignal: r.topSignal ?? "Macro regime · FRED",
+        platforms: r.platforms ?? [],
+      }));
+      // Show the full live ranked list — no Top-10 cap.
+      setResults(rows);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Live Sunesis call failed.";
+      setErrorMsg(message);
+      setResults([]);
+    } finally {
+      window.clearInterval(progressInterval);
+      setProgress(100);
+      setLoading(false);
+    }
   };
 
   return (
