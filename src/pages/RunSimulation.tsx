@@ -5,7 +5,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
-import { CANDIDATES, type AssetClass } from "@/data/simulationCandidates";
+import type { AssetClass } from "@/data/simulationCandidates";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
 import { supabase } from "@/integrations/supabase/client";
