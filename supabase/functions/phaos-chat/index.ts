@@ -386,7 +386,7 @@ ${safeResearch}`;
     }
 
     // AI actions log — model + version + minimal metadata (no PII content)
-    const modelName = "google/gemini-3-flash-preview";
+    const modelName = "google/gemini-2.5-flash-lite";
     console.log(JSON.stringify({
       evt: "phaos-chat.invoke",
       model: modelName,
@@ -411,7 +411,7 @@ ${safeResearch}`;
             ...safeMessages,
           ],
           stream: true,
-          max_tokens: 1024,
+          max_tokens: 600,
         }),
       }
     );

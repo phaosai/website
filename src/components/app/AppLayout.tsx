@@ -1,12 +1,35 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEntitlements } from "@/hooks/useEntitlements";
 import { Button } from "@/components/ui/button";
+
+const SunesisShell = lazy(() => import("@/pages/app/sunesis/SunesisShell"));
+
+// Routes that should be replaced with the explainer shell for free-tier users.
+const SHELL_PREFIXES = [
+  "/app/sunesis",
+  "/app/themes",
+  "/app/watchlists",
+  "/app/leaderboard",
+  "/app/simulations",
+  "/app/security",
+  "/app/audit",
+  "/app/pantheon",
+];
 
 export default function AppLayout() {
   const { user, signOut } = useAuth();
+  const ent = useEntitlements();
+  const { pathname } = useLocation();
+
+  const inShellArea = SHELL_PREFIXES.some((p) => pathname.startsWith(p));
+  const isFree = !ent.loading && ent.tier === "free";
+  const showShell = inShellArea && isFree;
+
   return (
     <ProtectedRoute>
       <SidebarProvider>
@@ -21,7 +44,13 @@ export default function AppLayout() {
               </div>
             </header>
             <main className="flex-1 overflow-auto">
-              <Outlet />
+              {showShell ? (
+                <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading…</div>}>
+                  <SunesisShell />
+                </Suspense>
+              ) : (
+                <Outlet />
+              )}
             </main>
           </div>
         </div>

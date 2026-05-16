@@ -299,13 +299,29 @@ const Navigation = () => {
               </div>
             );
           })}
-          <Link
-            to="/contact"
-            onClick={() => setMobileOpen(false)}
-            className="block bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2 rounded-full text-center glow-purple"
-          >
-            Schedule a Call
-          </Link>
+          <div className="pt-3 mt-2 border-t border-border/40 space-y-2">
+            <Link
+              to="/signin"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center justify-center gap-1.5 border border-border bg-background/60 text-foreground text-xs font-semibold uppercase tracking-wider px-3 py-2.5 rounded-full"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Sign In
+            </Link>
+            <Link
+              to="/auth?mode=signup"
+              onClick={() => setMobileOpen(false)}
+              className="block bg-gradient-purple text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-full text-center glow-purple"
+            >
+              Sign Up
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setMobileOpen(false)}
+              className="block border border-border text-foreground text-sm font-medium px-5 py-2.5 rounded-full text-center"
+            >
+              Schedule a Call
+            </Link>
+          </div>
         </div>
       )}
     </nav>
