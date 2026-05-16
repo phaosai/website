@@ -352,7 +352,7 @@ const RunSimulation = () => {
               className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <Sparkles className="w-5 h-5" />
-              Generate Top 10
+              Run Live Screen
             </button>
           </div>
 
@@ -372,12 +372,18 @@ const RunSimulation = () => {
             </div>
           )}
 
-          {/* Results — Top 10 */}
+          {errorMsg && !loading && (
+            <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-5 text-sm text-destructive">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Live results */}
           {results && !loading && (
             <div className="mt-6 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-sm border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
-                  Simulated — Sample Product Execution
+                <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  LIVE · Powered by Foundry
                 </span>
                 {summary && (
                   <span className="text-xs text-muted-foreground">
