@@ -1,106 +1,62 @@
-## Scope
+# Plan
 
-Three changes, all confirmed by your answers:
+## 1. Mobile Sign In / Sign Up parity
 
-1. **Asset class section** — add "Select all / Clear" controls matching the platform section, and change the default selection from `[Stock, ETF]` to `[Stock]` only.
-2. **Platform list cleanup** — remove platforms with regulatory/AML/breach/grey-zone or poor public reputations; add a proposed list of reputable additions for your approval before insert.
-3. **Quantum removal** — remove the "Run Quantum Audit" button **and** every other user-facing Quantum surface outside the Foundry.
+**Problem:** The mobile nav drawer only shows menu links and "Schedule a Call." The `Sign In` button (and the 3-portal `/signin` page with Voice / Workflow / Research) is hidden behind `hidden md:inline-flex` and never appears on phones.
 
----
+**Fix in `src/components/Navigation.tsx`:**
+- Inside the mobile drawer (around lines 232–309), add two prominent buttons just above "Schedule a Call":
+  - `Sign In` → `/signin` (the existing 3-portal chooser page — Voice, Workflow, Research)
+  - `Sign Up` → `/auth?mode=signup`
+- Style them as full-width pill buttons matching the desktop chips so the experience matches the screenshot the user shared.
 
-## 1. Asset class — Select All + default
+**Verify mobile rendering** of `/signin` and `/auth`:
+- `/signin` (`src/pages/SignIn.tsx`) — already uses `grid md:grid-cols-3`, so it stacks on mobile. Confirm padding/touch targets.
+- `/auth` (`src/pages/Auth.tsx`) — already has mobile keyboard fixes from prior turn; no changes needed unless QA flags something.
 
-In `src/pages/RunSimulation.tsx`:
-- Default state changes from `useState<AssetClass[]>(["stock", "etf"])` → `useState<AssetClass[]>(["stock"])`.
-- Step 1 header gets the same right-aligned "Select all / Clear" pill buttons as Step 2 (Select all = every value from `investmentGroups`; Clear = `[]`). Identical styling, same `flex items-center gap-2` cluster.
+## 2. "Allow all sign-ups, show a shell with explainers"
 
-No logic changes downstream — `canRun` already handles 1+ selection.
+**Behavior change:** Anyone can sign up. After auth, instead of hitting the gated tiers, every new account is routed into a **demo shell** of Sunesis (the product visible from `/signin → Research`) where:
+- Every button/card is wrapped in a click handler that opens a popover/modal explaining what that button does in detail.
+- Each explainer ends with a **Contact Us** link → opens the existing standard inquiry form (the same `SunesisSignupModal` / `lead-notification` template flow we already use).
+- No real data calls, no Stripe, no entitlement gating for the shell view.
 
----
+**Implementation:**
+- New component `src/components/sunesis/ShellExplainer.tsx` — a generic wrapper:
+  ```tsx
+  <ShellButton title="Truth Machine" description="Runs a multi-source audit against EDGAR, XBRL, GDELT...">
+    <button>Run Audit</button>
+  </ShellButton>
+  ```
+  On click, opens a dialog showing the description + a "Contact Us to activate" CTA that opens the existing lead-capture modal.
+- New page `src/pages/app/sunesis/SunesisShell.tsx` — a static layout mirroring the real Sunesis dashboard (Truth Machine, Watchlists, Themes, Ledger, Leaderboard, Workflow, Sandbox tiles), each wrapped in `ShellButton` with the relevant explainer copy.
+- Routing change in `src/App.tsx` (or wherever Sunesis routes live):
+  - If the authenticated user has **no paid entitlement**, redirect every `/app/sunesis/*` route to `/app/sunesis/shell` instead of showing the real modules or a tier paywall.
+  - Paid users continue to see the real modules.
+- The existing `useEntitlements` hook drives the gate. No DB schema changes needed.
 
-## 2. Platform list — removals + proposed additions
+**Copy for explainers:** I'll write short, plain-English descriptions for each of the ~10 Sunesis surfaces (Research, Watchlists, Themes, Theme Detail, Ledger, Leaderboard, Ticker, Workflow, Sandbox, Compliance, Language). One sentence what it does + one sentence what live data they'd get + Contact Us button.
 
-### Removals (queued as a single DB migration)
+## 3. Chatbot speed (currently ~60s replies)
 
-Crypto exchanges with regulatory/AML/breach issues:
-- **Binance**, **Binance.US** (Nov 2023 DOJ $4.3B settlement, CZ guilty plea)
-- **Bitfinex** (NY AG settlement, reserve disclosure history)
-- **BingX** (July 2024 hot-wallet hack)
-- **KuCoin** (2024 DOJ indictment, $300M+ AML settlement)
-- **MEXC** (no major-jurisdiction licensing, consumer warnings)
-- **Bybit** (Feb 2025 $1.4B hack, multi-jurisdiction restrictions)
-- **OKX** (Feb 2025 DOJ guilty plea, $500M+ in penalties)
-- **Crypto.com** (FTC scrutiny, undisclosed 2022 hack)
+**Root cause:** `phaos-chat` uses `google/gemini-3-flash-preview` with a ~6 KB system prompt + up to 1024 output tokens. Under preview-model load that easily explodes to 30–90s. The route already streams, but the model's **time-to-first-token** is the bottleneck — that's why the typing dots sit forever before any text appears.
 
-Permissionless perp DEXs (no KYC, regulatory grey zone):
-- **Hyperliquid**, **GMX**, **dYdX**, **Jupiter** (perps)
-- *(Uniswap, Raydium, PancakeSwap retained — spot AMMs, core DeFi infra)*
+**Fix in `supabase/functions/phaos-chat/index.ts`:**
+- Swap default model to `google/gemini-2.5-flash-lite` (consistently sub-2s TTFT on the Lovable AI Gateway). It's strong enough for the consultative Q&A this bot handles.
+- Lower `max_tokens` from `1024` → `512`. Replies stay complete but stop faster.
+- Trim `SYSTEM_PROMPT` aggressively: keep persona + security/refusal rules + formatting rule + 8 Wastes summary, drop the long COQ/benchmark sections (or move them behind a "if asked about COQ" line). Smaller prompt = faster first token + cheaper.
+- Keep streaming as-is; the client already renders deltas.
 
-CFD/FX brokers with poor reputations or weak regulation:
-- **FXCM** (2017 NFA ban — US misleading-customer order)
-- **Exness** (offshore, no tier-1 regulator)
-- **AvaTrade** (multiple regulator fines, retention practices)
-- **ZuluTrade** (signal-copy reputation issues)
-- **XM** (offshore, mixed reputation)
-- **Vantage** (offshore-leaning, marketing scrutiny)
-- **ThinkMarkets** (mixed regulator history)
+**Verification:** after deploy, send a test message via `supabase--curl_edge_functions` and confirm first token arrives in <3s.
 
-Other:
-- **bitFlyer** retained (Japan FSA regulated)
-- **Bitso**, **Mercado Bitcoin**, **NDAX**, **Newton** retained (regional regulated)
-- **Robinhood** retained (FINRA fines but tier-1 regulated, mainstream — flag if you want it removed)
+## 4. Out of scope (will not touch)
+- Stripe / pricing pages (user already removed Sunesis pricing in a prior turn).
+- Foundry / Quantum routes.
+- Desktop nav layout.
 
-### Proposed additions (for your approval — nothing inserted until you OK)
-
-All tier-1 regulated, broad asset-class coverage, strong public reputation, alphabetical fit:
-
-1. **AJ Bell** (UK, FCA — equities, funds, bonds)
-2. **Bitpanda** (EU, BaFin/MFSA — crypto + equities + metals)
-3. **Boursorama** (FR, ACPR — equities, ETFs, funds)
-4. **Charles Stanley Direct** (UK, FCA — equities, funds)
-5. **DBS Vickers** (SG, MAS — global equities, bonds)
-6. **Hargreaves Lansdown** (UK, FCA — equities, funds, SIPP)
-7. **Interactive Investor** (UK, FCA — multi-asset)
-8. **Lynx Broker** (EU IBKR partner — futures, options, equities)
-9. **Sygnum Bank** (CH, FINMA — regulated crypto + tokenized RWAs)
-10. **TradeZero** (BS, regulated — equities, OTC)
-11. **Zerodha** (IN, SEBI — equities, F&O — large reputable retail base)
-
-→ **Confirm which additions to include**, then I'll write one migration that does the deletes + inserts atomically, and update `FALLBACK_PLATFORMS` in `RunSimulation.tsx` so the fallback matches the DB.
-
----
-
-## 3. Quantum surfaces — Foundry-only
-
-### Remove
-| File | What goes |
-|------|-----------|
-| `src/pages/RunSimulation.tsx` | "Run Quantum Audit" button, `QuantumAuditModal` import + render, `quantumOpen`/`quantumPrompt` state, the `requiresQuantum` gate in `runSimulation` (cross-class runs become free), `AlertDialog` quantum prompt, `Cpu` icon import |
-| `src/pages/app/sunesis/SunesisResearch.tsx` | "Quantum cross-validation" toggle block (lines ~465–490), `quantumManual`/`quantumAuto`/`quantumActive` state, `quantum_enabled` payload fields (send `false`), `Atom` icon import |
-| `src/components/sunesis/AlertsPanel.tsx` | "Quantum auto-alerts" switch block (~327–349), `tryQuantum`, `quantum_enabled` in default state + persisted writes (always `false`) |
-| `src/pages/app/sunesis/SunesisLeaderboard.tsx` | "Quantum Elite" category from `Category` union + `TABS` array |
-| `src/pages/app/sunesis/SunesisLedger.tsx` | The "Quantum Audit completed" sample row + remove "quantum_audits" from footer disclaimer |
-| `src/components/phaos/SunesisMoatStrip.tsx` | Drop the `{ Icon: Cpu, label: "Quantum Audit" }` strip item |
-| `src/pages/app/sunesis/SunesisTicker.tsx` | Remove `<QRRGauge>` render + import |
-| `src/components/phaos/index.ts` | Remove `QRRGauge`/`QRRBadge` exports |
-
-### Keep
-- `QuantumAuditModal.tsx`, `QRRGauge.tsx`, `QRRBadge.tsx` files stay on disk (used by Foundry / future Foundry tooling).
-- `FoundryAdmin.tsx` retains everything (admin-gated already).
-- DB columns `quantum_enabled` on `saved_searches` / `alert_settings` stay (backward-compat); UI just never sets `true`.
-
----
-
-## Verification
-- `bun run build` after each file group.
-- Manual check on `/one/run-simulation` (Select all/Clear works on Step 1; Stock pre-selected; no Quantum button); `/app/sunesis/research`, `/app/sunesis/leaderboard`, `/app/sunesis/ledger`, `/app/sunesis/ticker/AAPL` (no quantum surfaces); `/app/foundry` (admin) still has everything.
-
----
-
-## What I need from you before building
-
-1. Approve the **proposed additions list** (or strike any).
-2. Confirm **Robinhood** stays (default) or should be removed.
-3. Anything else to remove that I didn't flag.
-
-Once you confirm, I'll execute all three changes in one pass.
+## Files to be edited / created
+- edit `src/components/Navigation.tsx` (mobile drawer Sign In / Sign Up)
+- edit `src/App.tsx` (route guard → shell for free accounts)
+- create `src/components/sunesis/ShellExplainer.tsx`
+- create `src/pages/app/sunesis/SunesisShell.tsx`
+- edit `supabase/functions/phaos-chat/index.ts` (model + max_tokens + trimmed prompt)
