@@ -80,6 +80,13 @@ function FoundryAdminInner() {
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
   const [pinging, setPinging] = useState(false);
+  const QMODE_KEY = "phaos.foundry.quantumMode.v1";
+  const [quantumMode, setQuantumMode] = useState<boolean>(() => {
+    try { return localStorage.getItem(QMODE_KEY) === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(QMODE_KEY, quantumMode ? "1" : "0"); } catch { /* ignore */ }
+  }, [quantumMode]);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
