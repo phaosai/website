@@ -51,7 +51,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
       Deno.env.get("SUPABASE_SECRET_KEY") ?? "",
     ].filter((v) => v.length > 0);
-    const isServiceCall = serviceKeys.some((key) => auth === `Bearer ${key}` || apikey === key);
+    const adminToken = Deno.env.get("PURGE_ADMIN_TOKEN") ?? "";
+    const isAdminTokenCall = adminToken.length > 0 && req.headers.get("x-phaos-admin-token") === adminToken;
+    const isServiceCall = isAdminTokenCall || serviceKeys.some((key) => auth === `Bearer ${key}` || apikey === key);
     if (!isServiceCall) {
       const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: auth } }, auth: { persistSession: false },
