@@ -56,17 +56,18 @@ export function PageShell({ title, description, minTier, actions, children }: Pr
 
 export function PCITierBadge({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-muted-foreground">—</span>;
-  let label = "Stand Aside", color = "text-red-500";
-  if (score >= 80) { label = "Strong"; color = "text-emerald-500"; }
-  else if (score >= 60) { label = "Constructive"; color = "text-emerald-400"; }
-  else if (score >= 40) { label = "Watch"; color = "text-amber-400"; }
-  else if (score >= 20) { label = "Caution"; color = "text-orange-400"; }
+  // Lazy imports to avoid circular module init.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { getPciColorClass } = require("@/constants/pciData") as typeof import("@/constants/pciData");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { pciToBandName } = require("@/lib/pciMatrix") as typeof import("@/lib/pciMatrix");
+  const palette = getPciColorClass(score);
   return (
     <span
-      className={`font-semibold ${color}`}
-      title="PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns."
+      className={`font-semibold ${palette.text}`}
+      title="PCI is a research confidence score based on publicly available signals. SIMULATED — does not predict or guarantee investment returns."
     >
-      {score}<span className="ml-2 text-xs font-normal text-muted-foreground">{label}</span>
+      {score}<span className="ml-2 text-xs font-normal text-muted-foreground">{pciToBandName(score)}</span>
     </span>
   );
 }
