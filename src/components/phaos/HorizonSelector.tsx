@@ -1,9 +1,15 @@
+import { Lock } from "lucide-react";
 import { HORIZON_GROUPS, HORIZON_LABELS, type Horizon } from "@/lib/pciMatrix";
+import type { Tier } from "@/hooks/useEntitlements";
+import { HORIZON_MIN_TIER } from "@/lib/horizonGating";
 
 interface Props {
   value: Horizon;
   onChange: (h: Horizon) => void;
-  /** Optional className for the outer wrapper. */
+  /** If provided, horizons outside this list are rendered as locked. */
+  allowedHorizons?: readonly Horizon[];
+  /** Click handler for locked horizons (typically routes to /pricing). */
+  onLockedClick?: (h: Horizon, minTier: Tier) => void;
   className?: string;
 }
 
@@ -13,12 +19,18 @@ const GROUP_TITLES: Record<keyof typeof HORIZON_GROUPS, string> = {
   eventDriven: "Event-Driven",
 };
 
-/**
- * Compact horizon selector. Three grouped rows of pill buttons.
- * Pure presentational — drives the `horizon` prop of PciCommandCenter
- * and the `horizon` body field of `compute-pci-score`.
- */
-export function HorizonSelector({ value, onChange, className = "" }: Props) {
+const TIER_LABEL: Record<Tier, string> = {
+  free: "Free",
+  sunesis: "Sunesis",
+  aion: "Aion",
+  kyrios: "Kyrios",
+  phaos_one: "Phaos ONE",
+  pantheon: "Pantheon",
+};
+
+export function HorizonSelector({ value, onChange, allowedHorizons, onLockedClick, className = "" }: Props) {
+  const isAllowed = (h: Horizon) => !allowedHorizons || allowedHorizons.includes(h);
+
   return (
     <div className={`rounded-xl border border-border bg-card/40 p-4 ${className}`}>
       <p className="text-[10px] font-mono tracking-[0.3em] uppercase text-muted-foreground mb-3">
@@ -31,21 +43,42 @@ export function HorizonSelector({ value, onChange, className = "" }: Props) {
               {GROUP_TITLES[group]}
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {HORIZON_GROUPS[group].map((h) => {
+              {HORIZON_GROUPS[group].map((rawH) => {
+                const h = rawH as Horizon;
                 const active = h === value;
+                const allowed = isAllowed(h);
+                const minTier = HORIZON_MIN_TIER[h];
+                const title = allowed
+                  ? HORIZON_LABELS[h]
+                  : `${HORIZON_LABELS[h]} · Requires ${TIER_LABEL[minTier]} tier`;
+                const base = "px-2.5 py-1 rounded-md text-xs font-mono border transition-colors inline-flex items-center gap-1";
+                if (!allowed) {
+                  return (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => onLockedClick?.(h, minTier)}
+                      className={`${base} border-dashed border-border bg-background/20 text-muted-foreground/60 hover:text-muted-foreground hover:border-foreground/30 cursor-pointer`}
+                      title={title}
+                    >
+                      <Lock className="w-3 h-3" />
+                      {HORIZON_LABELS[h]}
+                    </button>
+                  );
+                }
                 return (
                   <button
                     key={h}
                     type="button"
-                    onClick={() => onChange(h as Horizon)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-mono border transition-colors ${
+                    onClick={() => onChange(h)}
+                    className={`${base} ${
                       active
                         ? "border-primary bg-primary/15 text-foreground"
                         : "border-border bg-background/40 text-muted-foreground hover:text-foreground hover:border-foreground/30"
                     }`}
-                    title={HORIZON_LABELS[h as Horizon]}
+                    title={title}
                   >
-                    {HORIZON_LABELS[h as Horizon]}
+                    {HORIZON_LABELS[h]}
                   </button>
                 );
               })}
