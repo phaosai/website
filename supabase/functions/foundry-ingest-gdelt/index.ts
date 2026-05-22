@@ -52,35 +52,40 @@ Deno.serve(async (req) => {
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
     if (!isAdmin) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { year } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { year } = body;
+    const subBrainId: string = body.subBrainId ?? "alternative";
+    const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!Number.isInteger(year) || year < 2006 || year > 2025)
-      return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json({ ok: false, error: "year must be 2006-2025", rows_written: 0, bytes_added: 0, indexed_bytes_added: 0, failed: [] });
 
     const runId = crypto.randomUUID();
     let payload: Record<string, unknown>;
     let sourceUrl: string;
-    let units = 0;
+    let indexed = 0;
     if (year <= 2014) {
       sourceUrl = `http://data.gdeltproject.org/events/${year}.zip`;
-      const head = await fetch(sourceUrl, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } });
-      const cl = Number(head.headers.get("content-length") ?? 0);
-      payload = { archive_available: head.ok, archive_bytes: cl, version: "GDELT 1.0 yearly", ingest_run_id: runId };
-      units = cl;
+      const head = await fetch(sourceUrl, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } }).catch(() => null);
+      const cl = Number(head?.headers.get("content-length") ?? 0);
+      payload = { archive_available: !!head?.ok, archive_bytes: cl, version: "GDELT 1.0 yearly", ingest_run_id: runId };
+      indexed = cl;
     } else {
       sourceUrl = `http://data.gdeltproject.org/gdeltv2/masterfilelist.txt`;
       const s = await sampleV2(year);
       payload = { ...s, version: "GDELT 2.0 sampled", ingest_run_id: runId };
-      units = s.estimated_event_rows;
+      indexed = s.archive_bytes_sampled ?? s.estimated_event_rows ?? 0;
     }
 
     const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
-    await supabase.from("foundry_year_corpus").insert({
+    const { error } = await supabase.from("foundry_year_corpus").insert({
       year, dimension: "sentiment", source_id: `gdelt:${runId.slice(0, 8)}`,
       source_url: sourceUrl, payload, ingest_run_id: runId,
-      payload_bytes: payloadBytes, content_units: units,
+      payload_bytes: payloadBytes, content_units: indexed,
+      sub_brain_id: subBrainId, platform: "gdelt", indexed_bytes: indexed,
     });
-    return new Response(JSON.stringify({ ok: true, year, run_id: runId, payload, bytes_added: payloadBytes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (error) throw new Error(error.message);
+    return json({ ok: true, year, run_id: runId, sub_brain_id: subBrainId, rows_written: 1, bytes_added: payloadBytes, indexed_bytes_added: indexed, payload, written: ["gdelt"], failed: [] });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e), rows_written: 0, bytes_added: 0, indexed_bytes_added: 0, failed: [] }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
