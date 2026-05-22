@@ -418,41 +418,37 @@ function FoundryAdminInner() {
         .reduce((s: number, m) => s + Object.keys((m ?? {}) as Record<string, number>).length, 0);
       const { error: deactErr } = await supabase.from("promoted_brains").update({ is_active: false }).eq("is_active", true);
       if (deactErr) throw deactErr;
-      const { error } = await supabase.from("promoted_brains").insert({
-        engine_name: promoteName.trim(),
-        version: state.promote.version || "v1.0",
-        enabled_dimensions: enabledDims as unknown as string[],
-        residual_bias: { flat: residuals, by_regime: residualsByRegime },
-        combined_score: Number(lastCombined) || 0,
-        is_active: true,
-        notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
-      });
-      if (error) throw error;
+      // Insert + return id atomically so we don't race on a name lookup.
+      const { data: inserted, error: insErr } = await supabase
+        .from("promoted_brains")
+        .insert({
+          engine_name: promoteName.trim(),
+          version: state.promote.version || "v1.0",
+          enabled_dimensions: enabledDims as unknown as string[],
+          residual_bias: { flat: residuals, by_regime: residualsByRegime },
+          combined_score: Number(lastCombined) || 0,
+          is_active: true,
+          notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
+        })
+        .select("id")
+        .single();
+      if (insErr || !inserted?.id) throw insErr ?? new Error("insert returned no id");
+      const newBrainId = inserted.id;
 
       // Section 7 — Stage 5: pre-bake live_pci_matrix for zero-latency reads.
-      try {
-        const { data: brainRow } = await supabase
-          .from("promoted_brains")
-          .select("id")
-          .eq("is_active", true)
-          .eq("engine_name", promoteName.trim())
-          .order("promoted_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (brainRow?.id) {
-          const bakeRes = await supabase.functions.invoke("bake-live-pci-matrix", {
-            body: { promoted_brain_id: brainRow.id },
-          });
-          if (bakeRes.error) {
-            toast({
-              title: "Brain promoted, but live matrix bake failed",
-              description: bakeRes.error.message ?? "Run bake-live-pci-matrix manually.",
-              variant: "destructive",
-            });
-          }
-        }
-      } catch (bakeErr) {
-        console.error("bake-live-pci-matrix invoke failed", bakeErr);
+      // If bake fails we MUST roll the new brain back to is_active=false so
+      // end users don't see an active engine with an empty matrix.
+      const bakeRes = await supabase.functions.invoke("bake-live-pci-matrix", {
+        body: { promoted_brain_id: newBrainId },
+      });
+      if (bakeRes.error) {
+        await supabase.from("promoted_brains").update({ is_active: false }).eq("id", newBrainId);
+        toast({
+          title: "Promotion rolled back — live matrix bake failed",
+          description: `${bakeRes.error.message ?? "bake-live-pci-matrix returned an error"}. The new brain was deactivated and the previous live engine remains in place.`,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
