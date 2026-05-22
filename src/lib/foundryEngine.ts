@@ -826,6 +826,32 @@ export async function loadCorpusCoverage(): Promise<Record<string, Record<number
   return out;
 }
 
+/**
+ * Coverage helper: distinct years per sub_brain_id from foundry_year_corpus.
+ * Used to RESTORE Stage 1 sub-brain lock state from the database on mount,
+ * so a localStorage clear (or a fresh browser/session) never appears to "lose"
+ * already-completed ingestion work. The DB is the source of truth.
+ */
+export async function loadSubBrainCoverage(): Promise<Record<string, number[]>> {
+  const out: Record<string, number[]> = {};
+  try {
+    const { data, error } = await (supabase as any)
+      .from("foundry_year_corpus")
+      .select("sub_brain_id, year")
+      .not("sub_brain_id", "is", null)
+      .limit(50000);
+    if (error || !data) return out;
+    const seen: Record<string, Set<number>> = {};
+    for (const r of data as Array<{ sub_brain_id: string | null; year: number }>) {
+      const id = r.sub_brain_id ?? "";
+      if (!id) continue;
+      (seen[id] ||= new Set()).add(Number(r.year));
+    }
+    for (const [id, set] of Object.entries(seen)) out[id] = Array.from(set).sort((a, b) => a - b);
+  } catch { /* ignore */ }
+  return out;
+}
+
 export interface QuantumPingResult {
   ok: boolean;
   summary: string;
