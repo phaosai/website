@@ -347,18 +347,33 @@ function FoundryAdminInner() {
   async function runRegime() {
     setState((prev) => ({ ...prev, regime: { ...prev.regime, status: "running" } }));
     await new Promise((r) => setTimeout(r, 1500));
+    let recordedRuns = 0;
+    let recordedAccuracy = 0;
     setState((prev) => {
       const runs = (prev.regimeRuns ?? 0) + 1;
       // Each subsequent run reduces noise (more samples, deeper sweep).
       const noise = Math.max(2, 5 - Math.log10(runs + 1) * 1.2);
       const samples = 600 + runs * 150;
       const acc = pciTierMatchAccuracy({ samples, noise });
+      recordedRuns = runs;
+      recordedAccuracy = acc.tierMatchPct;
       return recomputeGates({
         ...prev,
         regimeRuns: runs,
         regime: { status: "done", accuracy: acc.tierMatchPct },
       });
     });
+    await recordFoundryStageRun({
+      stageNumber: 2,
+      stageKey: "stage2_regime_classifier",
+      stageLabel: "Stage 2 — Regime Classifier",
+      years: [2006, 2007, 2008, 2009, 2010],
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: 1,
+      accuracy: recordedAccuracy,
+      evidence: { run: recordedRuns, regimes: ["crisis", "volatile", "calm", "melt_up", "recovery"] },
+    });
+    refreshStageRunTotals();
     toast({ title: "Regime classifier locked", description: `Regime layer trained. Run any number of times — every pass widens the labeled window the final quantum will consume.` });
   }
 
@@ -390,6 +405,8 @@ function FoundryAdminInner() {
     });
     recordReport(out.report);
     await new Promise((r) => setTimeout(r, 1000));
+    let recordedRuns = 0;
+    let recordedAccuracy = 0;
     setState((prev) => {
       const runs = (prev.synthesisRuns ?? 0) + 1;
       // Combined brain absorbs all sub-brains and tightens with every run.
@@ -397,6 +414,8 @@ function FoundryAdminInner() {
       const noise = Math.max(0.8, baseNoise - Math.log10(runs + 1) * 0.4);
       const samples = 1500 + runs * 400;
       const acc = pciTierMatchAccuracy({ samples, noise });
+      recordedRuns = runs;
+      recordedAccuracy = acc.tierMatchPct;
       return recomputeGates({
         ...prev,
         synthesisRuns: runs,
@@ -407,6 +426,17 @@ function FoundryAdminInner() {
         },
       });
     });
+    await recordFoundryStageRun({
+      stageNumber: 3,
+      stageKey: "stage3_quantum_synthesis",
+      stageLabel: "Stage 3 — Quantum System Assessment",
+      years: ALL_FOUNDRY_YEARS,
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: 1,
+      accuracy: recordedAccuracy,
+      evidence: { run: recordedRuns, quantum: out.report, anchorCount, subBrains: ASSET_CLASSES.map((c) => c.id) },
+    });
+    refreshStageRunTotals();
     toast({ title: "⚛︎ Quantum result · Unified synthesis", description: out.message });
   }
 
