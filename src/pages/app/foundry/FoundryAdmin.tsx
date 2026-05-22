@@ -27,6 +27,7 @@ import {
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
+import { WalkForwardMatrix } from "@/components/foundry/WalkForwardMatrix";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
