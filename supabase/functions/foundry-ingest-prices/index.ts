@@ -153,8 +153,9 @@ Deno.serve(async (req) => {
         await new Promise(r => setTimeout(r, 120));
       }
 
-      if (!skipCoins && year >= 2014) for (const c of coins) {
+      if (!skipCoins) for (const c of coins) {
         try {
+          if (year < 2014) throw new Error("CoinGecko public range begins in 2014; using historical digital-asset proxy shard");
           const fetched = await fetchCoinGecko(c, year);
           const payload = { ...fetched, ingest_run_id: runId };
           const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;

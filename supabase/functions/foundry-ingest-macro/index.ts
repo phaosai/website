@@ -34,7 +34,7 @@ const TAG_TO_SUBBRAIN: Record<string,string> = {
 
 async function fetchFredYear(series: string, year: number) {
   const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${series}`;
-  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
+  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" }, signal: AbortSignal.timeout(6500) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const text = await r.text();
   const lines = text.trim().split("\n").slice(1);
