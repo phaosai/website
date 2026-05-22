@@ -947,6 +947,22 @@ function FoundryAdminInner() {
 
       {/* ---------- 5-PILLAR INGESTION DASHBOARD (replaces legacy Stage 1) ---------- */}
       <PillarIngestionGrid
+        onStageEvidence={(e) => {
+          recordFoundryStageRun({
+            stageNumber: 1,
+            stageKey: `stage1_${e.subBrainId}`,
+            stageLabel: `Stage 1 — ${e.name}`,
+            status: e.status,
+            subBrainId: e.subBrainId,
+            years: e.years,
+            dimensions: ALL_DIMENSIONS,
+            rowsAdded: e.rowsAdded,
+            storedBytesAdded: e.storedBytesAdded,
+            indexedBytesAdded: e.indexedBytesAdded,
+            contentUnitsAdded: e.contentUnitsAdded,
+            evidence: { failed_sources: e.failedCount, source: "sub_brain_ingestion_grid" },
+          }).then(refreshStageRunTotals);
+        }}
         onAllWiredPillarsComplete={() => {
           setState((prev) => recomputeGates({
             ...prev,
