@@ -77,8 +77,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const auth = req.headers.get("Authorization") ?? "";
     const apikey = req.headers.get("apikey") ?? "";
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const isServiceCall = serviceKey.length > 0 && (auth === `Bearer ${serviceKey}` || apikey === serviceKey);
+    const serviceKeys = [
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
+      Deno.env.get("SUPABASE_SECRET_KEY") ?? "",
+    ].filter((v) => v.length > 0);
+    const isServiceCall = serviceKeys.some((key) => auth === `Bearer ${key}` || apikey === key);
     if (!isServiceCall) {
       const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: auth } }, auth: { persistSession: false },
