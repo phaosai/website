@@ -1,87 +1,70 @@
+## Goal
+Implement Section 6 of the Foundry spec — Sequential Walk-Forward Validation — as a new control matrix inside the existing Stage 4 — Rolling Annual Validation section of `FoundryAdmin.tsx`. No changes to branding, layout outside this section, or to the live Sunesis engine. All outputs labeled SIMULATED.
 
-# PCI 0–100 Expected Return Matrix + Horizon Engine — Section 3
+## Scope (presentation + thin orchestration, no schema/migration)
+All changes confined to:
+- `src/pages/app/foundry/FoundryAdmin.tsx` — new matrix UI inside the Stage 4 `<section>` (added above the existing 2011 → 2025 year grid; existing controls untouched).
+- `src/components/foundry/WalkForwardMatrix.tsx` *(new)* — encapsulates the 4-button matrix + Adversarial Challenger button + scatterplot.
+- `src/lib/walkForward.ts` *(new)* — pure orchestration helpers that wrap existing `foundryEngine` primitives (`runYear`, `trainYearMultiPass`, `recomputeGates`). No new SDK, no new edge function.
 
-Per your guardrail: nothing visible ships without your approval. Below is the proposed scope with explicit approval gates.
+No edits to `foundryEngine.ts`, `pciMatrix.ts`, edge functions, schema, or design tokens.
 
-## ⚠️ Conflict to resolve before I touch anything
-Project memory currently states: **"ONLY user-facing score = PCI, 1–100, 5 tiers."** The spec extends this to **0–100 (101 integers)** and re-bands the tiers around expected-return ranges. I need your call on:
+## The Matrix (4 buttons, single row, SIMULATED badge)
 
-**Q1.** Override the memory rule and adopt 0–100 / new bands everywhere? (recommended — matches spec)
-**Q2.** Tier mapping — the spec gives 9 named bands. The current UI palette has 5 colors (`pci-choice`, `pci-go`, `pci-potential`, `pci-warning`, `pci-no-go`). Options:
-  - **A.** Keep 5 colors, fold spec's 9 bands into them by severity (no new design tokens).
-  - **B.** Add 4 new color tokens for the new extreme bands (Systemic Arbitrage / Asymmetric Haven / Zombie / Eradicated). Visual change — needs separate aesthetic sign-off.
+1. **Initialize Base Brain** — Runs the existing year cycle silently for 2011 → 2015 (closest available baseline; engine years start at 2011 — flagged in the plan, see Open Question 1). Writes "baseline weights packed" into state.baselineLocked. Disabled once locked; "Re-pack baseline" available via small ghost button.
+2. **Execute Blind Annual Simulation** — Year dropdown 2016–2025. Calls `runYear(year, false, { silent: false })` with a hard guard: refuses to run unless baseline is locked AND no later year has been scored (chronological buffer enforced in `walkForward.ts`).
+3. **Audit Blind Run Performance** — Reads `y.results[combined].predictions` for the selected blind year, renders a **Prediction vs. Realization Scatterplot** (Jan 1 PCI on X, Dec 31 realized PCI on Y, diagonal = perfect). Built with inline SVG (no `recharts` — that's a Core rule). Interactive: hover dots → tooltip with symbol + Δ. Shows R², MAE, hit-rate above the chart.
+4. **Run Final Sunesis Pattern Synthesis** — Computes exponential decay weights across all scored years with `weight = exp(-λ · (currentYear - y.year))` and λ tuned so 2023–2025 hold ≥60% of total weight. Displays the weight distribution as a small bar strip and writes `state.synthesisWeights` (additive; doesn't overwrite Stage 3 synthesis).
 
-I'll wait for your answers on Q1/Q2 before writing any code.
+Buttons gate each other left-to-right (1 unlocks 2, 2 unlocks 3 for that year, 3 unlocks 4 once at least one blind year is audited).
 
----
+## Adversarial Challenger Loop (separate button, below the matrix)
+- Pulls `y.results[combined].predictions` across all scored years, isolates the top 5% by `|jan1Pci - dec31RealizedPci|`.
+- Runs N=200 Monte Carlo synthetic perturbations on that worst-error slice:
+  - Volatility acceleration: noise σ × Uniform(1.5, 3.0).
+  - Liquidity compression: shrinks accuracy ceiling by Uniform(0.7, 0.95).
+- Re-fits kernel weights via simple gradient descent on residuals (already exposed by `trainYearMultiPass`'s residual map); writes `state.adversarialResiduals` and renders before/after MAE delta + a toast.
+- Confirmation `AlertDialog` (matches existing Hyper-Forge pattern) since this mutates the residual map.
 
-## Scope (Section 3 only)
-1. New canonical bands table for PCI 0–100 with the exact return ranges from the spec.
-2. Pure helpers: `pciToExpectedReturnRange(pci)`, `pciToBandName(pci)`, `bandFromExpectedReturn(pct)`.
-3. Horizon model: `Horizon` union + multipliers used by both engine and UI display.
-4. Edge function `compute-pci-score` accepts an optional `horizon` parameter and returns the matching expected-return range alongside the existing `pci`/`tier`/`components`.
-5. Front-end PCI display surfaces (PciCommandCenter, ShellExplainer, ThemeDetail, Ticker, Workflow) read the new band+range via the helpers — no per-component math.
+## Layout placement (no existing UI moved)
+Inside the Stage 4 `<section>` (`FoundryAdmin.tsx` ~L606), insert a new `<Card>` between the explainer block (L661) and the year-pill grid (L685):
 
-Out of scope (separate plans): membership-level horizon gating (Section 4), Stage-4 validation (Section 6), live signal feeder rewiring.
-
----
-
-## Files I'd touch (no edits until you approve)
-
-### New
-- `src/lib/pciMatrix.ts` — single source of truth:
-  - `PCI_BANDS` constant (9 entries per spec).
-  - `pciToBand(pci: number): PciBand`.
-  - `pciToExpectedReturnRange(pci, horizon): { minPct, maxPct, label }`.
-  - `HORIZONS` constant grouped Velocity / Macro / Event-Driven.
-  - `scaleReturnForHorizon(annualizedPct, horizon): { minPct, maxPct }`.
-
-### Edited (logic only — no visual change unless you pick option B above)
-- `src/constants/pciData.ts` — keep the 100 designations as is, but:
-  - Add entry for **PCI 0** ("Eradicated").
-  - `getPciData` clamp becomes `0..100`.
-  - `getPciColorClass` re-bucketed against the new spec bands (5-color compression per Q2/A, or 9-color expansion per Q2/B).
-- `supabase/functions/compute-pci-score/index.ts`:
-  - Accept `horizon` in request body (default `"1Y"`).
-  - Return new `expected_return_range` + `band_name` fields.
-  - Clamp `pci` to `0..100` (currently effectively 0–100 already, but no explicit 0 handling).
-  - **No change** to weighting formula or RLS — pure additive output.
-- Memory: `mem://features/phaos-conviction-index` updated to "0–100, spec bands per Section 3", and Core rule line updated.
-
-### Read-only audit (no edits expected)
-- `src/components/phaos/PciCommandCenter.tsx`, `src/components/sunesis/ShellExplainer.tsx`, `src/pages/app/sunesis/SunesisThemeDetail.tsx`, `SunesisTicker.tsx`, `SunesisWorkflow.tsx`, `CommandCenter.tsx`, `FoundryAdmin.tsx` — confirm they consume `getPciData`/`getPciColorClass` and pick up the band changes for free. If any hardcode tier text, I'll list them and ask before editing.
-
----
-
-## Horizon model (proposed enum)
-
-```ts
-type Horizon =
-  | "1H" | "7D" | "30D" | "90D"          // Velocity
-  | "6M" | "1Y" | "2Y" | "3Y" | "5Y" | "10Y"  // Macro
-  | "48H_CATALYST" | "90D_AFTERSHOCK";   // Event-Driven
+```text
+Stage 4 header (unchanged)
+explainer block (unchanged)
+────────────────────────────────────────────────
+NEW: Walk-Forward Validation Matrix card
+  [1 Initialize Base Brain] [2 Blind Sim · Year ▾] [3 Audit] [4 Pattern Synthesis]
+  [Adversarial Challenger Loop]   (separate row, accent border)
+  scatterplot + metrics (when audit run)
+────────────────────────────────────────────────
+year pills 2011-2025 (unchanged)
+selected year card (unchanged)
 ```
 
-`scaleReturnForHorizon` rescales the spec's bands (which read as annual-equivalent ranges) using a documented `sqrt(time)` volatility scaler:
-- Short horizons (1H/7D/30D/90D) → compress ranges (e.g. 1Y +99% becomes 90D +24%).
-- Long horizons (3Y/5Y/10Y) → expand ranges proportionally.
-- Event-driven (48H/90D-aftershock) → use spec-fixed multipliers (I'll propose values for your approval before coding).
+Visual style: reuses existing `Card`, `Button`, `Badge`, `Select`, `AlertDialog`, the `SIMULATED` badge constant, and emerald/primary tokens already in `FoundryAdmin.tsx`. Zero new colors, zero new tokens.
 
-Horizon scaler math will be in a `// METHODOLOGY:` comment block so the audit memo can cite it.
+## Technical notes
 
----
+State shape additions (local to `ForgeState` via `setState` casts, no engine change):
+```ts
+baselineLocked?: boolean;
+baselineYears?: number[];          // [2011..2015]
+blindRuns?: Record<number, { auditedAt: string }>;
+synthesisWeights?: Record<number, number>;
+adversarialResiduals?: { beforeMae: number; afterMae: number; sampleSize: number };
+```
 
-## Verification
-1. Vitest unit tests for `pciToBand`, `pciToExpectedReturnRange`, `scaleReturnForHorizon` (round-trip on each spec band).
-2. Edge function curl test with `{ ticker: "AAPL", horizon: "30D" }` to confirm response shape includes the new fields.
-3. Visual audit of `/app/sunesis/themes` and `/app/run-simulation` for any tier label drift.
+Scatterplot: 320×320 SVG, semantic tokens only (`hsl(var(--primary))`, `hsl(var(--muted-foreground))`), framer-motion fade-in (allowed).
 
----
+Chronological buffer: enforced as `selectedBlindYear > max(scoredYears)` — refuses with a toast otherwise. No lookahead.
 
-## Approval checklist (please answer)
-1. **Q1** — adopt 0–100 / new bands across UI? (yes / no)
-2. **Q2** — color tokens: **A** (compress to 5) or **B** (add 4 new tokens, separate aesthetic review)?
-3. **Q3** — OK to default `horizon = "1Y"` for callers that don't pass one, so legacy behavior stays unchanged?
-4. **Q4** — should I update `mem://features/phaos-conviction-index` and the Core memory rule in the same change, or wait?
+## Open questions before I build
 
-I'll wait for these answers, then ship the engine + helpers first (no visual change), get your sign-off, and only then touch UI surfaces.
+1. **Baseline window mismatch:** the spec says 2006-2015, but the existing engine's earliest year is 2011 (`state.years` is fixed 2011–2025 per `foundryEngine.ts`). Options:
+   - (a) Use 2011-2015 as the baseline window and label it accordingly. *(my recommendation — no engine surgery, honest about available data)*
+   - (b) Extend the engine years back to 2006 (touches `foundryEngine.ts`, regenerates historical macro shocks, larger blast radius).
+2. **Scatterplot scope:** plot only Combined Brain predictions for the selected blind year, or overlay Original/Additive/Combined? *(default: Combined only — cleaner.)*
+3. **Adversarial mutation persistence:** write the optimized residuals back into `state.residualBias` (affects future Stage 4 retraining), or keep them isolated in `state.adversarialResiduals` for display only? *(default: isolated — safer.)*
+
+Please confirm (1), (2), (3) and I'll build it.
