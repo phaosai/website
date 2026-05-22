@@ -17,23 +17,17 @@ import {
 } from "@/components/ui/tooltip";
 import { getTheme } from "@/data/themes";
 import { fetchTickerPCIs, type TickerPCI } from "@/lib/themes";
+import { pciToBandName } from "@/lib/pciMatrix";
+import { getPciColorClass } from "@/constants/pciData";
 
 function pciColor(score: number | null) {
   if (score == null) return "text-muted-foreground";
-  if (score >= 80) return "text-emerald-500";
-  if (score >= 60) return "text-emerald-400";
-  if (score >= 40) return "text-amber-400";
-  if (score >= 20) return "text-orange-400";
-  return "text-red-500";
+  return getPciColorClass(score).text;
 }
 
 function tierLabel(score: number | null) {
   if (score == null) return "Pending";
-  if (score >= 80) return "Strong";
-  if (score >= 60) return "Constructive";
-  if (score >= 40) return "Watch";
-  if (score >= 20) return "Caution";
-  return "Stand Aside";
+  return pciToBandName(score);
 }
 
 function fmtTs(ts: string | null) {
@@ -219,7 +213,7 @@ export default function SunesisThemeDetail() {
                           )}
                         </TooltipContent>
                       </Tooltip>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-20 text-right">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-36 text-right truncate" title={tierLabel(r.pci_score)}>
                         {tierLabel(r.pci_score)}
                       </span>
                     </div>

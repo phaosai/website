@@ -1,10 +1,13 @@
 import { Crosshair, Radio, Eye } from "lucide-react";
 import { getPciData, getPciColorClass } from "@/constants/pciData";
+import { pciToBand, pciToExpectedReturnRange, type Horizon } from "@/lib/pciMatrix";
 
 interface Props {
   score: number;
   ticker?: string;
   assetType?: string;
+  /** Optional target horizon for the expected-return range. Defaults to 1Y. */
+  horizon?: Horizon;
 }
 
 const tierLabel = (s: number) =>
@@ -47,9 +50,11 @@ const PciGauge = ({ score, colorVar }: { score: number; colorVar: string }) => {
   );
 };
 
-export const PciCommandCenter = ({ score, ticker, assetType }: Props) => {
+export const PciCommandCenter = ({ score, ticker, assetType, horizon = "1Y" }: Props) => {
   const data = getPciData(score);
   const palette = getPciColorClass(score);
+  const band = pciToBand(score);
+  const expected = pciToExpectedReturnRange(score, horizon);
   const colorVar =
     score >= 96 ? "pci-choice" : score >= 90 ? "pci-go" : score >= 70 ? "pci-potential" : score >= 51 ? "pci-warning" : "pci-no-go";
 
@@ -82,6 +87,17 @@ export const PciCommandCenter = ({ score, ticker, assetType }: Props) => {
               {data.designation}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground italic">{data.tagline}</p>
+            <div className="mt-4 inline-flex flex-col items-center gap-1 rounded-md border border-border bg-background/60 px-3 py-2">
+              <p className="text-[9px] font-mono tracking-[0.3em] uppercase text-muted-foreground">
+                Spec Band · {band.name}
+              </p>
+              <p className={`text-xs font-mono tabular-nums ${palette.text}`}>
+                {expected.label}
+              </p>
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                SIMULATED · {band.description}
+              </p>
+            </div>
           </div>
         </div>
 
