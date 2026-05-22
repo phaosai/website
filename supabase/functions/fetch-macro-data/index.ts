@@ -44,6 +44,6 @@ Deno.serve(async (req) => {
     await writeCache("_MACRO", "macro", out, processed, 6 * 60);
     return json({ cached: false, ...processed });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("fetch-macro-data error:", e); return json({ error: "Internal server error" }, 500);
   }
 });

@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
           group_id: g.id,
           group_name: g.name,
           display_name: profile.handle_is_public && profile.public_handle ? profile.public_handle : "Anonymous",
-          country_code: profile.country_code || null,
+          country_code: profile.handle_is_public ? (profile.country_code || null) : null,
           age_days: ageDays,
           instruments: groupItems.length,
           total_return_percentage: totalRoi,

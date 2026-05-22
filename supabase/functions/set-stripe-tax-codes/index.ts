@@ -3,6 +3,7 @@
 //
 // curl -X POST .../set-stripe-tax-codes -H "x-admin-token: $TOKEN" -d '{"environment":"sandbox"}'
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
+import { timingSafeEqual } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,9 +28,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 
-  const adminToken = req.headers.get("x-admin-token");
+  const adminToken = req.headers.get("x-admin-token") ?? "";
   const expected = Deno.env.get("PURGE_ADMIN_TOKEN");
-  if (!expected || adminToken !== expected) {
+  if (!expected || !timingSafeEqual(adminToken, expected)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

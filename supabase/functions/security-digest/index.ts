@@ -6,6 +6,7 @@
 // so the inbox treatment is unmistakable.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { timingSafeEqual } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,8 +31,8 @@ Deno.serve(async (req) => {
   const adminToken = req.headers.get("x-admin-token") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const purgeToken = Deno.env.get("PURGE_ADMIN_TOKEN");
-  const isService = serviceKey && authHeader === `Bearer ${serviceKey}`;
-  const isAdmin = purgeToken && adminToken === purgeToken;
+  const isService = !!serviceKey && timingSafeEqual(authHeader, `Bearer ${serviceKey}`);
+  const isAdmin = !!purgeToken && timingSafeEqual(adminToken, purgeToken);
   if (!isService && !isAdmin) {
     return json({ error: "Unauthorized" }, 401);
   }

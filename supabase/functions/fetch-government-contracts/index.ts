@@ -35,6 +35,6 @@ Deno.serve(async (req) => {
     await writeCache(t, "gov_contracts", raw, processed, 24 * 60);
     return json({ ticker: t, cached: false, ...processed });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("fetch-government-contracts error:", e); return json({ error: "Internal server error" }, 500);
   }
 });

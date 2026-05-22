@@ -54,6 +54,6 @@ Deno.serve(async (req) => {
     await writeCache(t, "xbrl_facts", { cik }, processed, 12 * 60);
     return json({ ticker: t, cached: false, ...processed });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("fetch-xbrl-facts error:", e); return json({ error: "Internal server error" }, 500);
   }
 });
