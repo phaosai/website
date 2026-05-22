@@ -125,6 +125,7 @@ export default function SunesisTicker() {
   const [memos, setMemos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [horizon, setHorizon] = useState<Horizon>("1Y");
 
   useEffect(() => {
     if (!symbol) return;
@@ -216,12 +217,24 @@ export default function SunesisTicker() {
         </div>
       ) : (
         <>
-          {/* PCI command block — QRR gauge removed (Foundry-only surface). */}
-          <section>
+          {/* PCI command block — Section 3 spec bands + horizon selector */}
+          <section className="space-y-4">
+            {item.pci_score != null ? (
+              <PciCommandCenter
+                score={item.pci_score}
+                ticker={item.ticker}
+                assetType={item.asset_type ?? undefined}
+                horizon={horizon}
+              />
+            ) : (
+              <div className="rounded-xl border border-border bg-card/50 p-6">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
+                <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
+              </div>
+            )}
+            <HorizonSelector value={horizon} onChange={setHorizon} />
             <div className="rounded-xl border border-border bg-card/50 p-6">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Phaos Conviction Index</p>
-              <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
-              <details className="mt-6 group">
+              <details className="group">
                 <summary className="cursor-pointer text-sm flex items-center gap-2 text-purple-deep">
                   <ChevronDown className="w-4 h-4 group-open:rotate-180 transition" /> How this was built
                 </summary>
@@ -233,10 +246,11 @@ export default function SunesisTicker() {
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
                   Methodology: Sharpe-weighted signal aggregation, Kelly-criterion sizing context,
-                  volatility-adjusted confidence (GARCH(1,1)).
+                  volatility-adjusted confidence (GARCH(1,1)). Horizon scaling uses sqrt(time) for
+                  continuous horizons and fixed multipliers for event-driven horizons.
                 </p>
               </details>
-              <Disclaimer>PCI is a research confidence score based on publicly available signals. It does not predict or guarantee investment returns.</Disclaimer>
+              <Disclaimer>PCI is a SIMULATED research confidence score based on publicly available signals. Expected-return ranges are historical/scenario only and do not predict or guarantee investment returns.</Disclaimer>
             </div>
           </section>
 
