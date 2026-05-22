@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Play, CheckCircle2, XCircle, Database, Layers, Activity } from "lucide-react";
+import { Loader2, Play, CheckCircle2, XCircle, Database, Layers, Activity, HardDrive } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
@@ -21,76 +21,74 @@ interface SubBrain {
   id: string;
   name: string;
   blurb: string;
-  /** Corpus dimensions this sub-brain owns. Used to compute stored rows/bytes. */
-  dimensions: string[];
+  /** Platforms the sub-brain pulls from (for the audit chip row). */
+  platforms: string[];
   /** Ingestor edge functions called when the sub-brain is run. */
   steps: IngestStep[];
 }
 
 const DEFAULT_YEAR = new Date().getFullYear() - 1;
 
-// Each sub-brain calls a tailored set of public ingestors. Quantum is NOT
-// used here — these are pure data intake calls. Quantum runs later for
-// sub-brain vetting / unified synthesis / annual audits when Quantum Mode
-// is toggled ON in the Foundry header.
+// Every step now passes `subBrainId` so each ingestion row is owned by exactly
+// one sub-brain in the corpus. Quantum is NOT used here — pure intake.
 const SUB_BRAINS: SubBrain[] = [
   {
     id: "equities",
     name: "Equities Sub-Brain",
-    blurb: "Stocks, ETFs, REITs, ADRs · SEC filings + price corpus",
-    dimensions: ["price", "filings"],
+    blurb: "Stocks, ETFs, REITs, ADRs · SEC filings + daily price corpus",
+    platforms: ["stooq", "sec_edgar"],
     steps: [
-      { fn: "foundry-ingest-prices", body: { year: DEFAULT_YEAR, skipCoins: true }, label: "Stooq equity prices" },
-      { fn: "foundry-ingest-edgar",  body: { year: DEFAULT_YEAR }, label: "SEC EDGAR filings sweep" },
+      { fn: "foundry-ingest-prices", body: { year: DEFAULT_YEAR, skipCoins: true, subBrainId: "equities" }, label: "Stooq equity prices" },
+      { fn: "foundry-ingest-edgar",  body: { year: DEFAULT_YEAR, subBrainId: "equities" }, label: "SEC EDGAR full-index sweep" },
     ],
   },
   {
     id: "fixed_income",
     name: "Fixed Income Sub-Brain",
-    blurb: "Treasuries, corporates, munis · FRED rate curve",
-    dimensions: ["macro"],
+    blurb: "Treasuries, corporates, munis · FRED yield curve + credit spreads",
+    platforms: ["fred"],
     steps: [
-      { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR, tag: "fixed_income" }, label: "FRED yield curve & rates" },
+      { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR, tag: "fixed_income", subBrainId: "fixed_income" }, label: "FRED yield curve & credit spreads" },
     ],
   },
   {
     id: "derivatives",
     name: "Derivatives Sub-Brain",
-    blurb: "Futures, options, swaps · VIX/MOVE + macro context",
-    dimensions: ["macro"],
+    blurb: "Futures, options, swaps · VIX/MOVE + vol regime context",
+    platforms: ["fred"],
     steps: [
-      { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR, tag: "derivatives" }, label: "VIX / vol regime series" },
+      { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR, tag: "derivatives", subBrainId: "derivatives" }, label: "VIX / VIX-3M / vol regime series" },
     ],
   },
   {
     id: "fx_commodities",
     name: "FX & Commodities Sub-Brain",
-    blurb: "Forex, metals, energy, softs · oil / EURUSD + shipping",
-    dimensions: ["macro", "shipping"],
+    blurb: "Forex, metals, energy, softs · WTI / Brent / EURUSD + shipping",
+    platforms: ["fred", "baltic"],
     steps: [
-      { fn: "foundry-ingest-macro",    body: { year: DEFAULT_YEAR, tag: "fx_commodities" }, label: "WTI / EURUSD" },
-      { fn: "foundry-ingest-shipping", body: { year: DEFAULT_YEAR }, label: "Baltic Dry & freight proxy" },
+      { fn: "foundry-ingest-macro",    body: { year: DEFAULT_YEAR, tag: "fx_commodities", subBrainId: "fx_commodities" }, label: "FX, energy, metals" },
+      { fn: "foundry-ingest-shipping", body: { year: DEFAULT_YEAR, subBrainId: "fx_commodities" }, label: "Baltic Dry & freight proxies" },
     ],
   },
   {
     id: "digital_assets",
     name: "Digital Assets Sub-Brain",
-    blurb: "BTC, ETH, SOL, BNB, XRP · CoinGecko market data",
-    dimensions: ["price"],
+    blurb: "BTC, ETH, SOL, BNB, XRP, ADA, DOGE, DOT · CoinGecko daily history",
+    platforms: ["coingecko"],
     steps: [
-      { fn: "foundry-ingest-prices", body: { year: Math.max(DEFAULT_YEAR, 2014), skipStooq: true }, label: "CoinGecko crypto prices" },
+      { fn: "foundry-ingest-prices", body: { year: Math.max(DEFAULT_YEAR, 2014), skipStooq: true, subBrainId: "digital_assets" }, label: "CoinGecko crypto market data" },
     ],
   },
   {
     id: "alternative",
     name: "Alternative Sub-Brain",
     blurb: "Sentiment, geopolitical, climate, attention · GDELT + NOAA + Trends",
-    dimensions: ["sentiment", "geopolitical", "weather", "trends"],
+    platforms: ["gdelt", "noaa", "trends"],
     steps: [
-      { fn: "foundry-ingest-gdelt",        body: { year: DEFAULT_YEAR }, label: "GDELT sentiment slice" },
-      { fn: "foundry-ingest-geopolitical", body: { year: DEFAULT_YEAR }, label: "GDELT geopolitical archive" },
-      { fn: "foundry-ingest-weather",      body: { year: DEFAULT_YEAR }, label: "NOAA climate anomaly" },
-      { fn: "foundry-ingest-trends",       body: { year: DEFAULT_YEAR }, label: "Google Year-in-Search" },
+      { fn: "foundry-ingest-gdelt",        body: { year: DEFAULT_YEAR, subBrainId: "alternative" }, label: "GDELT sentiment slice" },
+      { fn: "foundry-ingest-geopolitical", body: { year: DEFAULT_YEAR, subBrainId: "alternative" }, label: "GDELT geopolitical archive" },
+      { fn: "foundry-ingest-weather",      body: { year: DEFAULT_YEAR, subBrainId: "alternative" }, label: "NOAA climate anomalies" },
+      { fn: "foundry-ingest-trends",       body: { year: DEFAULT_YEAR, subBrainId: "alternative" }, label: "Google Year-in-Search" },
     ],
   },
 ];
@@ -101,17 +99,22 @@ interface SubBrainState {
   progress: number;
   lastMessage: string | null;
   bytesAddedLastRun: number;
+  indexedAddedLastRun: number;
+  rowsAddedLastRun: number;
+  failedSources: { id: string; err: string }[];
 }
 
-interface CoverageRow { rows: number; bytes: number }
+interface CoverageRow { rows: number; bytes: number; indexed: number; units: number }
 
-const initialState = (): SubBrainState => ({ status: "idle", lastRunAt: null, progress: 0, lastMessage: null, bytesAddedLastRun: 0 });
+const initialState = (): SubBrainState => ({
+  status: "idle", lastRunAt: null, progress: 0, lastMessage: null,
+  bytesAddedLastRun: 0, indexedAddedLastRun: 0, rowsAddedLastRun: 0, failedSources: [],
+});
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
-  let i = 0;
-  let v = n;
+  let i = 0; let v = n;
   while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
   return `${v.toFixed(v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
 }
@@ -133,43 +136,39 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     SUB_BRAINS.reduce((acc, b) => ({ ...acc, [b.id]: initialState() }), {} as Record<string, SubBrainState>),
   );
   const firedRef = useRef(false);
-  // Per-dimension totals { rows, bytes } pulled directly from the database.
+  // Per-sub-brain totals { rows, bytes (stored), indexed (source archive bytes) }.
   const [coverage, setCoverage] = useState<Record<string, CoverageRow>>({});
   const [runningAll, setRunningAll] = useState(false);
 
   async function refreshCoverage() {
     const { data, error } = await supabase
       .from("foundry_year_corpus")
-      .select("dimension, payload_bytes");
+      .select("sub_brain_id, payload_bytes, indexed_bytes, content_units");
     if (error || !data) return;
     const totals: Record<string, CoverageRow> = {};
-    for (const r of data as Array<{ dimension: string; payload_bytes: number | null }>) {
-      totals[r.dimension] ||= { rows: 0, bytes: 0 };
-      totals[r.dimension].rows++;
-      totals[r.dimension].bytes += Number(r.payload_bytes ?? 0);
+    for (const r of data as Array<{ sub_brain_id: string | null; payload_bytes: number | null; indexed_bytes: number | null; content_units: number | null }>) {
+      const k = r.sub_brain_id ?? "alternative";
+      totals[k] ||= { rows: 0, bytes: 0, indexed: 0, units: 0 };
+      totals[k].rows++;
+      totals[k].bytes   += Number(r.payload_bytes  ?? 0);
+      totals[k].indexed += Number(r.indexed_bytes  ?? 0);
+      totals[k].units   += Number(r.content_units  ?? 0);
     }
     setCoverage(totals);
   }
   useEffect(() => { refreshCoverage(); }, []);
 
-  function brainTotals(b: SubBrain) {
-    let rows = 0;
-    let bytes = 0;
-    for (const d of b.dimensions) {
-      const c = coverage[d];
-      if (!c) continue;
-      rows += c.rows;
-      bytes += c.bytes;
-    }
-    return { rows, bytes };
+  function brainTotals(b: SubBrain): CoverageRow {
+    return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0 };
   }
 
   async function runSubBrain(b: SubBrain): Promise<boolean> {
-    setStates((s) => ({ ...s, [b.id]: { ...s[b.id], status: "running", progress: 5, lastMessage: "Engaging stealth profile…", bytesAddedLastRun: 0 } }));
+    setStates((s) => ({ ...s, [b.id]: { ...s[b.id], status: "running", progress: 5, lastMessage: "Engaging stealth profile…", bytesAddedLastRun: 0, indexedAddedLastRun: 0, rowsAddedLastRun: 0, failedSources: [] } }));
     const total = b.steps.length;
-    let okCount = 0;
+    let httpOk = 0;
     let lastErr: string | null = null;
-    let bytesAdded = 0;
+    let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0;
+    const failed: { id: string; err: string }[] = [];
 
     for (let i = 0; i < total; i++) {
       const step = b.steps[i];
@@ -181,26 +180,36 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
           headers: { "X-Phaos-UA": ua },
         });
         if (error) throw error;
-        const added = Number((data as { bytes_added?: number } | null)?.bytes_added ?? 0);
-        bytesAdded += added;
-        okCount++;
+        const d = (data ?? {}) as { ok?: boolean; rows_written?: number; bytes_added?: number; indexed_bytes_added?: number; failed?: { id: string; err: string }[] };
+        bytesAdded   += Number(d.bytes_added         ?? 0);
+        indexedAdded += Number(d.indexed_bytes_added ?? 0);
+        rowsAdded    += Number(d.rows_written        ?? 0);
+        if (Array.isArray(d.failed)) failed.push(...d.failed);
+        httpOk++;
       } catch (e) {
         lastErr = (e as Error).message ?? String(e);
       }
       if (i < total - 1) await randomSleep(2000, 5000);
     }
 
-    const finalStatus: SubBrainStatus = okCount === total ? "ok" : okCount === 0 ? "error" : "ok";
+    // A sub-brain is "ok" only when every step returned 2xx AND we actually
+    // wrote new rows (and therefore bytes) to the corpus this run.
+    const finalStatus: SubBrainStatus = (httpOk === total && rowsAdded > 0) ? "ok" : "error";
     setStates((s) => ({
       ...s,
       [b.id]: {
         status: finalStatus,
         lastRunAt: new Date().toISOString(),
         progress: 100,
-        lastMessage: lastErr
-          ? `${okCount}/${total} ok — last error: ${lastErr}`
-          : `${okCount}/${total} sources ingested · +${fmtBytes(bytesAdded)} added`,
+        lastMessage: finalStatus === "ok"
+          ? `${rowsAdded} row${rowsAdded === 1 ? "" : "s"} · +${fmtBytes(bytesAdded)} stored · +${fmtBytes(indexedAdded)} indexed${failed.length ? ` · ${failed.length} source${failed.length===1?"":"s"} failed` : ""}`
+          : lastErr
+            ? `${httpOk}/${total} steps ok · ${rowsAdded} rows · last error: ${lastErr}`
+            : `${httpOk}/${total} steps ok · ${rowsAdded} rows — every source for this sub-brain was throttled or empty. Re-run after a short wait.`,
         bytesAddedLastRun: bytesAdded,
+        indexedAddedLastRun: indexedAdded,
+        rowsAddedLastRun: rowsAdded,
+        failedSources: failed.slice(0, 8),
       },
     }));
     await refreshCoverage();
@@ -211,7 +220,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     const ok = await runSubBrain(b);
     toast({
       title: `${b.name} · ${ok ? "Ingested" : "Partial / failed"}`,
-      description: ok ? "Corpus rows added. Open the card to see stored bytes." : "One or more sources failed — see card details.",
+      description: ok ? "Corpus rows added. Stored and indexed bytes updated." : "No rows written this run — see card details for which sources failed.",
       variant: ok ? "default" : "destructive",
     });
     maybeFireAllComplete();
@@ -246,6 +255,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
 
   const totalRows = Object.values(coverage).reduce((s, c) => s + c.rows, 0);
   const totalBytes = Object.values(coverage).reduce((s, c) => s + c.bytes, 0);
+  const totalIndexed = Object.values(coverage).reduce((s, c) => s + c.indexed, 0);
   const allOk = SUB_BRAINS.every((b) => states[b.id]?.status === "ok");
 
   return (
@@ -254,7 +264,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
         <div>
           <h2 className="text-lg font-semibold">Stage 1 — Sub-Brain Ingestion (×6)</h2>
           <p className="text-sm text-muted-foreground">
-            One card per asset-class sub-brain. Each run is <span className="text-foreground">additive</span> — corpus rows and stored bytes grow with every click.
+            One card per asset-class sub-brain. Each run is <span className="text-foreground">additive</span> — new rows are inserted every click and a sub-brain only counts as <span className="text-emerald-400">Ingested</span> when the database confirms new rows and new bytes were stored.
             Anti-Block Stealth Protocol active (randomized 2–5s delay, rotating user-agents).
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -268,6 +278,9 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
           </Badge>
           <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
             <Database className="size-3" /> {fmtBytes(totalBytes)} stored
+          </Badge>
+          <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
+            <HardDrive className="size-3" /> {fmtBytes(totalIndexed)} indexed
           </Badge>
           <Badge variant="outline" className={cn(
             "gap-1",
@@ -296,36 +309,51 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
                 <CardTitle className="text-base">{b.name}</CardTitle>
                 <CardDescription className="text-xs">{b.blurb}</CardDescription>
                 <CardDescription className="flex flex-wrap gap-1">
-                  {b.dimensions.map((d) => (
-                    <span key={d} className="rounded border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{d}</span>
+                  {b.platforms.map((p) => (
+                    <span key={p} className="rounded border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{p}</span>
                   ))}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div className="rounded border border-border/40 bg-background/40 p-2">
                     <div className="text-muted-foreground">Corpus rows</div>
                     <div className="font-mono text-foreground">{totals.rows.toLocaleString()}</div>
+                  </div>
+                  <div className="rounded border border-border/40 bg-background/40 p-2">
+                    <div className="text-muted-foreground">Last run</div>
+                    <div className="font-mono text-foreground">{st.lastRunAt ? new Date(st.lastRunAt).toLocaleTimeString() : "—"}</div>
                   </div>
                   <div className="rounded border border-border/40 bg-background/40 p-2">
                     <div className="text-muted-foreground">Stored</div>
                     <div className="font-mono text-foreground">{fmtBytes(totals.bytes)}</div>
                   </div>
                   <div className="rounded border border-border/40 bg-background/40 p-2">
-                    <div className="text-muted-foreground">Last run</div>
-                    <div className="font-mono text-foreground">{st.lastRunAt ? new Date(st.lastRunAt).toLocaleTimeString() : "—"}</div>
+                    <div className="text-muted-foreground">Indexed</div>
+                    <div className="font-mono text-foreground">{fmtBytes(totals.indexed)}</div>
                   </div>
                 </div>
 
-                {st.bytesAddedLastRun > 0 && (
+                {(st.rowsAddedLastRun > 0 || st.bytesAddedLastRun > 0 || st.indexedAddedLastRun > 0) && (
                   <div className="text-[11px] text-emerald-400">
-                    +{fmtBytes(st.bytesAddedLastRun)} added in last run
+                    +{st.rowsAddedLastRun} rows · +{fmtBytes(st.bytesAddedLastRun)} stored · +{fmtBytes(st.indexedAddedLastRun)} indexed
                   </div>
                 )}
 
                 {st.status === "running" && <Progress value={st.progress} className="h-1" />}
                 {st.lastMessage && (
                   <p className={cn("text-[11px]", st.status === "error" ? "text-red-400" : "text-muted-foreground")}>{st.lastMessage}</p>
+                )}
+
+                {st.failedSources.length > 0 && (
+                  <details className="text-[11px]">
+                    <summary className="cursor-pointer text-muted-foreground">Failed sources ({st.failedSources.length})</summary>
+                    <ul className="mt-1 space-y-0.5 font-mono text-[10px] text-red-400/80">
+                      {st.failedSources.map((f, i) => (
+                        <li key={i}>· {f.id}: {f.err}</li>
+                      ))}
+                    </ul>
+                  </details>
                 )}
 
                 <div className="flex flex-wrap gap-2">
