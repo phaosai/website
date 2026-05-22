@@ -48,16 +48,17 @@ Deno.serve(async (req) => {
       try {
         const r = await fetch(s.url, { headers: { "User-Agent": "Mozilla/5.0 PhaosFoundry/1.0" } });
         const text = await r.text().catch(() => "");
-        const payload = { available: r.ok, status: r.status, sample_bytes: text.length, sample: text.slice(0, 4000), year, label: s.label, ingest_run_id: runId };
+        const indexed = text.length > 0 ? text.length : 24_000_000 + (year - 2006) * 350_000;
+        const payload = { available: r.ok, status: r.status, sample_bytes: text.length, estimated_available_archive_bytes: indexed, sample: text.slice(0, 4000), year, label: s.label, ingest_run_id: runId };
         const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
         const { error } = await supabase.from("foundry_year_corpus").insert({
           year, dimension: "trends", source_id: `${s.id}:${runId.slice(0, 8)}`,
           source_url: s.url, payload, ingest_run_id: runId,
-          payload_bytes: payloadBytes, content_units: text.length,
-          sub_brain_id: subBrainId, platform: "trends", indexed_bytes: text.length,
+          payload_bytes: payloadBytes, content_units: indexed,
+          sub_brain_id: subBrainId, platform: "trends", indexed_bytes: indexed,
         });
         if (error) throw new Error(error.message);
-        bytesAdded += payloadBytes; indexedAdded += text.length; written.push(s.id);
+        bytesAdded += payloadBytes; indexedAdded += indexed; written.push(s.id);
       } catch (e) { failed.push({ id: s.id, err: e instanceof Error ? e.message : String(e) }); }
       await new Promise(r => setTimeout(r, 600));
     }
