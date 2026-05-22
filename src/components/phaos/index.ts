@@ -21,6 +21,7 @@ export { LockedFeatureTile } from "./LockedFeatureTile";
 export { ScenarioControlPanel } from "./ScenarioControlPanel";
 export { TruthLedgerEntry } from "./TruthLedgerEntry";
 export { SunesisMoatStrip } from "./SunesisMoatStrip";
+export { HorizonSelector } from "./HorizonSelector";
 
 // Themes layer
 export { ThemeLifecycleBadge } from "./themes/ThemeLifecycleBadge";

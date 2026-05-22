@@ -11,13 +11,12 @@ import {
 
 const PLATFORMS = ["Robinhood", "Fidelity", "Schwab", "E*TRADE", "Thinkorswim", "All Others Publicly Available", "Other"];
 
+import { getPciColorClass } from "@/constants/pciData";
+import { pciToBandName } from "@/lib/pciMatrix";
+
 const PCI_TIER = (s: number | null | undefined) => {
   if (s == null) return { label: "—", color: "text-muted-foreground" };
-  if (s >= 80) return { label: "Strong", color: "text-emerald-500" };
-  if (s >= 60) return { label: "Constructive", color: "text-emerald-400" };
-  if (s >= 40) return { label: "Watch", color: "text-amber-400" };
-  if (s >= 20) return { label: "Caution", color: "text-orange-400" };
-  return { label: "Stand Aside", color: "text-red-500" };
+  return { label: pciToBandName(s), color: getPciColorClass(s).text };
 };
 
 interface PanelProps {
