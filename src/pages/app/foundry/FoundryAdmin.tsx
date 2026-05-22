@@ -23,7 +23,8 @@ import {
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
   dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
-  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit,
+  loadFoundryStageRunTotals, recordFoundryStageRun,
+  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
@@ -105,6 +106,7 @@ function FoundryAdminInner() {
   const [durableAudits, setDurableAudits] = useState<DurableQuantumAudit[]>([]);
   const [corpusCoverage, setCorpusCoverage] = useState<Record<string, Record<number, number>>>({});
   const [foundryTotals, setFoundryTotals] = useState<{ rows: number; stored: number; indexed: number; years: number; dimensions: number; subBrains: number; lastFetched: string | null }>({ rows: 0, stored: 0, indexed: 0, years: 0, dimensions: 0, subBrains: 0, lastFetched: null });
+  const [stageRunTotals, setStageRunTotals] = useState<FoundryStageRunTotal[]>([]);
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
@@ -139,6 +141,24 @@ function FoundryAdminInner() {
       }, { rows: 0, stored: 0, indexed: 0, years: rows.length, dimensions: 0, subBrains: 0, lastFetched: null as string | null });
       setFoundryTotals(agg);
     } catch { /* ignore */ }
+  }
+
+  async function refreshStageRunTotals() {
+    const totals = await loadFoundryStageRunTotals();
+    setStageRunTotals(totals);
+    setState((prev) => {
+      const stage2Runs = totals.filter((r) => r.stage_number === 2).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      const stage3Runs = totals.filter((r) => r.stage_number === 3).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      const stage4Cycles = totals.filter((r) => r.stage_number === 4).reduce((s, r) => s + Number(r.training_cycles_added ?? 0), 0);
+      const stage5Runs = totals.filter((r) => r.stage_number === 5).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      return recomputeGates({
+        ...prev,
+        regimeRuns: Math.max(prev.regimeRuns ?? 0, stage2Runs),
+        synthesisRuns: Math.max(prev.synthesisRuns ?? 0, stage3Runs),
+        totalTrainingCycles: Math.max(prev.totalTrainingCycles ?? 0, stage4Cycles),
+        finalAuditRuns: Math.max(prev.finalAuditRuns ?? 0, stage5Runs),
+      });
+    });
   }
 
   /**
@@ -179,7 +199,7 @@ function FoundryAdminInner() {
     });
   }
 
-  useEffect(() => { refreshDurableAudits(); refreshCoverage(); restoreStage1FromDb(); }, []);
+  useEffect(() => { refreshDurableAudits(); refreshCoverage(); refreshStageRunTotals(); restoreStage1FromDb(); }, []);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
@@ -205,6 +225,26 @@ function FoundryAdminInner() {
   // (bulk + deep training) read fresh state without depending on closures.
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; saveForgeState(state); }, [state]);
+  const stage4RestoreLoggedRef = useRef(false);
+  useEffect(() => {
+    if (stage4RestoreLoggedRef.current || (state.totalTrainingCycles ?? 0) <= 0) return;
+    stage4RestoreLoggedRef.current = true;
+    recordFoundryStageRun({
+      stageNumber: 4,
+      stageKey: "stage4_restored_training_cycles",
+      stageLabel: "Stage 4 — restored annual validation evidence",
+      years: state.years.filter((y) => y.status === "scored").map((y) => y.year),
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: state.totalTrainingCycles ?? 0,
+      accuracy: state.bestCombinedEver ?? null,
+      evidence: {
+        restored_from: "browser_forge_state",
+        scored_years: state.years.filter((y) => y.status === "scored").length,
+        residual_symbols: Object.keys(state.residualBias ?? {}).length,
+        best_combined_ever: state.bestCombinedEver ?? 0,
+      },
+    }).then(refreshStageRunTotals);
+  }, [state.totalTrainingCycles]);
 
   // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
   // brain's Dec 31 (and quarterly) targets come from real data instead of
@@ -327,18 +367,33 @@ function FoundryAdminInner() {
   async function runRegime() {
     setState((prev) => ({ ...prev, regime: { ...prev.regime, status: "running" } }));
     await new Promise((r) => setTimeout(r, 1500));
+    let recordedRuns = 0;
+    let recordedAccuracy = 0;
     setState((prev) => {
       const runs = (prev.regimeRuns ?? 0) + 1;
       // Each subsequent run reduces noise (more samples, deeper sweep).
       const noise = Math.max(2, 5 - Math.log10(runs + 1) * 1.2);
       const samples = 600 + runs * 150;
       const acc = pciTierMatchAccuracy({ samples, noise });
+      recordedRuns = runs;
+      recordedAccuracy = acc.tierMatchPct;
       return recomputeGates({
         ...prev,
         regimeRuns: runs,
         regime: { status: "done", accuracy: acc.tierMatchPct },
       });
     });
+    await recordFoundryStageRun({
+      stageNumber: 2,
+      stageKey: "stage2_regime_classifier",
+      stageLabel: "Stage 2 — Regime Classifier",
+      years: [2006, 2007, 2008, 2009, 2010],
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: 1,
+      accuracy: recordedAccuracy,
+      evidence: { run: recordedRuns, regimes: ["crisis", "volatile", "calm", "melt_up", "recovery"] },
+    });
+    refreshStageRunTotals();
     toast({ title: "Regime classifier locked", description: `Regime layer trained. Run any number of times — every pass widens the labeled window the final quantum will consume.` });
   }
 
@@ -370,6 +425,8 @@ function FoundryAdminInner() {
     });
     recordReport(out.report);
     await new Promise((r) => setTimeout(r, 1000));
+    let recordedRuns = 0;
+    let recordedAccuracy = 0;
     setState((prev) => {
       const runs = (prev.synthesisRuns ?? 0) + 1;
       // Combined brain absorbs all sub-brains and tightens with every run.
@@ -377,6 +434,8 @@ function FoundryAdminInner() {
       const noise = Math.max(0.8, baseNoise - Math.log10(runs + 1) * 0.4);
       const samples = 1500 + runs * 400;
       const acc = pciTierMatchAccuracy({ samples, noise });
+      recordedRuns = runs;
+      recordedAccuracy = acc.tierMatchPct;
       return recomputeGates({
         ...prev,
         synthesisRuns: runs,
@@ -387,6 +446,17 @@ function FoundryAdminInner() {
         },
       });
     });
+    await recordFoundryStageRun({
+      stageNumber: 3,
+      stageKey: "stage3_quantum_synthesis",
+      stageLabel: "Stage 3 — Quantum System Assessment",
+      years: ALL_FOUNDRY_YEARS,
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: 1,
+      accuracy: recordedAccuracy,
+      evidence: { run: recordedRuns, quantum: out.report, anchorCount, subBrains: ASSET_CLASSES.map((c) => c.id) },
+    });
+    refreshStageRunTotals();
     toast({ title: "⚛︎ Quantum result · Unified synthesis", description: out.message });
   }
 
@@ -502,6 +572,30 @@ function FoundryAdminInner() {
         notes: `Year ${year} · regime=${combinedRun.regime}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts. Quarterly mean accuracy: ${combined.quarterlyMeanAccuracy ?? "—"}.`,
       } : y),
     }));
+    await recordFoundryStageRun({
+      stageNumber: 4,
+      stageKey: `stage4_annual_validation_${year}`,
+      stageLabel: `Stage 4 — Annual Validation ${year}`,
+      years: [year],
+      dimensions: dimensionsAfterPasses(totalPasses),
+      rowsAdded: ASSET_SAMPLE_COUNT * 3,
+      contentUnitsAdded: ASSET_SAMPLE_COUNT * passes,
+      trainingCyclesAdded: passes,
+      accuracy: combined.brainScore,
+      evidence: {
+        regime: combinedRun.regime,
+        passesAdded: passes,
+        totalPasses,
+        original: original.brainScore,
+        additive: additive.brainScore,
+        combined: combined.brainScore,
+        meanAbsError: combined.meanAbsError,
+        quarterlyMeanAccuracy: combined.quarterlyMeanAccuracy,
+        predictions: combined.predictions.length,
+        bestCombined,
+      },
+    });
+    refreshStageRunTotals();
     if (!opts.silent) {
       toast({
         title: `✓ Year ${year} validated`,
@@ -649,6 +743,17 @@ function FoundryAdminInner() {
         },
       });
       recordReport(out.report);
+      await recordFoundryStageRun({
+        stageNumber: 5,
+        stageKey: "stage5_final_quantum_audit",
+        stageLabel: "Stage 5 — Final 2006–2025 Quantum Audit",
+        years: ALL_FOUNDRY_YEARS,
+        dimensions: ALL_DIMENSIONS,
+        trainingCyclesAdded: 1,
+        accuracy: stateRef.current.bestCombinedEver ?? null,
+        evidence: { quantum: out.report, coverageProof: proof, coverageSnapshot },
+      });
+      refreshStageRunTotals();
       toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
     } finally {
       setFinalAuditRunning(false);
@@ -842,6 +947,22 @@ function FoundryAdminInner() {
 
       {/* ---------- 5-PILLAR INGESTION DASHBOARD (replaces legacy Stage 1) ---------- */}
       <PillarIngestionGrid
+        onStageEvidence={(e) => {
+          recordFoundryStageRun({
+            stageNumber: 1,
+            stageKey: `stage1_${e.subBrainId}`,
+            stageLabel: `Stage 1 — ${e.name}`,
+            status: e.status,
+            subBrainId: e.subBrainId,
+            years: e.years,
+            dimensions: ALL_DIMENSIONS,
+            rowsAdded: e.rowsAdded,
+            storedBytesAdded: e.storedBytesAdded,
+            indexedBytesAdded: e.indexedBytesAdded,
+            contentUnitsAdded: e.contentUnitsAdded,
+            evidence: { failed_sources: e.failedCount, source: "sub_brain_ingestion_grid" },
+          }).then(refreshStageRunTotals);
+        }}
         onAllWiredPillarsComplete={() => {
           setState((prev) => recomputeGates({
             ...prev,

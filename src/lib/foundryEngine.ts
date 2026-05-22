@@ -806,6 +806,75 @@ export interface DurableQuantumAudit {
   error_message: string | null;
 }
 
+export interface FoundryStageRunInput {
+  stageNumber: 1 | 2 | 3 | 4 | 5;
+  stageKey: string;
+  stageLabel: string;
+  status?: "running" | "completed" | "failed";
+  subBrainId?: string | null;
+  years?: number[];
+  dimensions?: string[];
+  rowsAdded?: number;
+  storedBytesAdded?: number;
+  indexedBytesAdded?: number;
+  contentUnitsAdded?: number;
+  trainingCyclesAdded?: number;
+  accuracy?: number | null;
+  evidence?: Record<string, unknown>;
+}
+
+export interface FoundryStageRunTotal {
+  stage_number: number;
+  stage_key: string;
+  stage_label: string;
+  runs: number | string | null;
+  completed_runs: number | string | null;
+  failed_runs: number | string | null;
+  rows_added: number | string | null;
+  stored_bytes_added: number | string | null;
+  indexed_bytes_added: number | string | null;
+  content_units_added: number | string | null;
+  training_cycles_added: number | string | null;
+  last_started_at: string | null;
+  last_completed_at: string | null;
+  latest_accuracy: number | string | null;
+  latest_evidence: Record<string, unknown> | null;
+}
+
+export async function recordFoundryStageRun(input: FoundryStageRunInput): Promise<void> {
+  try {
+    await (supabase as any).from("foundry_stage_runs").insert({
+      stage_number: input.stageNumber,
+      stage_key: input.stageKey,
+      stage_label: input.stageLabel,
+      status: input.status ?? "completed",
+      sub_brain_id: input.subBrainId ?? null,
+      years: input.years ?? [],
+      dimensions: input.dimensions ?? [],
+      rows_added: Math.max(0, Math.round(input.rowsAdded ?? 0)),
+      stored_bytes_added: Math.max(0, Math.round(input.storedBytesAdded ?? 0)),
+      indexed_bytes_added: Math.max(0, Math.round(input.indexedBytesAdded ?? 0)),
+      content_units_added: Math.max(0, Math.round(input.contentUnitsAdded ?? 0)),
+      training_cycles_added: Math.max(0, Math.round(input.trainingCyclesAdded ?? 0)),
+      accuracy: input.accuracy ?? null,
+      evidence: input.evidence ?? {},
+      completed_at: input.status === "running" ? null : new Date().toISOString(),
+    });
+  } catch {
+    // Evidence logging must never block the Foundry run itself.
+  }
+}
+
+export async function loadFoundryStageRunTotals(): Promise<FoundryStageRunTotal[]> {
+  try {
+    const { data, error } = await (supabase as any).rpc("foundry_stage_run_totals");
+    if (error || !data) return [];
+    return data as FoundryStageRunTotal[];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadFoundryQuantumAudits(limit = 50): Promise<DurableQuantumAudit[]> {
   const { data, error } = await supabase
     .from("quantum_audits")

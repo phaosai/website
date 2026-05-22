@@ -181,9 +181,10 @@ function StatusBadge({ status }: { status: SubBrainStatus }) {
 export interface PillarIngestionGridProps {
   /** Fires once when every sub-brain has reached "ok" with verified corpus growth. */
   onAllWiredPillarsComplete?: () => void;
+  onStageEvidence?: (evidence: { subBrainId: string; name: string; years: number[]; rowsAdded: number; storedBytesAdded: number; indexedBytesAdded: number; contentUnitsAdded: number; failedCount: number; status: "completed" | "failed" }) => void;
 }
 
-export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngestionGridProps = {}) {
+export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence }: PillarIngestionGridProps = {}) {
   const [states, setStates] = useState<Record<string, SubBrainState>>(() =>
     SUB_BRAINS.reduce((acc, b) => ({ ...acc, [b.id]: initialState() }), {} as Record<string, SubBrainState>),
   );
@@ -268,7 +269,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     const total = plannedSteps.length;
     let httpOk = 0;
     let lastErr: string | null = null;
-    let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0;
+    let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0, contentUnitsAdded = 0;
     const failed: { id: string; err: string }[] = [];
 
     let i = 0;
@@ -281,10 +282,15 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
           headers: { "X-Phaos-UA": ua },
         });
         if (error) throw error;
-        const d = (data ?? {}) as { ok?: boolean; rows_written?: number; bytes_added?: number; indexed_bytes_added?: number; failed?: { id: string; err: string }[] };
+        const d = (data ?? {}) as { ok?: boolean; rows_written?: number; bytes_added?: number; indexed_bytes_added?: number; units_added?: number; failed?: { id: string; err: string }[] };
         bytesAdded   += Number(d.bytes_added         ?? 0);
         indexedAdded += Number(d.indexed_bytes_added ?? 0);
         rowsAdded    += Number(d.rows_written        ?? 0);
+        const unitsAdded = Number(d.units_added ?? 0);
+        contentUnitsAdded += unitsAdded;
+        if (unitsAdded > 0) {
+          setStates((s) => ({ ...s, [b.id]: { ...s[b.id], lastMessage: `${year} · ${step.label} · ${unitsAdded.toLocaleString()} source units indexed` } }));
+        }
         if (Array.isArray(d.failed)) failed.push(...d.failed);
         httpOk++;
       } catch (e) {
@@ -315,6 +321,17 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       },
     }));
     await refreshCoverage();
+    onStageEvidence?.({
+      subBrainId: b.id,
+      name: b.name,
+      years: batchYears,
+      rowsAdded,
+      storedBytesAdded: bytesAdded,
+      indexedBytesAdded: indexedAdded,
+      contentUnitsAdded,
+      failedCount: failed.length,
+      status: finalStatus === "ok" ? "completed" : "failed",
+    });
     return finalStatus === "ok";
   }
 
