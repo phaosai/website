@@ -248,10 +248,11 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       const ok = await runSubBrain(b);
       if (!ok) allOk = false;
     }
+    await refreshCoverage();
     setRunningAll(false);
     toast({
       title: allOk ? "All 6 sub-brains ingested" : "Some sub-brains had failures",
-      description: allOk ? "Stage 2 (Regime Classifier) is now unlocked." : "Review the cards with red badges and re-run the affected sub-brain.",
+      description: allOk ? "Stage 2 (Regime Classifier) is now unlocked." : "Re-run any red card; each function now writes a throttled-source fallback row instead of leaving the corpus empty.",
       variant: allOk ? "default" : "destructive",
     });
     maybeFireAllComplete();
