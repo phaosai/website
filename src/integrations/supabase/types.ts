@@ -2573,6 +2573,19 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      foundry_dimension_year_totals: {
+        Args: never
+        Returns: {
+          content_units: number
+          dimension: string
+          indexed_bytes: number
+          last_fetched: string
+          rows: number
+          stored_bytes: number
+          sub_brains: number
+          year: number
+        }[]
+      }
       foundry_sub_brain_totals: {
         Args: never
         Returns: {
