@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
         sub_brain_id: subBrainId, platform: s.platform, indexed_bytes: indexed,
       });
       if (!error) { bytesAdded += payloadBytes; indexedAdded += indexed; written.push(s.id); }
+      await new Promise(r => setTimeout(r, 220));
     }
     return json({
       ok: written.length > 0, year, run_id: runId, sub_brain_id: subBrainId,
