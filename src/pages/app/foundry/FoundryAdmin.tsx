@@ -552,6 +552,30 @@ function FoundryAdminInner() {
         notes: `Year ${year} · regime=${combinedRun.regime}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts. Quarterly mean accuracy: ${combined.quarterlyMeanAccuracy ?? "—"}.`,
       } : y),
     }));
+    await recordFoundryStageRun({
+      stageNumber: 4,
+      stageKey: `stage4_annual_validation_${year}`,
+      stageLabel: `Stage 4 — Annual Validation ${year}`,
+      years: [year],
+      dimensions: dimensionsAfterPasses(totalPasses),
+      rowsAdded: ASSET_SAMPLE_COUNT * 3,
+      contentUnitsAdded: ASSET_SAMPLE_COUNT * passes,
+      trainingCyclesAdded: passes,
+      accuracy: combined.brainScore,
+      evidence: {
+        regime: combinedRun.regime,
+        passesAdded: passes,
+        totalPasses,
+        original: original.brainScore,
+        additive: additive.brainScore,
+        combined: combined.brainScore,
+        meanAbsError: combined.meanAbsError,
+        quarterlyMeanAccuracy: combined.quarterlyMeanAccuracy,
+        predictions: combined.predictions.length,
+        bestCombined,
+      },
+    });
+    refreshStageRunTotals();
     if (!opts.silent) {
       toast({
         title: `✓ Year ${year} validated`,
@@ -699,6 +723,17 @@ function FoundryAdminInner() {
         },
       });
       recordReport(out.report);
+      await recordFoundryStageRun({
+        stageNumber: 5,
+        stageKey: "stage5_final_quantum_audit",
+        stageLabel: "Stage 5 — Final 2006–2025 Quantum Audit",
+        years: ALL_FOUNDRY_YEARS,
+        dimensions: ALL_DIMENSIONS,
+        trainingCyclesAdded: 1,
+        accuracy: stateRef.current.bestCombinedEver ?? null,
+        evidence: { quantum: out.report, coverageProof: proof, coverageSnapshot },
+      });
+      refreshStageRunTotals();
       toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
     } finally {
       setFinalAuditRunning(false);
