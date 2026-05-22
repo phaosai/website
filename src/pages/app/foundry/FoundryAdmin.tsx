@@ -26,6 +26,7 @@ import {
   type QuantumReport, type BrainKey, type QuantumPingResult,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
+import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -508,6 +509,9 @@ function FoundryAdminInner() {
           )}
         </div>
       )}
+
+      {/* ---------- 5-PILLAR INGESTION DASHBOARD (preview — Pillar 1 only) ---------- */}
+      <PillarIngestionGrid />
 
       {/* ---------- STAGE 1 ---------- */}
       <section className="space-y-3">
