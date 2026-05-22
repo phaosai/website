@@ -112,10 +112,11 @@ export const pciData: PciEntry[] = [
   { score: 3, designation: "Collapse", tagline: "Digital Deletion.", smokingGun: "Server Offline: AWS/Domains terminated.", observation: "The very digital infrastructure of the company has been unplugged and wiped." },
   { score: 2, designation: "Implosion", tagline: "Capital Extinction.", smokingGun: "Asset Annihilation.", observation: "Every dollar invested has been mathematically pulverized. The asset no longer exists in reality." },
   { score: 1, designation: "Extinction", tagline: "Historical Artifact.", smokingGun: "Absolute System Purge.", observation: "Our DPI confirms absolute, irreversible deletion from the financial system." },
+  { score: 0, designation: "Eradicated", tagline: "Delisted, Bankrupt, Eradicated.", smokingGun: "Total System Removal.", observation: "The asset has been permanently erased from every regulated and unregulated venue. There is nothing left to value." },
 ];
 
 export const getPciData = (score: number): PciEntry => {
-  const clamped = Math.max(1, Math.min(100, Math.round(score)));
+  const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const result = pciData.find((item) => item.score === clamped) ?? pciData[pciData.length - 1];
   return {
     ...result,
