@@ -1053,7 +1053,7 @@ function FoundryAdminInner() {
       </section>
 
       {/* ---------- DATA SOURCES PANEL ---------- */}
-      <DataSourcesPanel state={state} />
+      <DataSourcesPanel state={state} quantumMode={quantumMode} onQuantumReport={recordReport} />
 
       {/* ---------- STAGE 5 ---------- */}
       <section>
@@ -1370,33 +1370,35 @@ function FoundryAdminInner() {
 // year, and which dimensions are currently "learned" given the deepest
 // training-pass count across all years. Also exposes per-year ingest buttons
 // that invoke the foundry-ingest-* edge functions to hydrate the corpus.
-function DataSourcesPanel({ state }: { state: ForgeState }) {
+function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: ForgeState; quantumMode: boolean; onQuantumReport: (report: QuantumReport) => void }) {
   const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
   const learnedDims = new Set(dimensionsAfterPasses(maxPasses));
   const [year, setYear] = useState<number>(2006);
   const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
-  const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number }>>({});
+  const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }>>({});
   const [batchCursor, setBatchCursor] = useState(0);
+  const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
+  const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
+  const COIN_BATCHES = [["bitcoin", "ethereum"], ["solana", "binancecoin"], ["ripple", "cardano"], ["dogecoin", "polkadot"]];
 
   async function refreshStats() {
-    const { data } = await supabase
-      .from("foundry_year_corpus")
-      .select("year,payload_bytes,indexed_bytes")
-      .in("year", ALL_FOUNDRY_YEARS);
-    const next: Record<number, { rows: number; stored: number; indexed: number }> = {};
-    for (const r of (data ?? []) as Array<{ year: number; payload_bytes: number | null; indexed_bytes: number | null }>) {
-      next[r.year] ||= { rows: 0, stored: 0, indexed: 0 };
-      next[r.year].rows += 1;
-      next[r.year].stored += Number(r.payload_bytes ?? 0);
-      next[r.year].indexed += Number(r.indexed_bytes ?? 0);
+    const { data, error } = await (supabase as any).rpc("foundry_year_totals");
+    const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
+    if (!error && data) {
+      for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null }>) {
+        next[r.year] = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+      }
     }
     setStats(next);
   }
   useEffect(() => { refreshStats(); }, []);
 
   const sourceJobs = (y: number) => [
-    { kind: "prices", fn: "foundry-ingest-prices", body: { year: y } },
-    { kind: "macro", fn: "foundry-ingest-macro", body: { year: y, tag: "macro", subBrainId: "fixed_income" } },
+    ...EQUITY_BATCHES.map((tickers, i) => ({ kind: `equity prices ${i + 1}/${EQUITY_BATCHES.length}`, fn: "foundry-ingest-prices", body: { year: y, skipCoins: true, subBrainId: "equities", tickers } })),
+    ...COIN_BATCHES.map((coins, i) => ({ kind: `digital prices ${i + 1}/${COIN_BATCHES.length}`, fn: "foundry-ingest-prices", body: { year: y, skipStooq: true, subBrainId: "digital_assets", coins } })),
+    { kind: "fixed income macro", fn: "foundry-ingest-macro", body: { year: y, tag: "fixed_income", subBrainId: "fixed_income" } },
+    { kind: "derivatives macro", fn: "foundry-ingest-macro", body: { year: y, tag: "derivatives", subBrainId: "derivatives" } },
+    { kind: "fx commodities macro", fn: "foundry-ingest-macro", body: { year: y, tag: "fx_commodities", subBrainId: "fx_commodities" } },
     { kind: "edgar", fn: "foundry-ingest-edgar", body: { year: y, subBrainId: "equities" } },
     { kind: "gdelt", fn: "foundry-ingest-gdelt", body: { year: y, subBrainId: "alternative" } },
     { kind: "geopolitical", fn: "foundry-ingest-geopolitical", body: { year: y, subBrainId: "alternative" } },
