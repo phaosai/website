@@ -213,7 +213,7 @@ export default function SunesisThemeDetail() {
                           )}
                         </TooltipContent>
                       </Tooltip>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-20 text-right">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-36 text-right truncate" title={tierLabel(r.pci_score)}>
                         {tierLabel(r.pci_score)}
                       </span>
                     </div>
