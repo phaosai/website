@@ -683,6 +683,12 @@ function FoundryAdminInner() {
             )}
           </div>
         )}
+        {/* Section 6 — Walk-Forward Validation Matrix */}
+        <WalkForwardMatrix
+          state={state}
+          busy={bulkRunning !== null}
+          onRunYear={runYear}
+        />
         <div className="flex flex-wrap gap-2">
           {state.years.map((y) => (
             <button
