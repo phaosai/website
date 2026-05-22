@@ -29,8 +29,22 @@ interface SubBrain {
 
 const DEFAULT_YEAR = new Date().getFullYear() - 1;
 const ALL_FOUNDRY_YEARS = Array.from({ length: 20 }, (_, i) => 2006 + i);
-const YEAR_BATCH_SIZE = 2;
+const YEAR_BATCH_SIZE = 1;
 const YEAR_BATCH_KEY = "phaos.foundry.ingestionYearCursor.v1";
+const EQUITY_TICKER_BATCHES = [
+  ["AAPL", "MSFT", "GOOGL", "AMZN", "META"],
+  ["NVDA", "TSLA", "JPM", "BAC", "XOM"],
+  ["SPY", "QQQ", "DIA", "IWM", "VTI"],
+  ["TLT", "GLD", "SLV", "USO", "CVX"],
+  ["JNJ", "UNH", "WMT", "PG", "TIP"],
+  ["LQD", "HYG", "MUB", "EMB"],
+];
+const DIGITAL_COIN_BATCHES = [
+  ["bitcoin", "ethereum"],
+  ["solana", "binancecoin"],
+  ["ripple", "cardano"],
+  ["dogecoin", "polkadot"],
+];
 
 // Every step now passes `subBrainId` so each ingestion row is owned by exactly
 // one sub-brain in the corpus. Quantum is NOT used here — pure intake.
@@ -192,21 +206,43 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     });
   }
 
+  function expandSteps(b: SubBrain, year: number): IngestStep[] {
+    return b.steps.flatMap((step) => {
+      if (step.fn !== "foundry-ingest-prices") return [{ ...step, body: { ...step.body, year } }];
+      if (b.id === "equities") {
+        return EQUITY_TICKER_BATCHES.map((tickers, index) => ({
+          ...step,
+          label: `${step.label} · shard ${index + 1}/${EQUITY_TICKER_BATCHES.length}`,
+          body: { ...step.body, year, tickers },
+        }));
+      }
+      if (b.id === "digital_assets") {
+        return DIGITAL_COIN_BATCHES.map((coins, index) => ({
+          ...step,
+          label: `${step.label} · shard ${index + 1}/${DIGITAL_COIN_BATCHES.length}`,
+          body: { ...step.body, year, coins },
+        }));
+      }
+      return [{ ...step, body: { ...step.body, year } }];
+    });
+  }
+
   async function runSubBrain(b: SubBrain): Promise<boolean> {
     setStates((s) => ({ ...s, [b.id]: { ...s[b.id], status: "running", progress: 5, lastMessage: `Engaging stealth profile · batch ${batchYears.join("/")}…`, bytesAddedLastRun: 0, indexedAddedLastRun: 0, rowsAddedLastRun: 0, failedSources: [] } }));
-    const total = b.steps.length * batchYears.length;
+    const plannedSteps = batchYears.flatMap((year) => expandSteps(b, year).map((step) => ({ year, step })));
+    const total = plannedSteps.length;
     let httpOk = 0;
     let lastErr: string | null = null;
     let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0;
     const failed: { id: string; err: string }[] = [];
 
     let i = 0;
-    for (const year of batchYears) for (const step of b.steps) {
+    for (const { year, step } of plannedSteps) {
       const ua = pickUserAgent();
       setStates((s) => ({ ...s, [b.id]: { ...s[b.id], progress: 5 + Math.round((i / total) * 90), lastMessage: `${year} · ${step.label} · UA rotated` } }));
       try {
         const { data, error } = await supabase.functions.invoke(step.fn, {
-          body: { ...step.body, year },
+          body: step.body,
           headers: { "X-Phaos-UA": ua },
         });
         if (error) throw error;
@@ -220,7 +256,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
         lastErr = (e as Error).message ?? String(e);
       }
       i++;
-      if (i < total) await randomSleep(1200, 3200);
+      if (i < total) await randomSleep(1800, 4200);
     }
 
     // A sub-brain is "ok" only when every step returned 2xx AND we actually
@@ -306,7 +342,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
             Quantum is <span className="text-foreground">not</span> used for ingestion. Toggle Quantum Mode in the header for sub-brain vetting, unified synthesis, and annual audit reports.
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Current staggered intake batch: <span className="font-mono text-foreground">{batchYears.join(" / ")}</span>. Each click advances to the next 2-year batch across 2006–2025 and inserts new rows instead of replacing prior corpus data.
+            Current staggered intake year: <span className="font-mono text-foreground">{batchYears.join(" / ")}</span>. Each click advances through the full 2006–2025 timeline in micro-batches and inserts new rows instead of replacing prior corpus data.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

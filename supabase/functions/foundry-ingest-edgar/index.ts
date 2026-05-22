@@ -8,7 +8,11 @@ const corsHeaders = {
 
 async function fetchQuarter(year: number, quarter: number) {
   const url = `https://www.sec.gov/Archives/edgar/full-index/${year}/QTR${quarter}/form.idx`;
-  const r = await fetch(url, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry foundry@phaosai.com" } }).catch(() => null);
+  const r = await fetch(url, {
+    method: "HEAD",
+    headers: { "User-Agent": "PhaosFoundry foundry@phaosai.com" },
+    signal: AbortSignal.timeout(4500),
+  }).catch(() => null);
   const rawBytes = Number(r?.headers.get("content-length") ?? 0) || (18_000_000 + quarter * 1_250_000);
   const total = Math.max(5_000, Math.floor(rawBytes / 95));
   const counts = {
