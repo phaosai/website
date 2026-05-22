@@ -7,7 +7,15 @@
 // All writes use the service role.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+
+// Inline CORS — the npm:@supabase/supabase-js@2/cors subpath does not exist
+// in the upstream package and was causing the function to fail to boot.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const HORIZONS = [
   "1H","7D","30D","90D",
