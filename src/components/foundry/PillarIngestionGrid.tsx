@@ -269,7 +269,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
     const total = plannedSteps.length;
     let httpOk = 0;
     let lastErr: string | null = null;
-    let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0;
+    let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0, contentUnitsAdded = 0;
     const failed: { id: string; err: string }[] = [];
 
     let i = 0;
@@ -287,6 +287,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
         indexedAdded += Number(d.indexed_bytes_added ?? 0);
         rowsAdded    += Number(d.rows_written        ?? 0);
         const unitsAdded = Number(d.units_added ?? 0);
+        contentUnitsAdded += unitsAdded;
         if (unitsAdded > 0) {
           setStates((s) => ({ ...s, [b.id]: { ...s[b.id], lastMessage: `${year} · ${step.label} · ${unitsAdded.toLocaleString()} source units indexed` } }));
         }
@@ -327,7 +328,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       rowsAdded,
       storedBytesAdded: bytesAdded,
       indexedBytesAdded: indexedAdded,
-      contentUnitsAdded: 0,
+      contentUnitsAdded,
       failedCount: failed.length,
       status: finalStatus === "ok" ? "completed" : "failed",
     });
