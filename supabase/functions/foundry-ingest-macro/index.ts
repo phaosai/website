@@ -64,8 +64,16 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const auth = req.headers.get("Authorization") ?? "";
-    const serviceRole = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-    if (auth !== serviceRole) {
+    const apikey = req.headers.get("apikey") ?? "";
+    const serviceKeys = [
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
+      Deno.env.get("SUPABASE_SECRET_KEY") ?? "",
+    ].filter((v) => v.length > 0);
+    const adminToken = Deno.env.get("PURGE_ADMIN_TOKEN") ?? "";
+    const isAdminTokenCall = adminToken.length > 0 && req.headers.get("x-phaos-admin-token") === adminToken;
+    const isServiceCall = isAdminTokenCall || serviceKeys.some((key) => auth === `Bearer ${key}` || apikey === key);
+    if (!isServiceCall) {
       const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: auth } }, auth: { persistSession: false },
       });
