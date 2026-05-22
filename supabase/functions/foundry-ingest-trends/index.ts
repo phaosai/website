@@ -1,6 +1,4 @@
-// Foundry · public attention ingester (Google Year-in-Search archive).
-// Writes (year, "trends", "google-yis") rows into public.foundry_year_corpus.
-
+// Foundry · Google trends/year-in-search ingester — additive.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -25,27 +23,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const url = `https://trends.google.com/trends/yis/${year}/GLOBAL/`;
-    let payload: Record<string, unknown>;
-    try {
-      const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
-      const html = await r.text();
-      payload = {
-        ok: r.ok,
-        status: r.status,
-        bytes: html.length,
-        source_url: url,
-        label: `Google Year-in-Search ${year}`,
-        year,
-      };
-    } catch (e) {
-      payload = { ok: false, error: e instanceof Error ? e.message : String(e), source_url: url };
-    }
-    await supabase.from("foundry_year_corpus").upsert({
-      year, dimension: "trends", source_id: "google-yis", source_url: url, payload,
+    const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
+    const text = await r.text().catch(() => "");
+    const runId = crypto.randomUUID();
+    const payload = { available: r.ok, status: r.status, sample_bytes: text.length, sample: text.slice(0, 2000), year, ingest_run_id: runId };
+    const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+    const { error } = await supabase.from("foundry_year_corpus").insert({
+      year, dimension: "trends", source_id: `google-yis:${runId.slice(0, 8)}`,
+      source_url: url, payload, ingest_run_id: runId,
+      payload_bytes: payloadBytes, content_units: text.length,
     });
-    return new Response(JSON.stringify({ ok: true, year, written: ["google-yis"] }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (error) throw error;
+    return new Response(JSON.stringify({ ok: true, year, run_id: runId, bytes_added: payloadBytes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
