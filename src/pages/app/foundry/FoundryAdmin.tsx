@@ -184,7 +184,7 @@ function FoundryAdminInner() {
     let qUsed = false;
     if (quantumToggles[id]) {
       announceQuantum(`Sub-brain vetting · ${ASSET_CLASSES.find((c) => c.id === id)?.label}`);
-      const out = await runQuantumStage({ scope: "subbrain", label: id });
+      const out = await runQuantumStage({ scope: "subbrain", label: id, enabled: quantumMode, foundryMeta: { assetClass: id } });
       qMessage = out.message;
       qUsed = out.ran;
       recordReport(out.report);
