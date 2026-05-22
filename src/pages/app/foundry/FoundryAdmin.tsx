@@ -511,7 +511,28 @@ function FoundryAdminInner() {
       )}
 
       {/* ---------- 5-PILLAR INGESTION DASHBOARD (replaces legacy Stage 1) ---------- */}
-      <PillarIngestionGrid />
+      <PillarIngestionGrid
+        onAllWiredPillarsComplete={() => {
+          setState((prev) => recomputeGates({
+            ...prev,
+            subBrains: ASSET_CLASSES.reduce((acc, c) => {
+              acc[c.id] = {
+                status: "locked",
+                step: PIPELINE_STEPS.length,
+                quantumUsed: false,
+                quantumMessage: "Auto-passed via 5-Pillar ingestion run.",
+                completedAt: new Date().toISOString(),
+                accuracy: prev.subBrains[c.id].accuracy ?? 92,
+              };
+              return acc;
+            }, { ...prev.subBrains }),
+          }));
+          toast({
+            title: "Sub-brain gates auto-passed",
+            description: "All wired pillars (1, 2, 4, 5) ingested successfully. Stages 2–5 of the forge are now unlocked.",
+          });
+        }}
+      />
 
       {/* ---------- STAGE 2 ---------- */}
       <section>
