@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
             if (error) throw error;
             written.push(`${year}:coingecko:${c}`);
           } catch (e) { failed.push({ id: `coingecko:${c}`, year, err: String(e instanceof Error ? e.message : e) }); }
-          await new Promise((r) => setTimeout(r, 1500));
+          await new Promise((r) => setTimeout(r, 800));
         }
       }
     }
