@@ -2573,6 +2573,17 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      foundry_sub_brain_totals: {
+        Args: never
+        Returns: {
+          content_units: number
+          indexed_bytes: number
+          last_fetched: string
+          rows: number
+          stored_bytes: number
+          sub_brain_id: string
+        }[]
+      }
       get_account_summary: { Args: { _user_id?: string }; Returns: Json }
       get_or_create_usage_period: {
         Args: { _ref_date?: string; _user_id: string }
