@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { PageShell, Disclaimer } from "@/components/app/PageShell";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy } from "lucide-react";
+import { Trophy, Lock } from "lucide-react";
+import { useMembership } from "@/hooks/useMembership";
 
 type Category = "equities_funds" | "fixed_income" | "derivatives" | "fx_commodities" | "next_gen_crypto" | "conviction_accuracy";
 type WindowKey = "best_day_ytd" | "best_week_ytd" | "best_month_ytd" | "current_week" | "current_month" | "current_quarter" | "current_year";
@@ -41,6 +42,7 @@ const fmtPct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
 const flag = (cc: string | null) => cc ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(0x1f1a5 + c.charCodeAt(0))) : "🌐";
 
 export default function SunesisLeaderboard() {
+  const { limits } = useMembership();
   const [category, setCategory] = useState<Category>("equities_funds");
   const [windowKey, setWindowKey] = useState<WindowKey>("current_year");
   const [rows, setRows] = useState<Row[]>([]);
@@ -146,20 +148,37 @@ export default function SunesisLeaderboard() {
               {!loading && !error && rows.length === 0 && (
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No public watchlists in this category yet.</td></tr>
               )}
-              {!loading && rows.map((r, idx) => (
-                <tr key={r.group_id} className="border-t border-border hover:bg-accent/30">
-                  <td className="p-2.5 font-bold tabular-nums text-muted-foreground">
-                    {idx < 3 ? <Trophy className={`inline w-4 h-4 mr-1 ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : "text-amber-700"}`} /> : null}
-                    {idx + 1}
-                  </td>
-                  <td className="p-2.5 font-semibold">{r.display_name}</td>
-                  <td className="p-2.5 text-lg leading-none">{flag(r.country_code)}</td>
-                  <td className="p-2.5 text-muted-foreground">{r.group_name}</td>
-                  <td className="p-2.5 text-xs text-muted-foreground tabular-nums">{r.age_days}d</td>
-                  <td className="p-2.5 tabular-nums">{r.instruments}</td>
-                  <td className={`p-2.5 text-right font-bold tabular-nums ${r.total_return_percentage >= 0 ? "text-pci-go" : "text-pci-no-go"}`}>{metricValue(r)}</td>
-                </tr>
-              ))}
+              {!loading && (() => {
+                const visibleRows = rows.slice(0, limits.resultSliceMax);
+                const lockedCount = Math.max(0, rows.length - visibleRows.length);
+                return (
+                  <>
+                    {visibleRows.map((r, idx) => (
+                      <tr key={r.group_id} className="border-t border-border hover:bg-accent/30">
+                        <td className="p-2.5 font-bold tabular-nums text-muted-foreground">
+                          {idx < 3 ? <Trophy className={`inline w-4 h-4 mr-1 ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : "text-amber-700"}`} /> : null}
+                          {idx + 1}
+                        </td>
+                        <td className="p-2.5 font-semibold">{r.display_name}</td>
+                        <td className="p-2.5 text-lg leading-none">{flag(r.country_code)}</td>
+                        <td className="p-2.5 text-muted-foreground">{r.group_name}</td>
+                        <td className="p-2.5 text-xs text-muted-foreground tabular-nums">{r.age_days}d</td>
+                        <td className="p-2.5 tabular-nums">{r.instruments}</td>
+                        <td className={`p-2.5 text-right font-bold tabular-nums ${r.total_return_percentage >= 0 ? "text-pci-go" : "text-pci-no-go"}`}>{metricValue(r)}</td>
+                      </tr>
+                    ))}
+                    {lockedCount > 0 && (
+                      <tr className="border-t border-border bg-muted/20">
+                        <td colSpan={7} className="p-3 text-center text-xs text-muted-foreground">
+                          <Lock className="inline size-3 mr-1.5 -mt-0.5" />
+                          {lockedCount} more {lockedCount === 1 ? "row" : "rows"} locked at the {limits.label} tier ·{" "}
+                          <a href="/contact?topic=upgrade" className="text-primary underline-offset-2 hover:underline">Schedule a Call</a> to unlock.
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })()}
             </tbody>
           </table>
         </div>

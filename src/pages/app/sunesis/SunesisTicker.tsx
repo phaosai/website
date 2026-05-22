@@ -295,7 +295,7 @@ export default function SunesisTicker() {
                   continuous horizons and fixed multipliers for event-driven horizons.
                 </p>
               </details>
-              <Disclaimer>PCI is a SIMULATED research confidence score based on publicly available signals. Expected-return ranges are historical/scenario only and do not predict or guarantee investment returns.</Disclaimer>
+              <Disclaimer>PCI is a quantitative research confidence score based on publicly available signals. Expected-return ranges are scenario-based and do not predict or guarantee investment returns.</Disclaimer>
             </div>
           </section>
 

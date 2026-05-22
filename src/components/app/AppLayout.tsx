@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { Button } from "@/components/ui/button";
+import { ComplianceFooter } from "@/components/ComplianceFooter";
 
 const SunesisShell = lazy(() => import("@/pages/app/sunesis/SunesisShell"));
 
@@ -53,6 +54,7 @@ export default function AppLayout() {
                 <Outlet />
               )}
             </main>
+            <ComplianceFooter />
           </div>
         </div>
       </SidebarProvider>

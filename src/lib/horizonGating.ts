@@ -1,38 +1,40 @@
 // Section 4 — horizon availability per membership tier.
-// Conservative defaults: short horizons broadly available; long horizons and
-// event-driven horizons gated to higher tiers. Tweak per founder confirmation.
+// This module is now a thin adapter over `src/lib/membershipGating.ts`, the
+// single source of truth for all per-tier limits. Kept for back-compat with
+// existing imports across the app.
 
 import type { Tier } from "@/hooks/useEntitlements";
-import { HORIZON_GROUPS, type Horizon } from "@/lib/pciMatrix";
-
-const TIER_HORIZONS: Record<Tier, Horizon[]> = {
-  free:      ["1Y"],
-  sunesis:   [...HORIZON_GROUPS.velocity, "6M", "1Y", "2Y"],
-  aion:      [...HORIZON_GROUPS.velocity, "6M", "1Y", "2Y", "3Y", "5Y"],
-  kyrios:    [...HORIZON_GROUPS.velocity, ...HORIZON_GROUPS.macro],
-  phaos_one: [...HORIZON_GROUPS.velocity, ...HORIZON_GROUPS.macro, ...HORIZON_GROUPS.eventDriven],
-  pantheon:  [...HORIZON_GROUPS.velocity, ...HORIZON_GROUPS.macro, ...HORIZON_GROUPS.eventDriven],
-};
-
-/** Minimum tier required for each horizon (used for upsell tooltips). */
-export const HORIZON_MIN_TIER: Record<Horizon, Tier> = (() => {
-  const tiers: Tier[] = ["free", "sunesis", "aion", "kyrios", "phaos_one", "pantheon"];
-  const out = {} as Record<Horizon, Tier>;
-  const allH: Horizon[] = [
-    ...HORIZON_GROUPS.velocity,
-    ...HORIZON_GROUPS.macro,
-    ...HORIZON_GROUPS.eventDriven,
-  ];
-  for (const h of allH) {
-    out[h] = tiers.find((t) => TIER_HORIZONS[t].includes(h)) ?? "pantheon";
-  }
-  return out;
-})();
+import type { Horizon } from "@/lib/pciMatrix";
+import {
+  HORIZON_GROUPS as _GROUPS,
+} from "@/lib/pciMatrix";
+import {
+  MEMBERSHIP_LIMITS,
+  TIER_TO_LEVEL,
+  levelForTier,
+  minLevelForHorizon,
+} from "@/lib/membershipGating";
 
 export function horizonsForTier(tier: Tier): Horizon[] {
-  return TIER_HORIZONS[tier];
+  return MEMBERSHIP_LIMITS[levelForTier(tier)].horizons;
 }
 
 export function isHorizonAllowed(tier: Tier, h: Horizon): boolean {
-  return TIER_HORIZONS[tier].includes(h);
+  return horizonsForTier(tier).includes(h);
 }
+
+/** Minimum Tier required for each horizon (preserved for tooltips). */
+export const HORIZON_MIN_TIER: Record<Horizon, Tier> = (() => {
+  const tiers: Tier[] = ["free", "sunesis", "aion", "kyrios", "phaos_one", "pantheon"];
+  const allH: Horizon[] = [
+    ..._GROUPS.velocity,
+    ..._GROUPS.macro,
+    ..._GROUPS.eventDriven,
+  ];
+  const out = {} as Record<Horizon, Tier>;
+  for (const h of allH) {
+    const minLvl = minLevelForHorizon(h);
+    out[h] = tiers.find((t) => TIER_TO_LEVEL[t] >= minLvl) ?? "pantheon";
+  }
+  return out;
+})();

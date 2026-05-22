@@ -1,70 +1,140 @@
 ## Goal
-Implement Section 6 of the Foundry spec — Sequential Walk-Forward Validation — as a new control matrix inside the existing Stage 4 — Rolling Annual Validation section of `FoundryAdmin.tsx`. No changes to branding, layout outside this section, or to the live Sunesis engine. All outputs labeled SIMULATED.
+Section 4 (5-level membership gatekeeping + frosted-glass locks) and Section 7 (global compliance footer, SIMULATED badge scope clean-up, Stage 5 → `live_pci_matrix` pre-bake) — implemented without disturbing existing aesthetics, copy, or working flows. All changes go through your approval first.
 
-## Scope (presentation + thin orchestration, no schema/migration)
-All changes confined to:
-- `src/pages/app/foundry/FoundryAdmin.tsx` — new matrix UI inside the Stage 4 `<section>` (added above the existing 2011 → 2025 year grid; existing controls untouched).
-- `src/components/foundry/WalkForwardMatrix.tsx` *(new)* — encapsulates the 4-button matrix + Adversarial Challenger button + scatterplot.
-- `src/lib/walkForward.ts` *(new)* — pure orchestration helpers that wrap existing `foundryEngine` primitives (`runYear`, `trainYearMultiPass`, `recomputeGates`). No new SDK, no new edge function.
+---
 
-No edits to `foundryEngine.ts`, `pciMatrix.ts`, edge functions, schema, or design tokens.
+## Part A — 5-Level Membership Gatekeeping
 
-## The Matrix (4 buttons, single row, SIMULATED badge)
+### A1. Tier mapping (NEEDS YOUR CALL — Open Question 1)
+The spec calls for **5 levels** at $0 / $49 / $149 / $299 / $499. The codebase currently has **6 tiers** wired in `useEntitlements.ts`: `free | sunesis | aion | kyrios | phaos_one | pantheon`. Two ways forward:
 
-1. **Initialize Base Brain** — Runs the existing year cycle silently for 2011 → 2015 (closest available baseline; engine years start at 2011 — flagged in the plan, see Open Question 1). Writes "baseline weights packed" into state.baselineLocked. Disabled once locked; "Re-pack baseline" available via small ghost button.
-2. **Execute Blind Annual Simulation** — Year dropdown 2016–2025. Calls `runYear(year, false, { silent: false })` with a hard guard: refuses to run unless baseline is locked AND no later year has been scored (chronological buffer enforced in `walkForward.ts`).
-3. **Audit Blind Run Performance** — Reads `y.results[combined].predictions` for the selected blind year, renders a **Prediction vs. Realization Scatterplot** (Jan 1 PCI on X, Dec 31 realized PCI on Y, diagonal = perfect). Built with inline SVG (no `recharts` — that's a Core rule). Interactive: hover dots → tooltip with symbol + Δ. Shows R², MAE, hit-rate above the chart.
-4. **Run Final Sunesis Pattern Synthesis** — Computes exponential decay weights across all scored years with `weight = exp(-λ · (currentYear - y.year))` and λ tuned so 2023–2025 hold ≥60% of total weight. Displays the weight distribution as a small bar strip and writes `state.synthesisWeights` (additive; doesn't overwrite Stage 3 synthesis).
+- **(a) Map onto existing 5 (recommended — zero billing surgery):** drop `aion`-as-distinct and consolidate.
+  ```
+  L1 Free       → free
+  L2 $49        → sunesis
+  L3 $149       → aion       (rename label "Phaos Research" → preserve)
+  L4 $299       → kyrios
+  L5 $499       → phaos_one  (Pantheon stays as enterprise above L5)
+  ```
+- **(b) Repurpose Pantheon as L5 "Quantum Oracle":** keeps Phaos ONE separate; risks renaming a published product.
 
-Buttons gate each other left-to-right (1 unlocks 2, 2 unlocks 3 for that year, 3 unlocks 4 once at least one blind year is audited).
+I recommend **(a)**. Pricing values in code are unchanged in this PR — only tier→capability tables are added.
 
-## Adversarial Challenger Loop (separate button, below the matrix)
-- Pulls `y.results[combined].predictions` across all scored years, isolates the top 5% by `|jan1Pci - dec31RealizedPci|`.
-- Runs N=200 Monte Carlo synthetic perturbations on that worst-error slice:
-  - Volatility acceleration: noise σ × Uniform(1.5, 3.0).
-  - Liquidity compression: shrinks accuracy ceiling by Uniform(0.7, 0.95).
-- Re-fits kernel weights via simple gradient descent on residuals (already exposed by `trainYearMultiPass`'s residual map); writes `state.adversarialResiduals` and renders before/after MAE delta + a toast.
-- Confirmation `AlertDialog` (matches existing Hyper-Forge pattern) since this mutates the residual map.
-
-## Layout placement (no existing UI moved)
-Inside the Stage 4 `<section>` (`FoundryAdmin.tsx` ~L606), insert a new `<Card>` between the explainer block (L661) and the year-pill grid (L685):
-
-```text
-Stage 4 header (unchanged)
-explainer block (unchanged)
-────────────────────────────────────────────────
-NEW: Walk-Forward Validation Matrix card
-  [1 Initialize Base Brain] [2 Blind Sim · Year ▾] [3 Audit] [4 Pattern Synthesis]
-  [Adversarial Challenger Loop]   (separate row, accent border)
-  scatterplot + metrics (when audit run)
-────────────────────────────────────────────────
-year pills 2011-2025 (unchanged)
-selected year card (unchanged)
-```
-
-Visual style: reuses existing `Card`, `Button`, `Badge`, `Select`, `AlertDialog`, the `SIMULATED` badge constant, and emerald/primary tokens already in `FoundryAdmin.tsx`. Zero new colors, zero new tokens.
-
-## Technical notes
-
-State shape additions (local to `ForgeState` via `setState` casts, no engine change):
+### A2. New module: `src/lib/membershipGating.ts`
+Single source of truth, derived from `Tier`:
 ```ts
-baselineLocked?: boolean;
-baselineYears?: number[];          // [2011..2015]
-blindRuns?: Record<number, { auditedAt: string }>;
-synthesisWeights?: Record<number, number>;
-adversarialResiduals?: { beforeMae: number; afterMae: number; sampleSize: number };
+export interface MembershipLimits {
+  resultSliceMax: number;       // .slice(0, N)
+  pciMin: number; pciMax: number;
+  tickersAllowed: "SPY_ONLY" | "BATCH_A" | "BATCH_AB_E" | "BATCH_ABCDE" | "ALL";
+  horizons: Horizon[];           // overrides current horizonGating
+  smsAlertsUnlimited: boolean;
+  label: "Free" | "Sunesis" | "Research" | "Phaos ONE" | "Quantum Oracle";
+}
+```
+The five rows from the spec become the table values. `horizonGating.ts` is rewritten to read from this module so nothing else moves.
+
+Asset batches (A/B/C/D/E) need definition (see **Open Question 2**).
+
+### A3. New hook: `useMembership.ts`
+Wraps `useEntitlements()` and returns `{ level: 1|2|3|4|5, limits: MembershipLimits, loading }`. `useIsLiveAccount` is preserved and used only for the admin Foundry route.
+
+### A4. Locked-feature overlay: `src/components/app/LockedOverlay.tsx`
+Reusable wrapper:
+```tsx
+<LockedOverlay requiredLevel={3} reason="2-year horizon">
+  <YourFeature />
+</LockedOverlay>
+```
+Renders children with `backdrop-blur-sm bg-background/40` overlay + a centered card containing the required tier name and a **"Schedule a Call"** CTA (per Core memory — never "Book a Demo"). No new colors; uses existing tokens.
+
+### A5. Application sites (presentation-only diffs)
+Only places that already render results lists / horizon pickers / PCI filters:
+- `SunesisTicker.tsx` — slice results to `limits.resultSliceMax`; pass `limits.horizons` into the existing `HorizonSelector` (it already supports gated horizons).
+- `SunesisWatchlists.tsx` / `SunesisLedger.tsx` — same slice.
+- PCI range filter (wherever it lives in Sunesis screens) — clamp slider to `[pciMin, pciMax]`; locked tail bars rendered greyed with `<LockedOverlay>`.
+- Ticker entry: free tier locked to `SPY` (input enforced + tooltip).
+- SMS alerts (`alert_schedules` UI): unlimited toggle only at L5; lower tiers keep current cap.
+
+No layout shifts, no new sections, no copy changes outside the lock CTA card.
+
+---
+
+## Part B — Compliance & Deployment
+
+### B1. Global compliance footer (Open Question 3 — scope)
+New `src/components/ComplianceFooter.tsx` that pins the exact spec string at the bottom of every authenticated app route. Two flavors:
+- **(a) App-only (recommended):** mount inside `AppLayout.tsx` below `<main>` as a thin `sticky bottom-0` bar (~28px, muted-foreground text, semantic tokens). Marketing site already has a `Footer.tsx` with similar legal text.
+- **(b) Truly global:** also append to `Footer.tsx`. Risk: duplicates existing disclaimers.
+
+I recommend **(a)**.
+
+Exact text (no edits):
+> Phaos Sunesis is a quantitative research utility displaying predictive mathematical models. It does not provide financial, investment, or trading advice.
+
+### B2. SIMULATED badge scope clean-up
+Audit (already done): the `SIMULATED · Historical Example` badge appears in `FoundryAdmin.tsx`, `SunesisSandbox.tsx`, `SunesisLedger.tsx`, `WalkForwardMatrix.tsx`, and `SunesisTicker.tsx`. Per spec, **live Sunesis output must not carry it**; only sandbox/foundry/historical demos do.
+
+Proposed removals (Open Question 4 — confirm each):
+- `SunesisTicker.tsx`: remove the badge from the **live ticker header** but KEEP the existing `<Disclaimer>` about expected-return ranges.
+- Keep everywhere else (Sandbox, Ledger, Foundry, WalkForwardMatrix) — those are explicitly historical/sandbox.
+
+### B3. Stage 5 promote → pre-bake `live_pci_matrix` (DB migration required)
+
+**New table** (migration, ask for your OK before running):
+```sql
+CREATE TABLE public.live_pci_matrix (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  promoted_brain_id uuid NOT NULL REFERENCES public.promoted_brains(id) ON DELETE CASCADE,
+  ticker text NOT NULL,
+  horizon text NOT NULL,
+  pci_score integer NOT NULL,
+  band_name text NOT NULL,
+  expected_return_low numeric, expected_return_high numeric,
+  baked_at timestamptz NOT NULL DEFAULT now(),
+  is_active boolean NOT NULL DEFAULT true,
+  UNIQUE (promoted_brain_id, ticker, horizon)
+);
+ALTER TABLE public.live_pci_matrix ENABLE ROW LEVEL SECURITY;
+-- Read: all authenticated. Write: service_role only.
 ```
 
-Scatterplot: 320×320 SVG, semantic tokens only (`hsl(var(--primary))`, `hsl(var(--muted-foreground))`), framer-motion fade-in (allowed).
+**Promote flow change** (`FoundryAdmin.tsx::promote()`):
+1. Existing `promoted_brains` insert stays.
+2. After success, invoke new edge function `bake-live-pci-matrix` with the new `promoted_brain_id`.
+3. Edge function deactivates prior matrix rows and inserts pre-baked `(ticker × horizon)` rows for the asset universe across all 12 horizons.
+4. End-user reads go through `live_pci_matrix` (read-through cache) — zero compute on first paint. Existing `compute-pci-score` keeps working as the fallback / refresh source.
 
-Chronological buffer: enforced as `selectedBlindYear > max(scoredYears)` — refuses with a toast otherwise. No lookahead.
+This is the only DB-touching change in the PR.
 
-## Open questions before I build
+---
 
-1. **Baseline window mismatch:** the spec says 2006-2015, but the existing engine's earliest year is 2011 (`state.years` is fixed 2011–2025 per `foundryEngine.ts`). Options:
-   - (a) Use 2011-2015 as the baseline window and label it accordingly. *(my recommendation — no engine surgery, honest about available data)*
-   - (b) Extend the engine years back to 2006 (touches `foundryEngine.ts`, regenerates historical macro shocks, larger blast radius).
-2. **Scatterplot scope:** plot only Combined Brain predictions for the selected blind year, or overlay Original/Additive/Combined? *(default: Combined only — cleaner.)*
-3. **Adversarial mutation persistence:** write the optimized residuals back into `state.residualBias` (affects future Stage 4 retraining), or keep them isolated in `state.adversarialResiduals` for display only? *(default: isolated — safer.)*
+## Files (proposed; nothing edited yet)
 
-Please confirm (1), (2), (3) and I'll build it.
+**New:**
+- `src/lib/membershipGating.ts`
+- `src/hooks/useMembership.ts`
+- `src/components/app/LockedOverlay.tsx`
+- `src/components/ComplianceFooter.tsx`
+- `supabase/functions/bake-live-pci-matrix/index.ts` (+ config block)
+
+**Edited:**
+- `src/lib/horizonGating.ts` → reads from `membershipGating.ts` (behavior preserved).
+- `src/components/app/AppLayout.tsx` → mount `<ComplianceFooter />`.
+- `src/pages/app/sunesis/SunesisTicker.tsx`, `SunesisWatchlists.tsx`, `SunesisLedger.tsx` → slice + horizon limits + lock overlays.
+- `src/pages/app/foundry/FoundryAdmin.tsx` → `promote()` adds `bake-live-pci-matrix` invocation.
+
+**Unchanged:** `useIsLiveAccount.ts` body (still admin-only); `useEntitlements.ts`; all branding, copy, colors, design tokens.
+
+---
+
+## Open Questions (need confirmation before I touch any file)
+
+1. **Tier mapping (a) vs (b)** above. Default: **(a)**.
+2. **Asset batches A/B/C/D/E** — the spec references them by name. Please share the symbol lists (or confirm I should default to: A = mega-cap US equities + SPY, B = full S&P 500, C = international equities + FX, D = commodities + crypto, E = bonds + sector ETFs).
+3. **Compliance footer scope**: app-only sticky bar (a) or also append to marketing footer (b)? Default: **(a)**.
+4. **SIMULATED removals**: OK to remove the badge ONLY from `SunesisTicker.tsx`'s live header, keeping it in Sandbox/Ledger/Foundry/WalkForwardMatrix? Default: **yes**.
+5. **L1 ticker lock to SPY only** — does that override `compute-pci-score` for other tickers (server-side rejection) or is client-side gating sufficient? Default: **client-side gating + soft tooltip**.
+6. **`bake-live-pci-matrix` scope**: bake all symbols in `cache_warmup_tickers` × all 12 horizons (~ N × 12 rows). Confirm.
+
+Once you answer 1–6, I'll implement exactly as described — no scope creep.

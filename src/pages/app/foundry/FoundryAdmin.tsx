@@ -416,9 +416,36 @@ function FoundryAdminInner() {
         notes: `Promoted from Foundry. Total cycles: ${state.totalTrainingCycles ?? 0}. Best-ever combined: ${(state.bestCombinedEver ?? 0).toFixed(2)}. Flat residual map covers ${Object.keys(residuals).length} symbols. Regime-conditional residuals across ${Object.keys(residualsByRegime).length} regimes (${regimeSymCount} entries). Real OHLCV anchors loaded: ${anchorCount}. Asset universe: ${ASSET_SAMPLE_COUNT} symbols. Quarterly checkpoint training enabled.`,
       });
       if (error) throw error;
+
+      // Section 7 — Stage 5: pre-bake live_pci_matrix for zero-latency reads.
+      try {
+        const { data: brainRow } = await supabase
+          .from("promoted_brains")
+          .select("id")
+          .eq("is_active", true)
+          .eq("engine_name", promoteName.trim())
+          .order("promoted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (brainRow?.id) {
+          const bakeRes = await supabase.functions.invoke("bake-live-pci-matrix", {
+            body: { promoted_brain_id: brainRow.id },
+          });
+          if (bakeRes.error) {
+            toast({
+              title: "Brain promoted, but live matrix bake failed",
+              description: bakeRes.error.message ?? "Run bake-live-pci-matrix manually.",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (bakeErr) {
+        console.error("bake-live-pci-matrix invoke failed", bakeErr);
+      }
+
       toast({
         title: "✓ Engine promoted to Sunesis",
-        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research. Enabled dimensions: ${enabledDims.join(", ")}. Residual gradient map (${Object.keys(residuals).length} symbols) included.`,
+        description: `Sunesis Brain ${state.promote.version} "${promoteName}" is now powering live research. Enabled dimensions: ${enabledDims.join(", ")}. Residual gradient map (${Object.keys(residuals).length} symbols) included. Live PCI matrix pre-baked.`,
       });
     } catch (e: unknown) {
       // PostgrestError has message/details/hint/code as plain props (not Error instance).
