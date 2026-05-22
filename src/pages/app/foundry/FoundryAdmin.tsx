@@ -1027,6 +1027,12 @@ function FoundryAdminInner() {
               {[
                 { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated (no minimum score required)" },
                 { ok: promoteName.trim().length >= 3, label: "Engine series name provided" },
+                { ok: coverageVerified, label: coverageVerified
+                  ? `Corpus price coverage verified for all ${VALIDATION_YEARS.length} validation years`
+                  : `Missing real price coverage for: ${yearsMissingPriceCoverage.join(", ")} — run "Ingest all years (prices)" first` },
+                { ok: quantumVetted, label: quantumMode
+                  ? (quantumVetted ? "At least one durable quantum audit has completed" : "Quantum Mode is ON but no completed quantum audit yet — run a Synthesis or Year + Quantum audit")
+                  : "Quantum Mode is OFF — quantum vetting not required" },
               ].map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
                   {c.ok ? <CheckCircle2 className="size-3 text-emerald-400" /> : <XCircle className="size-3 text-muted-foreground" />}
