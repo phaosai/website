@@ -31,6 +31,39 @@ const PILLARS: Pillar[] = [
       { fn: "fetch-sec-filings", body: { formType: "8-K", ticker: "AAPL" }, label: "8-K sweep" },
     ],
   },
+  {
+    n: 2,
+    name: "Fundamentals & Flows",
+    sources: ["SEC EDGAR", "XBRL", "USAspending"],
+    endpoints: [
+      { fn: "foundry-ingest-edgar", body: { year: new Date().getFullYear() - 1 }, label: "EDGAR full-index sweep" },
+      { fn: "fetch-sec-filings", body: { formType: "10-K", ticker: "AAPL" }, label: "10-K fundamentals" },
+      { fn: "fetch-sec-filings", body: { formType: "10-Q", ticker: "AAPL" }, label: "10-Q fundamentals" },
+    ],
+  },
+  {
+    n: 3,
+    name: "Logistics & Supply Chain Pulse",
+    sources: ["Baltic Dry Index", "MarineTraffic"],
+    endpoints: [],
+    registryOnly: true,
+  },
+  {
+    n: 4,
+    name: "Sentiment & Attention",
+    sources: ["GDELT", "Google Trends"],
+    endpoints: [
+      { fn: "foundry-ingest-gdelt", body: { year: new Date().getFullYear() - 1 }, label: "GDELT sentiment slice" },
+    ],
+  },
+  {
+    n: 5,
+    name: "Macro Regime Context",
+    sources: ["FRED", "Yield Curves", "S&P 500 Regimes"],
+    endpoints: [
+      { fn: "fetch-macro-data", label: "FRED macro pull" },
+    ],
+  },
 ];
 
 interface PillarState {
@@ -55,6 +88,13 @@ export function PillarIngestionGrid() {
   );
 
   async function runPillar(p: Pillar) {
+    if (p.registryOnly || p.endpoints.length === 0) {
+      toast({
+        title: `Pillar ${p.n} · ${p.name}`,
+        description: "Registered in the Foundry data registry. No live ingester is wired yet — sources surface as 'Registry only'.",
+      });
+      return;
+    }
     setStates((s) => ({ ...s, [p.n]: { status: "running", lastRunAt: null, progress: 5, lastMessage: `Engaging stealth profile…` } }));
 
     const total = p.endpoints.length;
