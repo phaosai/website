@@ -303,6 +303,9 @@ function FoundryAdminInner() {
       residualByRegime: startingByRegime,
     });
     learningCurve.push(...combinedRun.curve);
+    // Cap in-memory learning curve so Hyper-Forge (1,000+ passes/year) doesn't
+    // grow the React tree or the persisted state unbounded.
+    if (learningCurve.length > 200) learningCurve.splice(0, learningCurve.length - 200);
     const original = originalRun.final;
     const additive = additiveRun.final;
     const combined = combinedRun.final;
