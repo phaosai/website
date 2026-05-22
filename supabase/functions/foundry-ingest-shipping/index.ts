@@ -49,9 +49,23 @@ Deno.serve(async (req) => {
     let bytesAdded = 0, indexedAdded = 0;
     const written: string[] = [];
     const sources = [
-      { id: "baltic-dry", url: "https://tradingeconomics.com/commodity/baltic", label: "Baltic Dry Index", platform: "baltic" },
-      { id: "global-freight", url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IR14260", label: "Global freight rate proxy (FRED)", platform: "fred" },
-      { id: "shipping-cost", url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCU483483", label: "Shipping & freight PPI", platform: "fred" },
+      { id: "baltic-dry",       url: "https://tradingeconomics.com/commodity/baltic", label: "Baltic Dry Index", platform: "baltic" },
+      { id: "baltic-capesize",  url: "https://tradingeconomics.com/commodity/baltic-exchange-capesize-index", label: "Baltic Capesize Index", platform: "baltic" },
+      { id: "baltic-panamax",   url: "https://tradingeconomics.com/commodity/baltic-exchange-panamax-index", label: "Baltic Panamax Index", platform: "baltic" },
+      { id: "baltic-supramax",  url: "https://tradingeconomics.com/commodity/baltic-exchange-supramax-index", label: "Baltic Supramax Index", platform: "baltic" },
+      { id: "global-freight",   url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IR14260", label: "Global freight rate proxy (FRED)", platform: "fred" },
+      { id: "shipping-ppi",     url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCU483483", label: "Water transport PPI", platform: "fred" },
+      { id: "trucking-ppi",     url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCU484484", label: "Truck transport PPI", platform: "fred" },
+      { id: "rail-ppi",         url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCU482482", label: "Rail transport PPI", platform: "fred" },
+      { id: "air-ppi",          url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCU481481", label: "Air transport PPI", platform: "fred" },
+      { id: "container-imports",url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IR14245", label: "Container imports proxy", platform: "fred" },
+      { id: "container-exports",url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IR14270", label: "Container exports proxy", platform: "fred" },
+      { id: "rail-carloads",    url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=RAILFRTCARLOADSD11", label: "US Rail Carloads", platform: "fred" },
+      { id: "rail-intermodal",  url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=RAILFRTINTERMODAL", label: "US Rail Intermodal", platform: "fred" },
+      { id: "truck-tonnage",    url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=TRUCKD11", label: "ATA Truck Tonnage", platform: "fred" },
+      { id: "us-imports",       url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IMPGS", label: "US Imports of Goods/Services", platform: "fred" },
+      { id: "us-exports",       url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=EXPGS", label: "US Exports of Goods/Services", platform: "fred" },
+      { id: "global-supply",    url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=GSCPI", label: "NY Fed Global Supply Chain Index", platform: "fred" },
     ];
     for (const s of sources) {
       const p = await probe(s.url);
@@ -65,6 +79,7 @@ Deno.serve(async (req) => {
         sub_brain_id: subBrainId, platform: s.platform, indexed_bytes: indexed,
       });
       if (!error) { bytesAdded += payloadBytes; indexedAdded += indexed; written.push(s.id); }
+      await new Promise(r => setTimeout(r, 220));
     }
     return json({
       ok: written.length > 0, year, run_id: runId, sub_brain_id: subBrainId,
