@@ -22,8 +22,8 @@ import {
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
-  dimensionsAfterPasses,
-  type QuantumReport, type BrainKey, type QuantumPingResult,
+  dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage,
+  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
