@@ -46,7 +46,7 @@ export function saveWalkForward(s: WalkForwardState) {
 /**
  * Combined-brain predictions for a year, or [] if not scored yet.
  */
-export function combinedPredictionsFor(state: ForgeState, year: number): BrainPrediction[] {
+export function combinedPredictionsFor(state: ForgeState, year: number): WFPrediction[] {
   const y = state.years.find((x) => x.year === year);
   if (!y || !y.results) return [];
   return y.results.find((r) => r.brain === "combined")?.predictions ?? [];
@@ -60,7 +60,7 @@ export interface AuditMetrics {
   hitRate: number; // fraction within ±10 PCI pts
 }
 
-export function computeAuditMetrics(preds: BrainPrediction[]): AuditMetrics {
+export function computeAuditMetrics(preds: WFPrediction[]): AuditMetrics {
   if (preds.length === 0) {
     return { count: 0, mae: 0, rmse: 0, r2: 0, hitRate: 0 };
   }
@@ -96,8 +96,8 @@ export function exponentialDecayWeights(
 /**
  * Top-N% by |jan1Pci - dec31RealizedPci| across all scored years.
  */
-export function worstSlice(state: ForgeState, fraction = 0.05): BrainPrediction[] {
-  const all: BrainPrediction[] = [];
+export function worstSlice(state: ForgeState, fraction = 0.05): WFPrediction[] {
+  const all: WFPrediction[] = [];
   for (const y of state.years) {
     if (y.status !== "scored") continue;
     all.push(...combinedPredictionsFor(state, y.year));
@@ -112,7 +112,7 @@ export function worstSlice(state: ForgeState, fraction = 0.05): BrainPrediction[
  * on the worst-error slice. Returns before/after MAE deltas only — does NOT
  * mutate `state.residualBias` (kept isolated per plan).
  */
-export function runAdversarialMonteCarlo(slice: BrainPrediction[], iterations = 200) {
+export function runAdversarialMonteCarlo(slice: WFPrediction[], iterations = 200) {
   if (slice.length === 0) return { beforeMae: 0, afterMae: 0, sampleSize: 0 };
   const baseErrs = slice.map((p) => Math.abs(p.dec31RealizedPci - p.jan1Pci));
   const beforeMae = baseErrs.reduce((a, b) => a + b, 0) / baseErrs.length;
