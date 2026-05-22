@@ -29,6 +29,6 @@ Deno.serve(async (req) => {
     await writeCache(t, "insider_tx", raw, processed, 6 * 60);
     return json({ ticker: t, cached: false, ...processed });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("fetch-insider-transactions error:", e); return json({ error: "Internal server error" }, 500);
   }
 });

@@ -34,6 +34,6 @@ Deno.serve(async (req) => {
     await writeCache(cacheKey, "google_trends", raw, processed, 60);
     return json({ keyword: kw, cached: false, ...processed });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("fetch-google-trends error:", e); return json({ error: "Internal server error" }, 500);
   }
 });
