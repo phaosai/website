@@ -739,16 +739,29 @@ function FoundryAdminInner() {
           </div>
         </div>
         {bulkRunning && (
-          <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs text-primary">
-            {bulkRunning === "sequential" && "Running every year 2011 → 2025 in sequence. Each year is scored independently before the next begins."}
-            {bulkRunning === "deep" && `Deep training in progress — 100 passes per year × 15 years = 1,500 additional training instances. The brain is repeatedly retrained against every macro shock (2011 debt-ceiling, 2018 volmageddon, 2020 pandemic, 2022 inflation, etc.) to drive accuracy toward the irreducible-surprise ceiling.`}
-            {bulkRunning === "hyper" && hyperProgress && (
-              <span>
-                Hyper-Forge in progress — sweep <span className="font-mono">{hyperProgress.sweep}</span> / {hyperProgress.totalSweeps} ·
-                year <span className="font-mono">{hyperProgress.year}</span> ·
-                cycles complete: <span className="font-mono">{state.totalTrainingCycles ?? 0}</span> ·
-                residual symbols: <span className="font-mono">{Object.keys(state.residualBias ?? {}).length}</span>
-              </span>
+          <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs text-primary flex flex-wrap items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              {bulkRunning === "sequential" && "Running every year 2011 → 2025 in sequence. Each year is scored independently before the next begins."}
+              {bulkRunning === "deep" && `Deep training in progress — 100 passes per year × 15 years = 1,500 additional training instances. The brain is repeatedly retrained against every macro shock (2011 debt-ceiling, 2018 volmageddon, 2020 pandemic, 2022 inflation, etc.) to drive accuracy toward the irreducible-surprise ceiling.`}
+              {bulkRunning === "hyper" && hyperProgress && (
+                <span>
+                  Hyper-Forge in progress — sweep <span className="font-mono">{hyperProgress.sweep}</span> / {hyperProgress.totalSweeps} ·
+                  year <span className="font-mono">{hyperProgress.year}</span> ·
+                  cycles complete: <span className="font-mono">{state.totalTrainingCycles ?? 0}</span> ·
+                  residual symbols: <span className="font-mono">{Object.keys(state.residualBias ?? {}).length}</span>
+                </span>
+              )}
+            </div>
+            {bulkRunning === "hyper" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                onClick={() => { cancelHyperRef.current = true; }}
+                disabled={cancelHyperRef.current}
+              >
+                {cancelHyperRef.current ? "Stopping…" : "Cancel Hyper-Forge"}
+              </Button>
             )}
           </div>
         )}
