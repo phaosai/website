@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Hammer, Lock, Loader2, CheckCircle2, XCircle, Sparkles, Cpu, Rocket,
-  ChevronRight, AlertTriangle, ShieldCheck, RotateCcw,
+  ChevronRight, AlertTriangle, ShieldCheck, RotateCcw, Database, HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -45,6 +45,8 @@ const SIMULATED = (
     Simulated · Historical Example
   </Badge>
 );
+
+const ALL_FOUNDRY_YEARS = Array.from({ length: 20 }, (_, i) => 2006 + i);
 
 function StagePill({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
   return (
@@ -409,6 +411,7 @@ function FoundryAdminInner() {
 
   // ---------- Bulk runners ----------
   const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep" | "hyper">(null);
+  const [finalAuditRunning, setFinalAuditRunning] = useState(false);
   const [hyperProgress, setHyperProgress] = useState<{ sweep: number; year: number; totalSweeps: number } | null>(null);
   const cancelHyperRef = useRef(false);
   const [liveBrain, setLiveBrain] = useState<{ name: string; version: string } | null>(null);
