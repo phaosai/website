@@ -455,6 +455,59 @@ export type Database = {
           },
         ]
       }
+      live_pci_matrix: {
+        Row: {
+          baked_at: string
+          band_name: string
+          created_at: string
+          expected_return_high: number | null
+          expected_return_low: number | null
+          horizon: string
+          id: string
+          is_active: boolean
+          pci_score: number
+          promoted_brain_id: string
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          baked_at?: string
+          band_name: string
+          created_at?: string
+          expected_return_high?: number | null
+          expected_return_low?: number | null
+          horizon: string
+          id?: string
+          is_active?: boolean
+          pci_score: number
+          promoted_brain_id: string
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          baked_at?: string
+          band_name?: string
+          created_at?: string
+          expected_return_high?: number | null
+          expected_return_low?: number | null
+          horizon?: string
+          id?: string
+          is_active?: boolean
+          pci_score?: number
+          promoted_brain_id?: string
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_pci_matrix_promoted_brain_id_fkey"
+            columns: ["promoted_brain_id"]
+            isOneToOne: false
+            referencedRelation: "promoted_brains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_events: {
         Row: {
           country_code: string | null
