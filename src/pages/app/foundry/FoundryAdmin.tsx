@@ -652,7 +652,7 @@ function FoundryAdminInner() {
                 status: "locked",
                 step: PIPELINE_STEPS.length,
                 quantumUsed: false,
-                quantumMessage: "Auto-passed via 5-Pillar ingestion run.",
+                quantumMessage: "Auto-passed via 6 sub-brain ingestion run.",
                 completedAt: new Date().toISOString(),
                 accuracy: prev.subBrains[c.id].accuracy ?? 92,
               };
@@ -661,7 +661,7 @@ function FoundryAdminInner() {
           }));
           toast({
             title: "Sub-brain gates auto-passed",
-            description: "All wired pillars (1, 2, 4, 5) ingested successfully. Stages 2–5 of the forge are now unlocked.",
+            description: "All 6 sub-brains have verified stored corpus rows and byte growth. Stage 2 is now unlocked.",
           });
         }}
       />
