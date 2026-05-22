@@ -1,6 +1,14 @@
 // Stage 4 — Sequential Walk-Forward Validation helpers.
 // Pure orchestration around foundryEngine primitives. No SDK, no network.
-import type { ForgeState, YearScore, BrainPrediction } from "@/lib/foundryEngine";
+import type { ForgeState } from "@/lib/foundryEngine";
+
+export type WFPrediction = {
+  assetClass: string;
+  symbol: string;
+  jan1Pci: number;
+  dec31RealizedPci: number;
+  accuracy: number;
+};
 
 export const BASELINE_YEARS = [2011, 2012, 2013, 2014, 2015];
 export const BLIND_YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
