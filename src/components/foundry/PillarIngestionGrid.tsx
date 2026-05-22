@@ -102,6 +102,23 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     PILLARS.reduce((acc, p) => ({ ...acc, [p.n]: initialState() }), {} as Record<number, PillarState>),
   );
   const firedRef = useRef(false);
+  const [coverage, setCoverage] = useState<Record<string, Record<number, number>>>({});
+  async function refreshCoverage() {
+    setCoverage(await loadCorpusCoverage());
+  }
+  useEffect(() => { refreshCoverage(); }, []);
+
+  function pillarCoverage(p: Pillar) {
+    let rows = 0;
+    let coveredDims = 0;
+    for (const d of p.dimensions) {
+      const m = coverage[d] ?? {};
+      const total = Object.values(m).reduce((s, n) => s + n, 0);
+      rows += total;
+      if (total > 0) coveredDims++;
+    }
+    return { rows, coveredDims, totalDims: p.dimensions.length };
+  }
 
   async function runPillar(p: Pillar) {
     if (p.registryOnly || p.endpoints.length === 0) {
@@ -161,6 +178,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       title: `Pillar ${p.n} · ${p.name}`,
       description: `${okCount}/${total} sources ingested${lastErr ? ` — ${lastErr}` : ""}.`,
     });
+    // Refresh corpus coverage so the verified badge updates immediately.
+    refreshCoverage();
   }
 
   return (
