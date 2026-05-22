@@ -158,8 +158,12 @@ interface SubBrainState {
 
 interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; years: number; dimensions: number; lastFetched?: string | null }
 type CoverageRpcRow = { sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; years?: number | string | null; dimensions?: number | string | null; last_fetched: string | null };
+type CorpusProofRow = { sub_brain_id: string | null; year: number | null; dimension: string | null; payload_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; fetched_at: string | null };
 type CoverageRpcResult = { data: CoverageRpcRow[] | null; error: { message?: string } | null };
-const foundryCoverageRpc = supabase as unknown as { rpc: (fn: "foundry_sub_brain_coverage_totals" | "foundry_sub_brain_totals") => Promise<CoverageRpcResult> };
+const foundryCoverageClient = supabase as unknown as {
+  rpc: (fn: "foundry_sub_brain_coverage_totals" | "foundry_sub_brain_totals") => Promise<CoverageRpcResult>;
+  from: (table: "foundry_year_corpus") => { select: (columns: string) => { not: (column: string, operator: string, value: null) => { gte: (column: string, value: number) => { lte: (column: string, value: number) => { limit: (count: number) => Promise<{ data: CorpusProofRow[] | null; error: { message?: string } | null }> } } } } };
+};
 
 const initialState = (): SubBrainState => ({
   status: "idle", lastRunAt: null, progress: 0, lastMessage: null,
@@ -201,13 +205,9 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
   const [runningAll, setRunningAll] = useState(false);
   useEffect(() => { onCompleteRef.current = onAllWiredPillarsComplete; }, [onAllWiredPillarsComplete]);
 
-  const refreshCoverage = useCallback(async () => {
-    const primary = await foundryCoverageRpc.rpc("foundry_sub_brain_coverage_totals");
-    const fallback = primary.error || !primary.data ? await foundryCoverageRpc.rpc("foundry_sub_brain_totals") : primary;
-    const { data, error } = fallback;
-    if (error || !data) return;
+  function rowsToTotals(rows: CoverageRpcRow[]): Record<string, CoverageRow> {
     const totals: Record<string, CoverageRow> = {};
-    for (const r of data) {
+    for (const r of rows) {
       const k = r.sub_brain_id ?? "unknown";
       totals[k] = {
         rows: Number(r.rows ?? 0),
@@ -218,6 +218,42 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
         dimensions: Number(r.dimensions ?? 0),
         lastFetched: r.last_fetched ?? null,
       };
+    }
+    return totals;
+  }
+
+  function corpusRowsToTotals(rows: CorpusProofRow[]): Record<string, CoverageRow> {
+    const totals: Record<string, CoverageRow & { yearSet?: Set<number>; dimensionSet?: Set<string> }> = {};
+    for (const r of rows) {
+      const k = r.sub_brain_id ?? "unknown";
+      const cur = totals[k] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, years: 0, dimensions: 0, lastFetched: null, yearSet: new Set<number>(), dimensionSet: new Set<string>() };
+      cur.rows += 1;
+      cur.bytes += Number(r.payload_bytes ?? 0);
+      cur.indexed += Number(r.indexed_bytes ?? 0);
+      cur.units += Number(r.content_units ?? 0);
+      if (r.year) cur.yearSet?.add(r.year);
+      if (r.dimension) cur.dimensionSet?.add(r.dimension);
+      if (!cur.lastFetched || (r.fetched_at && r.fetched_at > cur.lastFetched)) cur.lastFetched = r.fetched_at;
+      totals[k] = cur;
+    }
+    return Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, { ...v, years: v.yearSet?.size ?? 0, dimensions: v.dimensionSet?.size ?? 0, yearSet: undefined, dimensionSet: undefined } as CoverageRow]));
+  }
+
+  const refreshCoverage = useCallback(async () => {
+    const primary = await foundryCoverageClient.rpc("foundry_sub_brain_coverage_totals");
+    const fallback = primary.error || !primary.data ? await foundryCoverageClient.rpc("foundry_sub_brain_totals") : primary;
+    const { data, error } = fallback;
+    let totals: Record<string, CoverageRow> = data && !error ? rowsToTotals(data) : {};
+    if (Object.keys(totals).length === 0) {
+      const direct = await foundryCoverageClient
+        .from("foundry_year_corpus")
+        .select("sub_brain_id,year,dimension,payload_bytes,indexed_bytes,content_units,fetched_at")
+        .not("sub_brain_id", "is", null)
+        .gte("year", 2006)
+        .lte("year", 2025)
+        .limit(50000);
+      if (direct.error || !direct.data) return;
+      totals = corpusRowsToTotals(direct.data);
     }
     setCoverage(totals);
     setStates((cur) => {
