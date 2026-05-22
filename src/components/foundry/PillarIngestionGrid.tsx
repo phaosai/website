@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Loader2, Play, CheckCircle2, XCircle, Clock, Database } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
+import { loadCorpusCoverage } from "@/lib/foundryEngine";
 import { cn } from "@/lib/utils";
 
 type PillarStatus = "idle" | "running" | "ok" | "error";
@@ -16,6 +17,8 @@ interface Pillar {
   name: string;
   sources: string[];
   endpoints: Array<{ fn: string; body?: Record<string, unknown>; label: string }>;
+  /** Corpus dimensions this pillar feeds (used for the verified-coverage badge). */
+  dimensions: string[];
   registryOnly?: boolean;
 }
 
@@ -27,6 +30,7 @@ const PILLARS: Pillar[] = [
     n: 1,
     name: "Insider Intent",
     sources: ["SEC Form 4", "13F", "8-K"],
+    dimensions: ["filings"],
     endpoints: [
       { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR insider/8-K sweep" },
     ],
@@ -35,6 +39,7 @@ const PILLARS: Pillar[] = [
     n: 2,
     name: "Fundamentals & Flows",
     sources: ["SEC EDGAR", "XBRL", "USAspending"],
+    dimensions: ["filings"],
     endpoints: [
       { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR full-index sweep" },
     ],
@@ -43,6 +48,7 @@ const PILLARS: Pillar[] = [
     n: 3,
     name: "Logistics & Supply Chain Pulse",
     sources: ["Baltic Dry Index", "Freight proxy"],
+    dimensions: ["shipping"],
     endpoints: [
       { fn: "foundry-ingest-shipping", body: { year: DEFAULT_YEAR }, label: "Shipping & freight pulse" },
     ],
@@ -51,6 +57,7 @@ const PILLARS: Pillar[] = [
     n: 4,
     name: "Sentiment & Attention",
     sources: ["GDELT", "Google Trends", "Geopolitical"],
+    dimensions: ["sentiment", "trends", "geopolitical"],
     endpoints: [
       { fn: "foundry-ingest-gdelt", body: { year: DEFAULT_YEAR }, label: "GDELT sentiment slice" },
       { fn: "foundry-ingest-trends", body: { year: DEFAULT_YEAR }, label: "Google Year-in-Search" },
@@ -61,6 +68,7 @@ const PILLARS: Pillar[] = [
     n: 5,
     name: "Macro Regime Context",
     sources: ["FRED", "Yield Curves", "S&P 500 Regimes", "Weather"],
+    dimensions: ["macro", "weather"],
     endpoints: [
       { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR }, label: "FRED macro corpus" },
       { fn: "foundry-ingest-weather", body: { year: DEFAULT_YEAR }, label: "NOAA climate" },
@@ -94,6 +102,23 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     PILLARS.reduce((acc, p) => ({ ...acc, [p.n]: initialState() }), {} as Record<number, PillarState>),
   );
   const firedRef = useRef(false);
+  const [coverage, setCoverage] = useState<Record<string, Record<number, number>>>({});
+  async function refreshCoverage() {
+    setCoverage(await loadCorpusCoverage());
+  }
+  useEffect(() => { refreshCoverage(); }, []);
+
+  function pillarCoverage(p: Pillar) {
+    let rows = 0;
+    let coveredDims = 0;
+    for (const d of p.dimensions) {
+      const m = coverage[d] ?? {};
+      const total = Object.values(m).reduce((s, n) => s + n, 0);
+      rows += total;
+      if (total > 0) coveredDims++;
+    }
+    return { rows, coveredDims, totalDims: p.dimensions.length };
+  }
 
   async function runPillar(p: Pillar) {
     if (p.registryOnly || p.endpoints.length === 0) {
@@ -153,6 +178,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       title: `Pillar ${p.n} · ${p.name}`,
       description: `${okCount}/${total} sources ingested${lastErr ? ` — ${lastErr}` : ""}.`,
     });
+    // Refresh corpus coverage so the verified badge updates immediately.
+    refreshCoverage();
   }
 
   return (
@@ -168,6 +195,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {PILLARS.map((p) => {
           const st = states[p.n];
+          const cov = pillarCoverage(p);
+          const verified = cov.coveredDims === cov.totalDims && cov.rows > 0;
           return (
             <Card key={p.n} className="border-border/40 bg-card/40">
               <CardHeader className="space-y-2">
@@ -175,7 +204,19 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-muted-foreground">PILLAR {p.n}</span>
                   </div>
-                  <StatusBadge status={st.status} />
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className={cn(
+                      "text-[10px]",
+                      verified
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                        : cov.rows > 0
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                          : "border-border/60 text-muted-foreground",
+                    )}>
+                      {verified ? `Verified · ${cov.rows} rows` : cov.rows > 0 ? `Partial · ${cov.coveredDims}/${cov.totalDims} dims` : "No corpus rows"}
+                    </Badge>
+                    <StatusBadge status={st.status} />
+                  </div>
                 </div>
                 <CardTitle className="text-base">{p.name}</CardTitle>
                 <CardDescription className="flex flex-wrap gap-1">
@@ -195,8 +236,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
                     <div className="font-mono text-foreground">{st.lastRunAt ? new Date(st.lastRunAt).toLocaleTimeString() : "—"}</div>
                   </div>
                   <div className="rounded border border-border/40 bg-background/40 p-2">
-                    <div className="text-muted-foreground">Endpoints</div>
-                    <div className="font-mono text-foreground">{p.endpoints.length}</div>
+                    <div className="text-muted-foreground">Corpus rows</div>
+                    <div className="font-mono text-foreground">{cov.rows}</div>
                   </div>
                 </div>
 
