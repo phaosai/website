@@ -1,6 +1,8 @@
 import { corsHeaders, json, requireUser, serviceClient } from "../_shared/phaos.ts";
+import { clampPci, expectedReturnRange, pciToBand, VALID_HORIZONS, type Horizon } from "./_pciMatrix.ts";
 
-// Aggregates cached signals into a single PCI score (1-100) with components and tier.
+// Aggregates cached signals into a single PCI score (0-100) with components and tier.
+// Tier is the legacy 5-bucket UI color tier; band_name is the spec-Section-3 band.
 const tier = (pci: number) =>
   pci >= 85 ? "strong_conviction" : pci >= 70 ? "constructive" : pci >= 50 ? "watch" : pci >= 30 ? "caution" : "avoid";
 
@@ -37,9 +39,11 @@ Deno.serve(async (req) => {
   try {
     const auth = await requireUser(req);
     if ("error" in auth) return auth.error;
-    const { ticker, organization_id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { ticker, organization_id, horizon: rawHorizon } = body ?? {};
     if (!ticker) return json({ error: "ticker required" }, 400);
     const t = ticker.toUpperCase();
+    const horizon: Horizon = VALID_HORIZONS.includes(rawHorizon) ? rawHorizon : "1Y";
     const authHeader = req.headers.get("Authorization")!;
 
     // If org-scoped persistence is requested, verify caller is a member of that org.
@@ -90,7 +94,11 @@ Deno.serve(async (req) => {
       insider_activity: insiderScore,
       macro_regime: macroScore,
     };
-    const pci = Math.round((filingScore * 0.15 + fundamentals * 0.30 + contractScore * 0.10 + insiderScore * 0.25 + macroScore * 0.20));
+    const pciRaw = Math.round((filingScore * 0.15 + fundamentals * 0.30 + contractScore * 0.10 + insiderScore * 0.25 + macroScore * 0.20));
+    const pci = clampPci(pciRaw);
+    const band = pciToBand(pci);
+    const expected_return = expectedReturnRange(pci, horizon);
+
 
     const sources = [
       filings && { type: "sec_filings", count: filings.count },
@@ -115,7 +123,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    return json({ ticker: t, pci, tier: tier(pci), components, sources, simulated: false });
+    return json({
+      ticker: t,
+      pci,
+      tier: tier(pci),
+      band_name: band.name,
+      band_description: band.description,
+      horizon,
+      expected_return_range: expected_return,
+      components,
+      sources,
+      simulated: false,
+    });
   } catch (e) {
     console.error("compute-pci-score error:", e);
     return json({ error: "Internal server error" }, 500);
