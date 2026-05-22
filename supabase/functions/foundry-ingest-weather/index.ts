@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         bytesAdded += payloadBytes; indexedAdded += indexed; unitsAdded += indexed;
         written.push(s.id);
       } catch (e) { failed.push({ id: s.id, err: e instanceof Error ? e.message : String(e) }); }
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 180));
     }
 
     return json({
