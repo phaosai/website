@@ -39,8 +39,36 @@ Deno.serve(async (req) => {
 
     const runId = crypto.randomUUID();
     const sources = [
-      { id: "google-yis-global", url: `https://trends.google.com/trends/yis/${year}/GLOBAL/`, label: "Google Year-in-Search (Global)" },
-      { id: "google-yis-us",     url: `https://trends.google.com/trends/yis/${year}/US/`,     label: "Google Year-in-Search (US)" },
+      // Google Year-in-Search archives (all keyless, public HTML)
+      { id: "yis-global", url: `https://trends.google.com/trends/yis/${year}/GLOBAL/`, label: "Google YIS Global" },
+      { id: "yis-us",     url: `https://trends.google.com/trends/yis/${year}/US/`,     label: "Google YIS US" },
+      { id: "yis-gb",     url: `https://trends.google.com/trends/yis/${year}/GB/`,     label: "Google YIS UK" },
+      { id: "yis-de",     url: `https://trends.google.com/trends/yis/${year}/DE/`,     label: "Google YIS Germany" },
+      { id: "yis-fr",     url: `https://trends.google.com/trends/yis/${year}/FR/`,     label: "Google YIS France" },
+      { id: "yis-jp",     url: `https://trends.google.com/trends/yis/${year}/JP/`,     label: "Google YIS Japan" },
+      { id: "yis-in",     url: `https://trends.google.com/trends/yis/${year}/IN/`,     label: "Google YIS India" },
+      { id: "yis-br",     url: `https://trends.google.com/trends/yis/${year}/BR/`,     label: "Google YIS Brazil" },
+      { id: "yis-ca",     url: `https://trends.google.com/trends/yis/${year}/CA/`,     label: "Google YIS Canada" },
+      { id: "yis-au",     url: `https://trends.google.com/trends/yis/${year}/AU/`,     label: "Google YIS Australia" },
+      { id: "yis-mx",     url: `https://trends.google.com/trends/yis/${year}/MX/`,     label: "Google YIS Mexico" },
+      { id: "yis-kr",     url: `https://trends.google.com/trends/yis/${year}/KR/`,     label: "Google YIS South Korea" },
+      // Wikipedia revision velocity on macro-crisis & market pages = public panic proxy
+      { id: "wiki-crisis", url: `https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvlimit=500&rvprop=timestamp&format=json&titles=Financial_crisis_of_${year}`, label: `Wikipedia revisions: Financial crisis ${year}` },
+      { id: "wiki-stock",  url: `https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvlimit=500&rvprop=timestamp&format=json&titles=Stock_market_crash`, label: "Wikipedia revisions: Stock market crash" },
+      { id: "wiki-recession", url: `https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvlimit=500&rvprop=timestamp&format=json&titles=Recession`, label: "Wikipedia revisions: Recession" },
+      { id: "wiki-inflation", url: `https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvlimit=500&rvprop=timestamp&format=json&titles=Inflation`, label: "Wikipedia revisions: Inflation" },
+      // Wikipedia pageviews API (REST, keyless) for risk-on / risk-off topics
+      { id: "wiki-pv-sp500", url: `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/S%26P_500/daily/${year}0101/${year}1231`, label: "Pageviews: S&P 500" },
+      { id: "wiki-pv-fed",   url: `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Federal_Reserve/daily/${year}0101/${year}1231`, label: "Pageviews: Federal Reserve" },
+      { id: "wiki-pv-btc",   url: `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Bitcoin/daily/${year}0101/${year}1231`, label: "Pageviews: Bitcoin" },
+      { id: "wiki-pv-vix",   url: `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/VIX/daily/${year}0101/${year}1231`, label: "Pageviews: VIX" },
+      { id: "wiki-pv-oil",   url: `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Petroleum/daily/${year}0101/${year}1231`, label: "Pageviews: Petroleum" },
+      // Internet Archive Wayback front pages — sample manifest
+      { id: "wayback-reuters", url: `https://web.archive.org/web/${year}0601000000*/reuters.com`, label: "Wayback Reuters front pages" },
+      { id: "wayback-wsj",     url: `https://web.archive.org/web/${year}0601000000*/wsj.com`,     label: "Wayback WSJ front pages" },
+      { id: "wayback-ft",      url: `https://web.archive.org/web/${year}0601000000*/ft.com`,      label: "Wayback FT front pages" },
+      { id: "wayback-bloomberg", url: `https://web.archive.org/web/${year}0601000000*/bloomberg.com`, label: "Wayback Bloomberg front pages" },
+      { id: "wayback-cnbc",    url: `https://web.archive.org/web/${year}0601000000*/cnbc.com`,    label: "Wayback CNBC front pages" },
     ];
     const written: string[] = []; const failed: { id: string; err: string }[] = [];
     let bytesAdded = 0, indexedAdded = 0;
