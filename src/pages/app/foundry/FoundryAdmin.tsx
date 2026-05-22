@@ -515,7 +515,9 @@ function FoundryAdminInner() {
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Live engine:</span>
-              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">Sunesis Brain v0.9 "Origin"</Badge>
+              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+                {liveBrain ? `Sunesis Brain ${liveBrain.version} "${liveBrain.name}"` : `Sunesis Brain v0.9 "Origin"`}
+              </Badge>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
