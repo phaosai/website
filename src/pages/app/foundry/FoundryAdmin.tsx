@@ -1403,6 +1403,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
   const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }>>({});
   const [proof, setProof] = useState<FoundryCoverageProof>(() => emptyCoverageProof());
+  const [lastRunProof, setLastRunProof] = useState<string | null>(null);
   const [batchCursor, setBatchCursor] = useState(0);
   const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
   const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
@@ -1489,8 +1490,9 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         for (const job of sourceJobs(y)) {
           try {
             setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
             if (error) throw error;
+            if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
             totalWritten += Number(data?.rows_written ?? 0);
             totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
           } catch (e) {
@@ -1500,7 +1502,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
           }
           completedJobs += 1;
           setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-          if (completedJobs < totalJobs) await new Promise((r) => setTimeout(r, mode === "all-sources" ? 2200 : 1600));
+          if (completedJobs < totalJobs) await randomSleep(mode === "all-sources" ? 1600 : 900, mode === "all-sources" ? 3800 : 2400);
         }
         if (!yearOk) yearsFailed.push(y);
         if (mode === "all-sources") await refreshStats();
@@ -1526,6 +1528,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         title: `✓ Backfilled data wells · ${years.length - yearsFailed.length}/${years.length} years`,
         description: `Wrote ${totalWritten} additive corpus rows. Source-level fallbacks/errors: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}.`,
       });
+      setLastRunProof(`Completed ${completedJobs}/${totalJobs} source shards · ${totalWritten.toLocaleString()} additive rows written · ${totalFailed.toLocaleString()} source fallbacks/errors · ${yearsFailed.length ? `year retries needed: ${yearsFailed.join(", ")}` : "all requested years returned saved rows"}.`);
       if (mode === "year-batch") setBatchCursor((c) => (c + years.length) % ALL_FOUNDRY_YEARS.length);
     } finally { await refreshStats(); setBusy(null); setIngestProgress(null); }
   }
