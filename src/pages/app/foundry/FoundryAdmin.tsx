@@ -1402,6 +1402,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   const [year, setYear] = useState<number>(2006);
   const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
   const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }>>({});
+  const [proof, setProof] = useState<FoundryCoverageProof>(() => emptyCoverageProof());
   const [batchCursor, setBatchCursor] = useState(0);
   const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
   const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
@@ -1410,12 +1411,22 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   async function refreshStats() {
     const { data, error } = await (supabase as any).rpc("foundry_year_totals");
     const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
+    const nextProof = emptyCoverageProof();
     if (!error && data) {
-      for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null }>) {
-        next[r.year] = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+      for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>) {
+        const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+        next[r.year] = row;
+        nextProof.totalRows += row.rows;
+        nextProof.totalStored += row.stored;
+        nextProof.totalIndexed += row.indexed;
+        if (row.dimensions >= ALL_DIMENSIONS.length && row.subBrains >= ASSET_CLASSES.length) nextProof.completeYears += 1;
+        if (!nextProof.lastFetched || (r.last_fetched && r.last_fetched > nextProof.lastFetched)) nextProof.lastFetched = r.last_fetched;
       }
     }
+    nextProof.missing = ALL_FOUNDRY_YEARS.filter((y) => (next[y]?.dimensions ?? 0) < ALL_DIMENSIONS.length || (next[y]?.subBrains ?? 0) < ASSET_CLASSES.length).map(String);
+    nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => (next[y]?.dimensions ?? 0) >= ALL_DIMENSIONS.length)).length;
     setStats(next);
+    setProof(nextProof);
   }
   useEffect(() => { refreshStats(); }, []);
 
