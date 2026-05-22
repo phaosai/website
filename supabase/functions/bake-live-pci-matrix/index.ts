@@ -119,9 +119,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Deactivate prior baked matrix.
-    await admin.from("live_pci_matrix").update({ is_active: false }).eq("is_active", true);
-
+    // (Prior active rows stay live until the new bake is fully committed —
+    // see insert-then-flip-then-deactivate sequence below.)
+    //
     // Bake rows. Use residual bias as a deterministic per-symbol seed when
     // present, otherwise fall back to a stable hash-derived score.
     // Build new rows as is_active=false first so a mid-write failure does not
