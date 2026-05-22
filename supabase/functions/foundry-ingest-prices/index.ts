@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           if (error) throw error;
           written.push(`${year}:stooq:${t}`);
         } catch (e) { failed.push({ id: `stooq:${t}`, year, err: String(e instanceof Error ? e.message : e) }); }
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 120));
       }
 
       if (year >= 2014) {
