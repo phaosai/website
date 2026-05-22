@@ -41,9 +41,29 @@ Deno.serve(async (req) => {
     const written: string[] = []; const failed: { id: string; err: string }[] = [];
     let bytesAdded = 0, indexedAdded = 0, unitsAdded = 0;
 
+    // NOAA NCEI public CSVs — global, hemispheres, US national + climate regions,
+    // plus core climate-index sources. All keyless. Each writes a row + indexed bytes.
     const sources = [
-      { id: "noaa-global", url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/land_ocean/12/12/${year}-${year}.csv`, label: "NOAA global land+ocean temperature anomaly" },
-      { id: "noaa-us",     url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/${year}-${year}.csv`, label: "NOAA contiguous US average temperature" },
+      { id: "noaa-global-temp",  url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/land_ocean/12/12/${year}-${year}.csv`, label: "NOAA global land+ocean temperature anomaly" },
+      { id: "noaa-global-land",  url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/land/12/12/${year}-${year}.csv`, label: "NOAA global land temperature" },
+      { id: "noaa-global-ocean", url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/ocean/12/12/${year}-${year}.csv`, label: "NOAA global ocean temperature" },
+      { id: "noaa-nhem",         url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/nhem/land_ocean/12/12/${year}-${year}.csv`, label: "Northern hemisphere temperature" },
+      { id: "noaa-shem",         url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/shem/land_ocean/12/12/${year}-${year}.csv`, label: "Southern hemisphere temperature" },
+      { id: "noaa-us-tavg",      url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tavg/12/12/${year}-${year}.csv`, label: "US average temperature" },
+      { id: "noaa-us-tmax",      url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tmax/12/12/${year}-${year}.csv`, label: "US max temperature" },
+      { id: "noaa-us-tmin",      url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/tmin/12/12/${year}-${year}.csv`, label: "US min temperature" },
+      { id: "noaa-us-precip",    url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pcp/12/12/${year}-${year}.csv`, label: "US precipitation" },
+      { id: "noaa-us-pdsi",      url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/pdsi/12/12/${year}-${year}.csv`, label: "US Palmer Drought Severity" },
+      { id: "noaa-us-cdd",       url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/cdd/12/12/${year}-${year}.csv`, label: "US cooling degree days" },
+      { id: "noaa-us-hdd",       url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/national/time-series/110/hdd/12/12/${year}-${year}.csv`, label: "US heating degree days" },
+      { id: "noaa-northeast",    url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/regional/time-series/101/tavg/12/12/${year}-${year}.csv`, label: "US Northeast region temp" },
+      { id: "noaa-midwest",      url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/regional/time-series/102/tavg/12/12/${year}-${year}.csv`, label: "US Midwest region temp" },
+      { id: "noaa-south",        url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/regional/time-series/103/tavg/12/12/${year}-${year}.csv`, label: "US South region temp" },
+      { id: "noaa-west",         url: `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/regional/time-series/104/tavg/12/12/${year}-${year}.csv`, label: "US West region temp" },
+      { id: "noaa-enso",         url: `https://psl.noaa.gov/gcos_wgsp/Timeseries/Data/nino34.long.anom.data`, label: "Nino 3.4 ENSO anomaly" },
+      { id: "noaa-amo",          url: `https://psl.noaa.gov/data/correlation/amon.us.long.data`, label: "Atlantic Multidecadal Oscillation" },
+      { id: "noaa-nao",          url: `https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/norm.nao.monthly.b5001.current.ascii.table`, label: "North Atlantic Oscillation" },
+      { id: "noaa-co2",          url: `https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv`, label: "Mauna Loa CO2 monthly" },
     ];
 
     for (const s of sources) {
