@@ -1572,6 +1572,15 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
           </Button>
         </div>
       </header>
+      <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-5">
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Saved rows</div><div className="font-mono text-foreground">{proof.totalRows.toLocaleString()}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Stored proof</div><div className="font-mono text-foreground">{fmtBytes(proof.totalStored)}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Indexed source volume</div><div className="font-mono text-foreground">{fmtBytes(proof.totalIndexed)}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Complete years</div><div className="font-mono text-foreground">{proof.completeYears}/20</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Last DB write</div><div className="font-mono text-foreground">{proof.lastFetched ? new Date(proof.lastFetched).toLocaleTimeString() : "—"}</div></div>
+      </div>
+      {lastRunProof && <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-3 text-[11px] text-emerald-400">Proof from last execution: {lastRunProof}</div>}
+      {proof.missing.length > 0 && <div className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] text-amber-400">Coverage still missing full 8-dimension / 6-sub-brain proof for: {proof.missing.join(", ")}. Re-run all-years or the listed year batch; saved rows are additive and will not be reduced.</div>}
       {ingestProgress && (
         <div className="space-y-1 rounded border border-border/40 bg-card/40 p-3 text-xs">
           <div className="flex items-center justify-between gap-3 text-muted-foreground">
