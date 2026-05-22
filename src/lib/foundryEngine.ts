@@ -14,7 +14,31 @@ export function loadForgeState(): ForgeState | null {
   } catch { return null; }
 }
 export function saveForgeState(s: ForgeState) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  try {
+    // Slim the payload so 15,000-cycle Hyper-Forge runs don't blow the 5 MB
+    // localStorage quota. We keep what the UI actually reads back on reload
+    // (scores, residuals, last predictions table) and drop high-cardinality
+    // arrays that are re-derivable on demand.
+    const slim: ForgeState = {
+      ...s,
+      years: s.years.map((y) => ({
+        ...y,
+        learningCurve: y.learningCurve ? y.learningCurve.slice(-200) : y.learningCurve,
+        results: y.results?.map((r) => ({
+          ...r,
+          predictions: r.predictions.map((p) => ({
+            assetClass: p.assetClass,
+            symbol: p.symbol,
+            jan1Pci: p.jan1Pci,
+            dec31RealizedPci: p.dec31RealizedPci,
+            accuracy: p.accuracy,
+            // Drop heavy quarterlyRealized arrays from persistence.
+          })),
+        })),
+      })),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+  } catch { /* quota exceeded or storage disabled — silently skip */ }
 }
 export function clearForgeState() {
   try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
