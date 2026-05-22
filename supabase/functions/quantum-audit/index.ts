@@ -705,15 +705,22 @@ Deno.serve(async (req) => {
         return json(409, { error: "Audit not yet completed" });
       }
 
-      // Generate summary if missing.
+      // Generate summary if missing, but PRESERVE any foundryMeta that was
+      // stored at create time so the printable Foundry report keeps showing
+      // exactly which dimensions/asset-classes/platforms/coverage were
+      // analyzed.
       if (!(audit as any).result_summary) {
-        const summary =
-          "Supplemental advanced-compute validation pass complete. Top filtered candidates returned a stable consensus signal across the constrained optimization set. Audit-ready research receipt generated.";
+        const existingMeta = ((audit as any).raw_result_metadata ?? {}) as Record<string, unknown>;
+        const isFoundry = ["subbrain", "synthesis", "year-audit"].includes(String((audit as any).selected_asset_type));
+        const summary = isFoundry
+          ? `Foundry ${(audit as any).selected_asset_type} quantum pass complete · ${(audit as any).selected_symbol} · backend ${(audit as any).ibm_backend} · workload ${(audit as any).ibm_workload_id}. Inputs and coverage snapshot recorded for audit.`
+          : "Supplemental advanced-compute validation pass complete. Top filtered candidates returned a stable consensus signal across the constrained optimization set. Audit-ready research receipt generated.";
         const meta = {
+          ...existingMeta,
           mode: (audit as any).validation_mode,
           backend: (audit as any).ibm_backend,
           workload: (audit as any).ibm_workload_id,
-          generatedAt: new Date().toISOString(),
+          finalizedAt: new Date().toISOString(),
         };
         await svc
           .from("quantum_audits")
