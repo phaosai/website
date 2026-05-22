@@ -880,8 +880,8 @@ function FoundryAdminInner() {
           <CardContent className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">
               {state.regime.status === "done"
-                ? <>Regime layer locked · in-sample agreement <span className="text-foreground">{state.regime.accuracy?.toFixed(1)}%</span></>
-                : state.regime.status === "ready" ? "Ready — all sub-brains forged"
+                ? <>Regime layer locked · in-sample agreement <span className="text-foreground">{state.regime.accuracy?.toFixed(1)}%</span> · <span className="font-mono">{state.regimeRuns ?? 0}</span> run{(state.regimeRuns ?? 0) === 1 ? "" : "s"} accumulated</>
+                : state.regime.status === "ready" ? "Ready — all sub-brains forged. Re-runnable: every press deepens the labeled regime window."
                 : "Locked until all 6 sub-brains are forged"}
             </div>
             <Button
@@ -889,7 +889,7 @@ function FoundryAdminInner() {
               disabled={state.regime.status === "locked" || state.regime.status === "running"}
             >
               {state.regime.status === "running" ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />}
-              {state.regime.status === "done" ? "Retrain regime layer" : "Train regime layer"}
+              {state.regime.status === "done" ? `Retrain regime layer (×${(state.regimeRuns ?? 0) + 1})` : "Train regime layer"}
             </Button>
           </CardContent>
         </Card>
@@ -906,7 +906,7 @@ function FoundryAdminInner() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">Stage 3 — Quantum System Assessment</CardTitle>
-                <CardDescription>Quantum synthesizes the Original Brain + all 6 sub-brains + regime layer into a combined methodology targeting 99.99% in-sample reconstruction of 2006–2010.</CardDescription>
+                <CardDescription>Quantum synthesizes the Original Brain + all 6 sub-brains + regime layer into a combined methodology targeting 99.99% in-sample reconstruction of 2006–2010. Re-runnable: every press fires another quantum workload and refines the combined brain.</CardDescription>
               </div>
               {state.synthesis.status === "done" && <CheckCircle2 className="size-5 text-emerald-400" />}
             </div>
@@ -914,22 +914,25 @@ function FoundryAdminInner() {
           <CardContent className="space-y-3">
             {state.synthesis.status === "done" && (
               <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs">
-                <div className="font-medium text-primary">Combined Quantum Brain · in-sample {state.synthesis.accuracy?.toFixed(2)}%</div>
+                <div className="font-medium text-primary">Combined Quantum Brain · in-sample {state.synthesis.accuracy?.toFixed(2)}% · <span className="font-mono">{state.synthesisRuns ?? 0}</span> synthesis run{(state.synthesisRuns ?? 0) === 1 ? "" : "s"}</div>
                 <div className="mt-1 text-muted-foreground">{state.synthesis.methodology}</div>
               </div>
             )}
             <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                {state.synthesis.status === "ready" ? "Ready — button is live" : state.synthesis.status === "locked" ? "Locked until Stage 2 completes" : "Synthesis complete"}
+                {state.synthesis.status === "ready" ? "Ready — button is live"
+                  : state.synthesis.status === "locked" ? "Locked until Stage 2 completes"
+                  : state.synthesis.status === "running" ? "Quantum workload in flight…"
+                  : "Synthesis complete · re-run any time to compound evidence"}
               </div>
               <Button
                 size="lg"
-                className={cn(state.synthesis.status === "ready" && "bg-primary text-primary-foreground")}
+                className={cn((state.synthesis.status === "ready" || state.synthesis.status === "done") && "bg-primary text-primary-foreground")}
                 onClick={runSynthesis}
-                disabled={state.synthesis.status !== "ready"}
+                disabled={state.synthesis.status === "locked" || state.synthesis.status === "running"}
               >
                 {state.synthesis.status === "running" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                Run Unified Synthesis
+                {state.synthesis.status === "done" ? `Re-run Unified Synthesis (×${(state.synthesisRuns ?? 0) + 1})` : "Run Unified Synthesis"}
               </Button>
             </div>
           </CardContent>
