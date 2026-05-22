@@ -225,6 +225,26 @@ function FoundryAdminInner() {
   // (bulk + deep training) read fresh state without depending on closures.
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; saveForgeState(state); }, [state]);
+  const stage4RestoreLoggedRef = useRef(false);
+  useEffect(() => {
+    if (stage4RestoreLoggedRef.current || (state.totalTrainingCycles ?? 0) <= 0) return;
+    stage4RestoreLoggedRef.current = true;
+    recordFoundryStageRun({
+      stageNumber: 4,
+      stageKey: "stage4_restored_training_cycles",
+      stageLabel: "Stage 4 — restored annual validation evidence",
+      years: state.years.filter((y) => y.status === "scored").map((y) => y.year),
+      dimensions: ALL_DIMENSIONS,
+      trainingCyclesAdded: state.totalTrainingCycles ?? 0,
+      accuracy: state.bestCombinedEver ?? null,
+      evidence: {
+        restored_from: "browser_forge_state",
+        scored_years: state.years.filter((y) => y.status === "scored").length,
+        residual_symbols: Object.keys(state.residualBias ?? {}).length,
+        best_combined_ever: state.bestCombinedEver ?? 0,
+      },
+    }).then(refreshStageRunTotals);
+  }, [state.totalTrainingCycles]);
 
   // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
   // brain's Dec 31 (and quarterly) targets come from real data instead of
