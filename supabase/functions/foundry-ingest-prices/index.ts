@@ -24,7 +24,7 @@ function stooqSymbol(ticker: string): string {
 async function fetchStooq(ticker: string, year: number) {
   const sym = stooqSymbol(ticker);
   const url = `https://stooq.com/q/d/l/?s=${sym}&d1=${year}0101&d2=${year}1231&i=d`;
-  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 PhaosFoundry/1.0" } });
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 PhaosFoundry/1.0" }, signal: AbortSignal.timeout(6500) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const text = await r.text();
   if (!text || text.startsWith("No data") || text.length < 50) throw new Error("no data");
@@ -51,7 +51,7 @@ async function fetchCoinGecko(coin: string, year: number) {
   const start = Math.floor(Date.UTC(year,0,1)/1000);
   const end   = Math.floor(Date.UTC(year,11,31,23,59,59)/1000);
   const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart/range?vs_currency=usd&from=${start}&to=${end}`;
-  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
+  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" }, signal: AbortSignal.timeout(6500) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const j = await r.json();
   const prices: [number,number][] = j.prices ?? [];
