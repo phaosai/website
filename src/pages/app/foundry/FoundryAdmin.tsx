@@ -22,7 +22,7 @@ import {
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
-  dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage,
+  dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
   type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
@@ -124,7 +124,46 @@ function FoundryAdminInner() {
     const cov = await loadCorpusCoverage();
     setCorpusCoverage(cov);
   }
-  useEffect(() => { refreshDurableAudits(); refreshCoverage(); }, []);
+
+  /**
+   * Restore Stage 1 sub-brain lock state from the database. The DB
+   * (foundry_year_corpus) is the source of truth — local React state and
+   * localStorage are just a UX cache. Any sub-brain that has at least one
+   * corpus row for every year 2006–2025 is marked "locked" here, so a
+   * cleared browser, new device, or stale localStorage never appears to
+   * "lose" already-completed ingestion work.
+   */
+  async function restoreStage1FromDb() {
+    const cov = await loadSubBrainCoverage();
+    if (!cov || Object.keys(cov).length === 0) return;
+    setState((prev) => {
+      const subBrains = { ...prev.subBrains };
+      let restored = 0;
+      for (const c of ASSET_CLASSES) {
+        const years = cov[c.id] ?? [];
+        const fullCoverage = ALL_FOUNDRY_YEARS.every((y) => years.includes(y));
+        if (fullCoverage && subBrains[c.id]?.status !== "locked") {
+          subBrains[c.id] = {
+            status: "locked",
+            step: PIPELINE_STEPS.length,
+            quantumUsed: subBrains[c.id]?.quantumUsed ?? false,
+            quantumMessage: subBrains[c.id]?.quantumMessage ?? "Restored from durable corpus (foundry_year_corpus).",
+            completedAt: subBrains[c.id]?.completedAt ?? new Date().toISOString(),
+            accuracy: subBrains[c.id]?.accuracy,
+          };
+          restored++;
+        }
+      }
+      if (restored === 0) return prev;
+      toast({
+        title: `🔁 Restored ${restored} sub-brain${restored === 1 ? "" : "s"} from database`,
+        description: "Stage 1 ingestion results were re-hydrated from foundry_year_corpus — your work is never lost.",
+      });
+      return recomputeGates({ ...prev, subBrains });
+    });
+  }
+
+  useEffect(() => { refreshDurableAudits(); refreshCoverage(); restoreStage1FromDb(); }, []);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
