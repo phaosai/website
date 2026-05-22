@@ -1,126 +1,148 @@
-I found the core reason the Foundry looks broken: the current UI says the pillars are wired, but several calls either never reach the backend, exceed backend execution limits, or falsely fail IBM backend discovery.
+## What I found
 
-## What is actually failing
-
-1. **Pillar ingestion is blocked by CORS before the backend receives the call**
-   - The UI sends a custom `X-Phaos-UA` header.
-   - The backend CORS allow-list does not include that header.
-   - Result: browser preflight succeeds only partially, then the real POST is blocked, so pillars show errors and no data is written.
-
-2. **Price backfill times out by design**
-   - The “Ingest all years (prices)” action sends 20 years of data through one backend function.
-   - Recent logs show `foundry-ingest-prices` returning **504 after ~150 seconds**.
-   - The function tries hundreds of Stooq/CoinGecko calls plus rate-limit sleeps in a single request, which cannot finish inside the edge runtime limit.
-
-3. **The corpus is almost empty**
-   - Current `foundry_year_corpus` contains only a few 2011 filings/sentiment rows.
-   - There are no durable price rows visible, so real OHLCV anchors do not load into the brain.
-
-4. **IBM Quantum is configured, but backend discovery is likely parsed incorrectly**
-   - Secrets exist: `IBM_Quantum_API` and `IBM_Quantum_CRN`.
-   - Existing audit rows show failures like: “IBM returned no accessible QPU backend for this CRN.”
-   - IBM’s current REST response uses a `devices` array; the code only checks an array or `backends`, so it can incorrectly conclude there are zero QPU backends.
-
-5. **Quantum report flow is too shallow**
-   - Foundry calls `quantum-audit` once and treats job submission as the result.
-   - It does not perform a full create → status → finalize cycle for Foundry synthesis.
-   - That means the UI can be misleading even if a job is queued, failed, or completed later.
-
-6. **The current Foundry product execution still contains registry/simulation scaffolding**
-   - Some cards are “registry only”.
-   - Sub-brain gates can auto-pass from partial ingestion.
-   - Promotion can proceed even if corpus coverage is too thin.
-   - This is why it felt like it tested perfectly while the real ingestion/quantum foundation was not actually working.
+- The hosted backend is healthy; the failures are in Foundry wiring and execution logic.
+- The Foundry corpus is still almost empty: only a few `filings` and `sentiment` rows exist, with no durable `price`, `macro`, `shipping`, `weather`, `trends`, or `geopolitical` coverage.
+- The ingestion UI marks pillars as wired/learned even when the backend did not write usable corpus rows.
+- Pillar 5 macro currently writes to the general signal cache, not the Foundry corpus, so it can look successful without feeding the brain.
+- Pillar 3 is still registry-only, so supply-chain/logistics is not truly ingested.
+- Quantum ping proves IBM credentials and backend discovery work, but it does not mean the Foundry has actually submitted a quantum workload. That is why the bottom report table can still say “No quantum invocations yet.”
+- The current quantum path creates local UI reports, but successful runs are not yet being treated as durable, printable, retrievable Foundry audit reports.
 
 ## Permission-sensitive changes
 
-No branding, colors, or visual identity will change.
+No branding or color identity changes are needed.
 
-This will change **product execution** in the following way:
+This will change product execution and some UX:
 
-- **Option A — Recommended: real Foundry execution mode**
-  - Replace the fake/monolithic ingestion behavior with durable, chunked jobs.
-  - Disable promotion until minimum corpus coverage and quantum synthesis are verified.
-  - Add honest “coverage / failed / pending / verified” states.
+1. Add a clear Foundry-level `Quantum Computing Mode` toggle near the Foundry header.
+   - Off: Foundry runs classical ingestion/training only.
+   - On: eligible Stage 1 sub-brain vetting, Stage 3 synthesis, and Stage 4 year audits submit quantum jobs and produce durable reports.
+2. Replace misleading “learned / auto-passed” behavior with verified corpus coverage.
+   - A pillar only becomes verified after database rows exist for the expected year/dimension.
+3. Block promotion when foundational coverage or required quantum synthesis is missing.
+4. Add durable audit-report storage and retrieval for every successful quantum Foundry run.
 
-- **Option B — Minimal patch mode**
-  - Only fix CORS, IBM parsing, and timeout-prone buttons.
-  - Keep the current UX mostly as-is.
-  - Faster, but less reliable and easier to misinterpret later.
-
-I recommend **Option A** because it directly fixes the reason the brain cannot be generated.
+Approving this plan gives permission for those UX/product-execution changes.
 
 ## Implementation plan
 
-### 1. Fix pillar ingestion transport
-- Add `x-phaos-ua` to CORS headers for all Foundry-related backend functions.
-- Standardize CORS responses so errors also return valid CORS headers.
-- Remove or make optional the custom header where it is not needed.
+### 1. Make quantum usage obvious and controllable
 
-### 2. Convert ingestion from one huge call into chunked, resumable jobs
-- Change `foundry-ingest-prices` to accept small batches: `{ year, tickers, coins }`.
-- Update the UI so “all years” runs year-by-year and batch-by-batch instead of one 20-year request.
-- Store partial success immediately so one slow provider does not destroy the whole run.
-- Surface exact failures per source/year/ticker instead of a generic error.
+- Add a prominent `Quantum Computing Mode` switch in the Foundry header.
+- Persist it in local storage so it stays on/off across reloads.
+- Show a live status line:
+  - `Quantum off — classical only`
+  - `Quantum on — IBM backend reachable`
+  - `Quantum on — IBM issue / simulator fallback`
+- Make the Stage 3 button explicit: `Run Quantum Synthesis` when the toggle is on, otherwise disabled or labeled `Enable Quantum Mode first`.
+- Add a smaller per-run override only where useful, but the master toggle remains the single source of truth.
 
-### 3. Make corpus coverage visible and enforceable
-- Query `foundry_year_corpus` for coverage by year and dimension.
-- Add a coverage gate before Stage 5 promotion.
-- Require at minimum:
-  - price anchors for validation years,
-  - EDGAR or fundamentals coverage,
-  - GDELT/sentiment coverage,
-  - macro/regime coverage.
-- Keep labels honest: “verified”, “partial”, “failed”, or “not wired”.
+### 2. Turn quantum ping into real Foundry execution
 
-### 4. Repair IBM Quantum integration
-- Update backend discovery parsing to support IBM’s current `devices` response shape.
-- Select an online, non-simulator `ibm_*` QPU when available.
-- Keep simulator fallback clearly labeled only when IBM truly fails.
-- Improve `Ping IBM Quantum` so it tells whether the issue is credentials, CRN access, no QPU, permissions, rate limit, or payload rejection.
+- Keep `Ping IBM Quantum` as a diagnostic only.
+- Update `runQuantumStage()` so a Foundry quantum run performs the full workflow:
+  1. create audit
+  2. poll status until completed/failed or timeout
+  3. finalize
+  4. save receipt metadata
+  5. return the durable audit id/report
+- Show the backend, workload id, status, analyzed scope, and simulator/hardware flag in the Foundry UI.
+- Treat “ping successful” and “quantum run executed” as separate states so the UI never implies quantum engaged when it only pinged.
 
-### 5. Turn quantum synthesis into a real workflow
-- Add a Foundry-specific synthesis action that builds a tensor summary from corpus coverage and residual weights.
-- Submit the workload to IBM Runtime.
-- Poll status and finalize the audit receipt before claiming success.
-- Store returned “master quantum weights” or synthesis metadata for promotion.
+### 3. Create durable printable quantum audit reports
 
-### 6. Make promotion safe
-- Block “Promote Sunesis Brain” unless:
-  - all validation years are scored,
-  - required ingestion coverage is present,
-  - IBM quantum synthesis has either completed on IBM or is explicitly accepted as simulator fallback,
-  - live PCI matrix bake succeeds.
-- Keep the ability to name the final brain.
-- Keep rollback behavior if live matrix bake fails.
+- Use the existing `quantum_audits` table as the durable source of truth and extend how we populate it.
+- Store a detailed `raw_result_metadata` payload for every Foundry quantum run, including:
+  - Foundry stage: subbrain / synthesis / year-audit
+  - year or asset-class label
+  - input dimensions included
+  - corpus coverage snapshot at submission time
+  - selected asset classes and platform universe scope
+  - tensor/vector summary
+  - IBM backend and workload id
+  - started/completed timestamps
+  - final receipt summary
+- Add a Foundry `Quantum Reports` panel that reads from the backend instead of relying only on local storage.
+- Add `Print / Save` action using the browser print dialog with a clean report view.
+- Add `Open report` / `Download JSON` for audit retrieval.
 
-### 7. Test and verify
-- Test each Foundry backend function directly.
-- Test browser ingestion from the Foundry page.
-- Confirm rows are written into `foundry_year_corpus`.
-- Confirm IBM ping returns a truthful diagnostic.
-- Confirm a small quantum create/status/finalize flow works.
-- Confirm brain promotion creates a promoted brain and live PCI matrix rows.
+### 4. Fix ingestion so every pillar writes to the Foundry corpus
+
+- Replace the current shallow pillar endpoint list with real corpus-writing ingesters.
+- Add/adjust backend functions so each required dimension writes rows to `foundry_year_corpus`:
+  - `price`: yearly OHLCV anchors for the broad asset universe
+  - `macro`: FRED/BLS/World Bank yearly snapshots
+  - `filings`: EDGAR full-index and filing counts/samples
+  - `sentiment`: GDELT tone/event snapshots
+  - `geopolitical`: GDELT Goldstein/conflict/event snapshots
+  - `shipping`: Baltic Dry / public shipping proxy snapshots
+  - `weather`: NOAA annual climate/commodity-impact proxy snapshots
+  - `trends`: Google Year-in-Search / public attention proxy snapshots
+- Fix Pillar 5 macro so it writes corpus rows, not only `signal_cache`.
+- Convert Pillar 3 from registry-only to a real logistics/shipping ingester.
+- Keep polite rate limits and chunking so calls do not timeout.
+
+### 5. Add year-by-year and dimension-by-dimension coverage checks
+
+- Add a coverage query helper for `foundry_year_corpus`.
+- After each ingestion run, verify rows by:
+  - year
+  - dimension
+  - source id
+  - row count
+  - last fetched time
+- Show honest statuses:
+  - `not started`
+  - `running`
+  - `partial`
+  - `verified`
+  - `failed`
+- Do not mark a pillar “Learned” unless the required rows are present.
+
+### 6. Account for all asset classes and platforms
+
+- Keep the current canonical asset classes from the research UI:
+  - Stock, ETF, Mutual / Index Fund, REIT, ADR, OTC / Penny
+  - US Treasury, Corporate Bond, Muni Bond
+  - Future, Option, CFD, Warrant, Perp Swap
+  - Forex, Metal, Soft Commodity, Energy
+  - Major Crypto, Altcoin, DeFi / DEX Token, Tokenized RWA, Stablecoin, Carbon Credit
+- Use the existing `trading_platforms` table as the platform universe for platform-aware research.
+- Add a shared asset/platform universe helper so Foundry training and live Sunesis research use the same categories instead of drifting apart.
+- Expand the Foundry training sample universe to cover each asset class above, not just the current six broad internal buckets.
+- Add a coverage report showing which asset classes and platform-supported instruments were included in the corpus/training pass.
+
+### 7. Make promotion safe
+
+- Block `Promote Sunesis Brain` unless:
+  - required corpus dimensions are verified for the training/validation years
+  - Stage 3 synthesis has completed
+  - if Quantum Mode is on, Stage 3 has a completed quantum audit report
+  - all required annual validations are scored
+  - live matrix bake succeeds
+- Remove the current “auto-pass via wired pillars” shortcut.
+- Keep rollback behavior if live PCI matrix bake fails.
+
+### 8. Validate after implementation
+
+- Test the edge functions directly for one small year first, then a broader year range.
+- Confirm corpus rows are written for every dimension.
+- Confirm the Foundry page can trigger ingestion without “Failed to send a request”.
+- Confirm quantum mode creates a real `quantum_audits` row, polls/finalizes it, and shows it in `Quantum Reports`.
+- Confirm the report can be opened, printed/saved, and retrieved after reload.
+- Confirm asset-class/platform coverage appears in both Foundry and Sunesis research paths.
 
 ## Files likely to change
 
-- `src/components/foundry/PillarIngestionGrid.tsx`
 - `src/pages/app/foundry/FoundryAdmin.tsx`
+- `src/components/foundry/PillarIngestionGrid.tsx`
 - `src/lib/foundryEngine.ts`
+- `src/lib/foundryDataSources.ts`
+- `src/data/simulationCandidates.ts`
+- `supabase/functions/quantum-audit/index.ts`
 - `supabase/functions/foundry-ingest-prices/index.ts`
 - `supabase/functions/foundry-ingest-edgar/index.ts`
 - `supabase/functions/foundry-ingest-gdelt/index.ts`
-- `supabase/functions/fetch-sec-filings/index.ts`
 - `supabase/functions/fetch-macro-data/index.ts`
-- `supabase/functions/quantum-audit/index.ts`
-- Possibly a database migration for durable ingestion/synthesis status if needed
-
-## Expected outcome
-
-After implementation, the Foundry should stop pretending progress happened and instead prove it:
-
-- ingestion calls reach the backend,
-- data writes to the corpus,
-- all years can be processed without 504 timeouts,
-- IBM Quantum can be diagnosed and used correctly,
-- the final Sunesis brain cannot be promoted until the required foundation is actually present.
+- New or expanded Foundry ingesters for shipping/weather/trends/geopolitical coverage
+- A database migration only if the existing quantum/corpus tables cannot safely hold the required report metadata

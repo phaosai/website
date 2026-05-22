@@ -480,7 +480,7 @@ Deno.serve(async (req) => {
 
     // -------- CREATE --------
     if (action === "create") {
-      const { ticker, investmentType, platforms, simulationMode, idempotencyKey } = body ?? {};
+      const { ticker, investmentType, platforms, simulationMode, idempotencyKey, foundryMeta } = body ?? {};
       if (!ticker || !investmentType || !Array.isArray(platforms) || platforms.length === 0) {
         return json(400, { error: "Missing required fields" });
       }
@@ -535,6 +535,17 @@ Deno.serve(async (req) => {
         usedAddon = true;
       }
 
+      // Detailed audit metadata persisted at create time so the printable
+      // Foundry report stays accurate even before finalize.
+      const initialMeta = {
+        scope: investmentType,
+        label: String(ticker),
+        simulationMode: simulationMode ?? "Foundry Brain Vetting",
+        foundryMeta: foundryMeta ?? {},
+        submittedAt: new Date().toISOString(),
+        submittedBy: user.id,
+      };
+
       // Insert audit record first (status queued)
       const { data: inserted, error: insertErr } = await svc
         .from("quantum_audits")
@@ -544,7 +555,8 @@ Deno.serve(async (req) => {
           selected_asset_type: investmentType,
           selected_symbol: String(ticker).slice(0, 48).toUpperCase(),
           selected_platforms: platforms.slice(0, 32),
-          simulation_input_snapshot: { simulationMode: simulationMode ?? "Normalized Simulation" },
+          simulation_input_snapshot: { simulationMode: simulationMode ?? "Normalized Simulation", foundryMeta: foundryMeta ?? {} },
+          raw_result_metadata: initialMeta,
           status: "queued",
           used_addon: usedAddon,
           idempotency_key: idemKey,
@@ -693,15 +705,22 @@ Deno.serve(async (req) => {
         return json(409, { error: "Audit not yet completed" });
       }
 
-      // Generate summary if missing.
+      // Generate summary if missing, but PRESERVE any foundryMeta that was
+      // stored at create time so the printable Foundry report keeps showing
+      // exactly which dimensions/asset-classes/platforms/coverage were
+      // analyzed.
       if (!(audit as any).result_summary) {
-        const summary =
-          "Supplemental advanced-compute validation pass complete. Top filtered candidates returned a stable consensus signal across the constrained optimization set. Audit-ready research receipt generated.";
+        const existingMeta = ((audit as any).raw_result_metadata ?? {}) as Record<string, unknown>;
+        const isFoundry = ["subbrain", "synthesis", "year-audit"].includes(String((audit as any).selected_asset_type));
+        const summary = isFoundry
+          ? `Foundry ${(audit as any).selected_asset_type} quantum pass complete · ${(audit as any).selected_symbol} · backend ${(audit as any).ibm_backend} · workload ${(audit as any).ibm_workload_id}. Inputs and coverage snapshot recorded for audit.`
+          : "Supplemental advanced-compute validation pass complete. Top filtered candidates returned a stable consensus signal across the constrained optimization set. Audit-ready research receipt generated.";
         const meta = {
+          ...existingMeta,
           mode: (audit as any).validation_mode,
           backend: (audit as any).ibm_backend,
           workload: (audit as any).ibm_workload_id,
-          generatedAt: new Date().toISOString(),
+          finalizedAt: new Date().toISOString(),
         };
         await svc
           .from("quantum_audits")

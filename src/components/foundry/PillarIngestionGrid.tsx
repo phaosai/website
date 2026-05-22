@@ -19,16 +19,16 @@ interface Pillar {
   registryOnly?: boolean;
 }
 
-// Block B — Step 1: render Pillar 1 only for visual review.
+// Each pillar now points at a corpus-writing edge function so verified
+// coverage in public.foundry_year_corpus matches the UI status.
+const DEFAULT_YEAR = new Date().getFullYear() - 1;
 const PILLARS: Pillar[] = [
   {
     n: 1,
     name: "Insider Intent",
     sources: ["SEC Form 4", "13F", "8-K"],
     endpoints: [
-      { fn: "fetch-sec-filings", body: { formType: "4", ticker: "AAPL" }, label: "Form 4 sweep" },
-      { fn: "fetch-sec-filings", body: { formType: "13F", ticker: "AAPL" }, label: "13F sweep" },
-      { fn: "fetch-sec-filings", body: { formType: "8-K", ticker: "AAPL" }, label: "8-K sweep" },
+      { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR insider/8-K sweep" },
     ],
   },
   {
@@ -36,32 +36,34 @@ const PILLARS: Pillar[] = [
     name: "Fundamentals & Flows",
     sources: ["SEC EDGAR", "XBRL", "USAspending"],
     endpoints: [
-      { fn: "foundry-ingest-edgar", body: { year: new Date().getFullYear() - 1 }, label: "EDGAR full-index sweep" },
-      { fn: "fetch-sec-filings", body: { formType: "10-K", ticker: "AAPL" }, label: "10-K fundamentals" },
-      { fn: "fetch-sec-filings", body: { formType: "10-Q", ticker: "AAPL" }, label: "10-Q fundamentals" },
+      { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR full-index sweep" },
     ],
   },
   {
     n: 3,
     name: "Logistics & Supply Chain Pulse",
-    sources: ["Baltic Dry Index", "MarineTraffic"],
-    endpoints: [],
-    registryOnly: true,
+    sources: ["Baltic Dry Index", "Freight proxy"],
+    endpoints: [
+      { fn: "foundry-ingest-shipping", body: { year: DEFAULT_YEAR }, label: "Shipping & freight pulse" },
+    ],
   },
   {
     n: 4,
     name: "Sentiment & Attention",
-    sources: ["GDELT", "Google Trends"],
+    sources: ["GDELT", "Google Trends", "Geopolitical"],
     endpoints: [
-      { fn: "foundry-ingest-gdelt", body: { year: new Date().getFullYear() - 1 }, label: "GDELT sentiment slice" },
+      { fn: "foundry-ingest-gdelt", body: { year: DEFAULT_YEAR }, label: "GDELT sentiment slice" },
+      { fn: "foundry-ingest-trends", body: { year: DEFAULT_YEAR }, label: "Google Year-in-Search" },
+      { fn: "foundry-ingest-geopolitical", body: { year: DEFAULT_YEAR }, label: "GDELT geopolitical (Goldstein)" },
     ],
   },
   {
     n: 5,
     name: "Macro Regime Context",
-    sources: ["FRED", "Yield Curves", "S&P 500 Regimes"],
+    sources: ["FRED", "Yield Curves", "S&P 500 Regimes", "Weather"],
     endpoints: [
-      { fn: "fetch-macro-data", label: "FRED macro pull" },
+      { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR }, label: "FRED macro corpus" },
+      { fn: "foundry-ingest-weather", body: { year: DEFAULT_YEAR }, label: "NOAA climate" },
     ],
   },
 ];
