@@ -22,7 +22,7 @@ import {
   ForgeState, initialForgeState, recomputeGates, runQuantumStage,
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
-  dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage,
+  dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
   type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
