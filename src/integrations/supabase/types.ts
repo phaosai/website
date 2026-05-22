@@ -2584,6 +2584,18 @@ export type Database = {
           sub_brain_id: string
         }[]
       }
+      foundry_year_totals: {
+        Args: never
+        Returns: {
+          dimensions: number
+          indexed_bytes: number
+          last_fetched: string
+          rows: number
+          stored_bytes: number
+          sub_brains: number
+          year: number
+        }[]
+      }
       get_account_summary: { Args: { _user_id?: string }; Returns: Json }
       get_or_create_usage_period: {
         Args: { _ref_date?: string; _user_id: string }
