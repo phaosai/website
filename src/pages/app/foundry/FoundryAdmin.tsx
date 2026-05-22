@@ -117,6 +117,8 @@ function FoundryAdminInner() {
       return next;
     });
     setOpenReport(r);
+    // Refresh durable audits — the edge function persists a row in quantum_audits.
+    refreshDurableAudits();
   }
 
   // Persist forge state on every change. Also keep a ref so async loops
@@ -166,12 +168,23 @@ function FoundryAdminInner() {
   );
 
   const lastScoredYear = [...state.years].reverse().find((y) => y.status === "scored");
-  // Promotion is allowed as soon as every year has at least one scored pass —
-  // there is no minimum brain-score threshold. The brain keeps learning every
-  // additional pass; users decide when to promote.
+  // Coverage check: require at least 1 corpus row for the "price" dimension
+  // for every validation year. Without verified price coverage, the realized
+  // anchors fall back to synthetic shocks and we should NOT promote.
+  const priceCoverage = corpusCoverage["price"] ?? {};
+  const yearsMissingPriceCoverage = VALIDATION_YEARS.filter((y) => (priceCoverage[y] ?? 0) === 0);
+  const coverageVerified = yearsMissingPriceCoverage.length === 0;
+  // If Quantum Mode is on, at least one durable completed quantum audit must
+  // exist (so the live brain is provably quantum-vetted before promotion).
+  const quantumVetted = !quantumMode || durableAudits.some((a) => a.status === "completed");
+  // Promotion is allowed when every year has a scored pass, the engine name is
+  // set, corpus coverage is verified, and (when quantum mode is on) at least
+  // one durable quantum audit has completed.
   const promoteEligible =
     state.years.every((y) => y.status === "scored") &&
-    promoteName.trim().length >= 3;
+    promoteName.trim().length >= 3 &&
+    coverageVerified &&
+    quantumVetted;
 
   const stage = lockedCount < 6 ? 1
     : state.regime.status !== "done" ? 2
