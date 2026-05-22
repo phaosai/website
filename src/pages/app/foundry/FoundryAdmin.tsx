@@ -124,6 +124,21 @@ function FoundryAdminInner() {
   async function refreshCoverage() {
     const cov = await loadCorpusCoverage();
     setCorpusCoverage(cov);
+    // Roll up totals for the live activity strip.
+    try {
+      const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const rows = (proofRows ?? []) as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>;
+      const agg = rows.reduce((acc, r) => {
+        acc.rows += Number(r.rows ?? 0);
+        acc.stored += Number(r.stored_bytes ?? 0);
+        acc.indexed += Number(r.indexed_bytes ?? 0);
+        acc.dimensions = Math.max(acc.dimensions, Number(r.dimensions ?? 0));
+        acc.subBrains = Math.max(acc.subBrains, Number(r.sub_brains ?? 0));
+        if (!acc.lastFetched || (r.last_fetched && r.last_fetched > acc.lastFetched)) acc.lastFetched = r.last_fetched;
+        return acc;
+      }, { rows: 0, stored: 0, indexed: 0, years: rows.length, dimensions: 0, subBrains: 0, lastFetched: null as string | null });
+      setFoundryTotals(agg);
+    } catch { /* ignore */ }
   }
 
   /**
