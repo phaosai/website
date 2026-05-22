@@ -128,11 +128,16 @@ function FoundryAdminInner() {
 
   function resetForge() {
     clearForgeState();
+    // Also clear walk-forward matrix state and the quantum-report log so a
+    // full reset really wipes every Foundry-scoped local artifact.
+    try { localStorage.removeItem("phaos.foundry.walkforward.v1"); } catch { /* ignore */ }
+    try { localStorage.removeItem(REPORTS_KEY); } catch { /* ignore */ }
+    setReports([]);
     setState(recomputeGates(initialForgeState()));
     setSelectedYear(null);
     setPromoteName("");
     setPromoteConfirm("");
-    toast({ title: "Foundry reset", description: "All sub-brains, regime, synthesis, and annual scores cleared. Start over from Stage 1." });
+    toast({ title: "Foundry reset", description: "Sub-brains, regime, synthesis, annual scores, walk-forward matrix, and quantum-report log all cleared. Start over from Stage 1." });
   }
 
   const lockedCount = useMemo(
@@ -350,6 +355,27 @@ function FoundryAdminInner() {
   // ---------- Bulk runners ----------
   const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep" | "hyper">(null);
   const [hyperProgress, setHyperProgress] = useState<{ sweep: number; year: number; totalSweeps: number } | null>(null);
+  const cancelHyperRef = useRef(false);
+  const [liveBrain, setLiveBrain] = useState<{ name: string; version: string } | null>(null);
+
+  // Read the actual currently-active promoted brain so the header badge always
+  // tells the truth. Falls back to v0.9 "Origin" if nothing has been promoted.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("promoted_brains")
+        .select("engine_name, version")
+        .eq("is_active", true)
+        .order("promoted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && data?.engine_name) {
+        setLiveBrain({ name: data.engine_name, version: data.version || "v1.0" });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function runAllYearsSequential() {
     setBulkRunning("sequential");
@@ -379,29 +405,35 @@ function FoundryAdminInner() {
   // 15,000 cycles and pulls every per-symbol bias toward zero.
   async function runHyperForge(sweeps = 1000) {
     setBulkRunning("hyper");
+    cancelHyperRef.current = false;
     setHyperProgress({ sweep: 0, year: VALIDATION_YEARS[0], totalSweeps: sweeps });
-    // Throttle progress updates so we don't fire 15,000 React re-renders.
     let lastProgressAt = 0;
-    for (let s = 0; s < sweeps; s++) {
+    let completedSweeps = 0;
+    outer: for (let s = 0; s < sweeps; s++) {
       for (const y of stateRef.current.years) {
+        if (cancelHyperRef.current) break outer;
         const now = Date.now();
         if (now - lastProgressAt > 50) {
           setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
           lastProgressAt = now;
         }
         await runYear(y.year, false, { silent: true, passes: 1 });
-        // Yield a microtask between years so React commits + the useEffect
-        // that refreshes stateRef runs before the next runYear reads it.
-        // This guarantees residual gradient memory actually carries forward
-        // year-to-year inside the same sweep instead of leaking.
         await new Promise((r) => setTimeout(r, 0));
       }
+      if (cancelHyperRef.current) break;
+      completedSweeps = s + 1;
     }
+    const wasCancelled = cancelHyperRef.current;
+    cancelHyperRef.current = false;
     setBulkRunning(null);
     setHyperProgress(null);
     toast({
-      title: `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
-      description: `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
+      title: wasCancelled
+        ? `Hyper-Forge cancelled · ${completedSweeps} sweeps completed`
+        : `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
+      description: wasCancelled
+        ? `Stopped at the last completed year. All progress from the ${completedSweeps} finished sweeps is saved — residuals and per-symbol bias maps are intact.`
+        : `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
     });
   }
 
@@ -483,7 +515,9 @@ function FoundryAdminInner() {
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Live engine:</span>
-              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">Sunesis Brain v0.9 "Origin"</Badge>
+              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+                {liveBrain ? `Sunesis Brain ${liveBrain.version} "${liveBrain.name}"` : `Sunesis Brain v0.9 "Origin"`}
+              </Badge>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -705,16 +739,29 @@ function FoundryAdminInner() {
           </div>
         </div>
         {bulkRunning && (
-          <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs text-primary">
-            {bulkRunning === "sequential" && "Running every year 2011 → 2025 in sequence. Each year is scored independently before the next begins."}
-            {bulkRunning === "deep" && `Deep training in progress — 100 passes per year × 15 years = 1,500 additional training instances. The brain is repeatedly retrained against every macro shock (2011 debt-ceiling, 2018 volmageddon, 2020 pandemic, 2022 inflation, etc.) to drive accuracy toward the irreducible-surprise ceiling.`}
-            {bulkRunning === "hyper" && hyperProgress && (
-              <span>
-                Hyper-Forge in progress — sweep <span className="font-mono">{hyperProgress.sweep}</span> / {hyperProgress.totalSweeps} ·
-                year <span className="font-mono">{hyperProgress.year}</span> ·
-                cycles complete: <span className="font-mono">{state.totalTrainingCycles ?? 0}</span> ·
-                residual symbols: <span className="font-mono">{Object.keys(state.residualBias ?? {}).length}</span>
-              </span>
+          <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs text-primary flex flex-wrap items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              {bulkRunning === "sequential" && "Running every year 2011 → 2025 in sequence. Each year is scored independently before the next begins."}
+              {bulkRunning === "deep" && `Deep training in progress — 100 passes per year × 15 years = 1,500 additional training instances. The brain is repeatedly retrained against every macro shock (2011 debt-ceiling, 2018 volmageddon, 2020 pandemic, 2022 inflation, etc.) to drive accuracy toward the irreducible-surprise ceiling.`}
+              {bulkRunning === "hyper" && hyperProgress && (
+                <span>
+                  Hyper-Forge in progress — sweep <span className="font-mono">{hyperProgress.sweep}</span> / {hyperProgress.totalSweeps} ·
+                  year <span className="font-mono">{hyperProgress.year}</span> ·
+                  cycles complete: <span className="font-mono">{state.totalTrainingCycles ?? 0}</span> ·
+                  residual symbols: <span className="font-mono">{Object.keys(state.residualBias ?? {}).length}</span>
+                </span>
+              )}
+            </div>
+            {bulkRunning === "hyper" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+                onClick={() => { cancelHyperRef.current = true; }}
+                disabled={cancelHyperRef.current}
+              >
+                {cancelHyperRef.current ? "Stopping…" : "Cancel Hyper-Forge"}
+              </Button>
             )}
           </div>
         )}
