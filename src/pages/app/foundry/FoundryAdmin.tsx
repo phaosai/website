@@ -77,7 +77,10 @@ function FoundryAdminInner() {
   const [promoteName, setPromoteName] = useState("");
   const [promoteConfirm, setPromoteConfirm] = useState("");
   const [reports, setReports] = useState<QuantumReport[]>(() => loadReports());
+  const [durableAudits, setDurableAudits] = useState<DurableQuantumAudit[]>([]);
+  const [corpusCoverage, setCorpusCoverage] = useState<Record<string, Record<number, number>>>({});
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
+  const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
   const [pinging, setPinging] = useState(false);
   const QMODE_KEY = "phaos.foundry.quantumMode.v1";
@@ -87,6 +90,16 @@ function FoundryAdminInner() {
   useEffect(() => {
     try { localStorage.setItem(QMODE_KEY, quantumMode ? "1" : "0"); } catch { /* ignore */ }
   }, [quantumMode]);
+
+  async function refreshDurableAudits() {
+    const rows = await loadFoundryQuantumAudits(100);
+    setDurableAudits(rows);
+  }
+  async function refreshCoverage() {
+    const cov = await loadCorpusCoverage();
+    setCorpusCoverage(cov);
+  }
+  useEffect(() => { refreshDurableAudits(); refreshCoverage(); }, []);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
