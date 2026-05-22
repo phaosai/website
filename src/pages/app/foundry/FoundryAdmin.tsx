@@ -1083,21 +1083,73 @@ function FoundryAdminInner() {
 
       {/* ---------- Quantum Reports ---------- */}
       <section className="space-y-3">
-        <header className="flex items-end justify-between">
+        <header className="flex items-end justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-lg font-semibold">Quantum Reports</h2>
-            <p className="text-sm text-muted-foreground">Every Foundry quantum invocation is logged here — backend used, runtime, workload id, and an honest report when it didn't run.</p>
+            <p className="text-sm text-muted-foreground">
+              Every Foundry quantum invocation is logged here — durable rows from the database (printable, downloadable for audit) and the current-session log.
+            </p>
           </div>
-          {reports.length > 0 && (
-            <Button size="sm" variant="outline" onClick={() => { setReports([]); saveReports([]); }}>Clear log</Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={refreshDurableAudits}>Refresh from DB</Button>
+            {reports.length > 0 && (
+              <Button size="sm" variant="outline" onClick={() => { setReports([]); saveReports([]); }}>Clear session log</Button>
+            )}
+          </div>
         </header>
-        {reports.length === 0 ? (
-          <div className="rounded border border-border/40 bg-card/40 p-6 text-center text-xs text-muted-foreground">
-            No quantum invocations yet. Run any sub-brain, the synthesis, or a year audit with quantum enabled.
+
+        {/* Durable, DB-backed audits */}
+        <div className="rounded border border-border/40 bg-card/40">
+          <div className="border-b border-border/40 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Durable quantum audits ({durableAudits.length}) — printable, downloadable, retrievable for auditing
           </div>
-        ) : (
+          {durableAudits.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              No durable quantum audits saved yet. Toggle Quantum Mode ON and run a Synthesis or Year + Quantum audit.
+            </div>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2">Created</th>
+                  <th className="px-3 py-2">Scope</th>
+                  <th className="px-3 py-2">Label</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Backend</th>
+                  <th className="px-3 py-2">Workload</th>
+                  <th className="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {durableAudits.map((a) => (
+                  <tr key={a.id} className="border-t border-border/30">
+                    <td className="px-3 py-2 font-mono text-muted-foreground">{new Date(a.created_at).toLocaleString()}</td>
+                    <td className="px-3 py-2">{a.selected_asset_type ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono">{a.selected_symbol ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <Badge variant="outline" className={cn(
+                        a.status === "completed" && "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+                        a.status === "failed" && "border-red-500/40 bg-red-500/10 text-red-400",
+                      )}>{a.status}</Badge>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-muted-foreground">{a.ibm_backend ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{a.ibm_workload_id ?? "—"}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Button size="sm" variant="ghost" onClick={() => setOpenDurable(a)}>View / Print</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Session-only log (in-memory) */}
+        {reports.length > 0 && (
           <div className="overflow-hidden rounded border border-border/40 bg-card/40">
+            <div className="border-b border-border/40 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Current-session log ({reports.length}) — cleared on page reload
+            </div>
             <table className="w-full text-xs">
               <thead className="bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                 <tr>
@@ -1134,6 +1186,7 @@ function FoundryAdminInner() {
         )}
       </section>
 
+      {/* Session-log dialog */}
       <AlertDialog open={!!openReport} onOpenChange={(o) => !o && setOpenReport(null)}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
@@ -1149,7 +1202,7 @@ function FoundryAdminInner() {
                   <div>Result: <span className={openReport?.result === "success" ? "text-emerald-400" : "text-red-400"}>{openReport?.result}</span></div>
                   <div>Backend: <span className="text-muted-foreground">{openReport?.backend ?? "—"}</span></div>
                   <div>Workload id: <span className="text-muted-foreground">{openReport?.workloadId ?? "—"}</span></div>
-                  <div>Ran on quantum: <span className="text-muted-foreground">{openReport?.ran ? "yes" : "no"}</span></div>
+                  <div>Audit id (DB): <span className="text-muted-foreground">{openReport?.auditId ?? "—"}</span></div>
                   <div>Simulator fallback: <span className="text-muted-foreground">{openReport?.simulator ? "yes" : "no"}</span></div>
                 </div>
                 <div className="rounded border border-primary/30 bg-primary/5 p-3">
@@ -1171,6 +1224,73 @@ function FoundryAdminInner() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setOpenReport(null)}>Close</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Durable-audit dialog: printable + downloadable */}
+      <AlertDialog open={!!openDurable} onOpenChange={(o) => !o && setOpenDurable(null)}>
+        <AlertDialogContent className="max-w-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              ⚛︎ Durable Quantum Audit · {openDurable?.selected_asset_type} · {openDurable?.selected_symbol}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div id="durable-audit-print" className="space-y-3 text-xs text-foreground">
+                <div className="grid grid-cols-2 gap-2 rounded border border-border/40 bg-background/40 p-3 font-mono">
+                  <div>Audit id: <span className="text-muted-foreground">{openDurable?.id}</span></div>
+                  <div>Status: <span className="text-muted-foreground">{openDurable?.status}</span></div>
+                  <div>Created: <span className="text-muted-foreground">{openDurable && new Date(openDurable.created_at).toLocaleString()}</span></div>
+                  <div>Completed: <span className="text-muted-foreground">{openDurable?.completed_at ? new Date(openDurable.completed_at).toLocaleString() : "—"}</span></div>
+                  <div>IBM backend: <span className="text-muted-foreground">{openDurable?.ibm_backend ?? "—"}</span></div>
+                  <div>Workload id: <span className="text-muted-foreground">{openDurable?.ibm_workload_id ?? "—"}</span></div>
+                </div>
+                {openDurable?.result_summary && (
+                  <div className="rounded border border-primary/30 bg-primary/5 p-3">
+                    <div className="mb-1 font-medium text-primary">Result summary</div>
+                    <div className="text-muted-foreground whitespace-pre-wrap">{openDurable.result_summary}</div>
+                  </div>
+                )}
+                {openDurable?.error_message && (
+                  <div className="rounded border border-red-500/30 bg-red-500/5 p-3">
+                    <div className="mb-1 font-medium text-red-400">Error</div>
+                    <pre className="whitespace-pre-wrap font-mono text-[10px] text-muted-foreground">{openDurable.error_message}</pre>
+                  </div>
+                )}
+                <div className="rounded border border-border/40 bg-background/40 p-3">
+                  <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Foundry context analyzed (raw_result_metadata)</div>
+                  <pre className="whitespace-pre-wrap font-mono text-[10px] text-muted-foreground max-h-96 overflow-auto">{openDurable && JSON.stringify(openDurable.raw_result_metadata ?? {}, null, 2)}</pre>
+                </div>
+                <div className="text-[10px] italic text-muted-foreground border-t border-border/40 pt-2">
+                  Compliance: Quantum Audit is an experimental research validation feature. This output is for research workflow support only. It is not a prediction of returns or investment advice.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (!openDurable) return;
+              const blob = new Blob([JSON.stringify(openDurable, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `quantum-audit-${openDurable.id}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}>Download JSON</Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const node = document.getElementById("durable-audit-print");
+              if (!node || !openDurable) return;
+              const w = window.open("", "_blank", "width=900,height=1100");
+              if (!w) return;
+              w.document.write(`<html><head><title>Quantum Audit ${openDurable.id}</title>
+                <style>body{font-family:ui-monospace,monospace;padding:24px;color:#111;background:#fff;font-size:12px}pre{white-space:pre-wrap;word-break:break-all;background:#f5f5f5;padding:8px;border:1px solid #ddd}h1{font-size:16px;margin-bottom:8px}.k{color:#666}</style>
+              </head><body><h1>⚛︎ Phaos Foundry — Durable Quantum Audit</h1>${node.innerHTML}</body></html>`);
+              w.document.close();
+              w.focus();
+              setTimeout(() => w.print(), 300);
+            }}>Print</Button>
+            <AlertDialogAction onClick={() => setOpenDurable(null)}>Close</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
