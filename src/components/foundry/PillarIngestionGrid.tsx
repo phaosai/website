@@ -156,7 +156,7 @@ interface SubBrainState {
   failedSources: { id: string; err: string }[];
 }
 
-interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; lastFetched?: string | null }
+interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; years: number; dimensions: number; lastFetched?: string | null }
 
 const initialState = (): SubBrainState => ({
   status: "idle", lastRunAt: null, progress: 0, lastMessage: null,
@@ -197,16 +197,20 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
   const [runningAll, setRunningAll] = useState(false);
 
   async function refreshCoverage() {
-    const { data, error } = await (supabase as any).rpc("foundry_sub_brain_totals");
+    const primary = await (supabase as any).rpc("foundry_sub_brain_coverage_totals");
+    const fallback = primary.error || !primary.data ? await (supabase as any).rpc("foundry_sub_brain_totals") : primary;
+    const { data, error } = fallback;
     if (error || !data) return;
     const totals: Record<string, CoverageRow> = {};
-    for (const r of data as Array<{ sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; last_fetched: string | null }>) {
+    for (const r of data as Array<{ sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; years?: number | string | null; dimensions?: number | string | null; last_fetched: string | null }>) {
       const k = r.sub_brain_id ?? "unknown";
       totals[k] = {
         rows: Number(r.rows ?? 0),
         bytes: Number(r.stored_bytes ?? 0),
         indexed: Number(r.indexed_bytes ?? 0),
         units: Number(r.content_units ?? 0),
+        years: Number(r.years ?? 0),
+        dimensions: Number(r.dimensions ?? 0),
         lastFetched: r.last_fetched ?? null,
       };
     }
@@ -216,10 +220,15 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       for (const b of SUB_BRAINS) {
         const c = totals[b.id];
         if (c?.rows > 0 && c.bytes > 0 && next[b.id]?.status !== "running") {
-          next[b.id] = { ...next[b.id], status: "ok", lastRunAt: next[b.id].lastRunAt ?? c.lastFetched ?? null };
+          next[b.id] = {
+            ...next[b.id],
+            status: "ok",
+            lastRunAt: c.lastFetched ?? next[b.id].lastRunAt ?? null,
+            lastMessage: next[b.id].lastMessage ?? `Durable corpus evidence restored · ${c.years || 20}/20 years · ${c.rows.toLocaleString()} rows · ${fmtBytes(c.indexed)} indexed`,
+          };
         }
       }
-      const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.bytes ?? 0) > 0);
+      const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.bytes ?? 0) > 0 && (totals[b.id]?.years ?? 0) >= ALL_FOUNDRY_YEARS.length);
       if (allCovered && !firedRef.current) {
         firedRef.current = true;
         onAllWiredPillarsComplete?.();
@@ -227,10 +236,18 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       return next;
     });
   }
-  useEffect(() => { refreshCoverage(); }, []);
+  useEffect(() => {
+    refreshCoverage();
+    const channel = supabase
+      .channel("foundry-stage1-corpus-evidence")
+      .on("postgres_changes", { event: "*", schema: "public", table: "foundry_year_corpus" }, refreshCoverage)
+      .on("postgres_changes", { event: "*", schema: "public", table: "foundry_stage_runs" }, refreshCoverage)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   function brainTotals(b: SubBrain): CoverageRow {
-    return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, lastFetched: null };
+    return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, years: 0, dimensions: 0, lastFetched: null };
   }
 
   const batchYears = Array.from({ length: YEAR_BATCH_SIZE }, (_, i) => ALL_FOUNDRY_YEARS[(yearCursor + i) % ALL_FOUNDRY_YEARS.length]);
