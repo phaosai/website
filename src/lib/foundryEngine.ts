@@ -816,13 +816,11 @@ export async function loadFoundryQuantumAudits(limit = 50): Promise<DurableQuant
 export async function loadCorpusCoverage(): Promise<Record<string, Record<number, number>>> {
   const out: Record<string, Record<number, number>> = {};
   try {
-    const { data, error } = await supabase
-      .from("foundry_year_corpus")
-      .select("dimension,year");
+    const { data, error } = await (supabase as any).rpc("foundry_dimension_year_totals");
     if (error || !data) return out;
-    for (const r of data as Array<{ dimension: string; year: number }>) {
+    for (const r of data as Array<{ dimension: string; year: number; rows: number | string | null }>) {
       out[r.dimension] ||= {};
-      out[r.dimension][r.year] = (out[r.dimension][r.year] ?? 0) + 1;
+      out[r.dimension][r.year] = Number(r.rows ?? 0);
     }
   } catch { /* ignore */ }
   return out;

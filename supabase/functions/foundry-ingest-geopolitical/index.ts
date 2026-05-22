@@ -38,8 +38,9 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: "year must be 2006-2025", rows_written: 0, bytes_added: 0, indexed_bytes_added: 0, failed: [] });
 
     const runId = crypto.randomUUID();
+    const userAgent = req.headers.get("x-phaos-ua") ?? "Mozilla/5.0 PhaosFoundry/1.0";
     const url = `http://data.gdeltproject.org/events/${year}.zip`;
-    const head = await fetch(url, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } }).catch(() => null);
+    const head = await fetch(url, { method: "HEAD", headers: { "User-Agent": userAgent }, signal: AbortSignal.timeout(3500) }).catch(() => null);
     const contentLength = Number(head?.headers.get("content-length") ?? 0);
     const indexed = contentLength > 0 ? contentLength : 1_250_000_000 + (year - 2006) * 75_000_000;
     const payload = {

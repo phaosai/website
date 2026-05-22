@@ -31,6 +31,7 @@ import { WalkForwardMatrix } from "@/components/foundry/WalkForwardMatrix";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
 function loadReports(): QuantumReport[] {
@@ -54,6 +55,20 @@ function fmtBytes(n: number): string {
   let i = 0; let v = n;
   while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
   return `${v.toFixed(v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+interface FoundryCoverageProof {
+  totalRows: number;
+  totalStored: number;
+  totalIndexed: number;
+  completeYears: number;
+  completeDimensions: number;
+  missing: string[];
+  lastFetched: string | null;
+}
+
+function emptyCoverageProof(): FoundryCoverageProof {
+  return { totalRows: 0, totalStored: 0, totalIndexed: 0, completeYears: 0, completeDimensions: 0, missing: [], lastFetched: null };
 }
 
 function StagePill({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
@@ -508,6 +523,27 @@ function FoundryAdminInner() {
     try {
       announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
       const coverage = await loadCorpusCoverage();
+      const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const missingDimensionYears = ALL_DIMENSIONS.flatMap((dim) => ALL_FOUNDRY_YEARS
+        .filter((y) => (coverage[dim]?.[y] ?? 0) === 0)
+        .map((y) => `${y}:${dim}`));
+      const proof = ((proofRows ?? []) as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>).reduce((acc, r) => {
+        acc.totalRows += Number(r.rows ?? 0);
+        acc.totalStored += Number(r.stored_bytes ?? 0);
+        acc.totalIndexed += Number(r.indexed_bytes ?? 0);
+        if (Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length) acc.completeYears += 1;
+        if (!acc.lastFetched || (r.last_fetched && r.last_fetched > acc.lastFetched)) acc.lastFetched = r.last_fetched;
+        return acc;
+      }, emptyCoverageProof());
+      proof.missing = ALL_FOUNDRY_YEARS.filter((y) => !((proofRows ?? []) as Array<{ year: number; dimensions: number | string | null; sub_brains: number | string | null }>).some((r) => r.year === y && Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length)).map(String);
+      if (missingDimensionYears.length > 0 || proof.missing.length > 0) {
+        toast({
+          title: "Final audit blocked — corpus proof incomplete",
+          description: `Missing ${missingDimensionYears.length} year/dimension proofs and ${proof.missing.length} incomplete years. Re-run Data Sources ingestion first; saved rows remain additive.`,
+          variant: "destructive",
+        });
+        return;
+      }
       const coverageSnapshot = Object.fromEntries(
         Object.entries(coverage).map(([dim, rows]) => [
           dim,
@@ -526,6 +562,7 @@ function FoundryAdminInner() {
           assetClasses: ASSET_CLASSES.map((c) => c.id),
           platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
           dimensions: ALL_DIMENSIONS,
+          coverageProof: proof,
           coverageSnapshot,
           trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
           bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
@@ -1376,6 +1413,8 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   const [year, setYear] = useState<number>(2006);
   const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
   const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }>>({});
+  const [proof, setProof] = useState<FoundryCoverageProof>(() => emptyCoverageProof());
+  const [lastRunProof, setLastRunProof] = useState<string | null>(null);
   const [batchCursor, setBatchCursor] = useState(0);
   const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
   const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
@@ -1383,13 +1422,25 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
 
   async function refreshStats() {
     const { data, error } = await (supabase as any).rpc("foundry_year_totals");
+    const { data: dimData } = await (supabase as any).rpc("foundry_dimension_year_totals");
     const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
+    const nextProof = emptyCoverageProof();
     if (!error && data) {
-      for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null }>) {
-        next[r.year] = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+      for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>) {
+        const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+        next[r.year] = row;
+        nextProof.totalRows += row.rows;
+        nextProof.totalStored += row.stored;
+        nextProof.totalIndexed += row.indexed;
+        if (row.dimensions >= ALL_DIMENSIONS.length && row.subBrains >= ASSET_CLASSES.length) nextProof.completeYears += 1;
+        if (!nextProof.lastFetched || (r.last_fetched && r.last_fetched > nextProof.lastFetched)) nextProof.lastFetched = r.last_fetched;
       }
     }
+    nextProof.missing = ALL_FOUNDRY_YEARS.filter((y) => (next[y]?.dimensions ?? 0) < ALL_DIMENSIONS.length || (next[y]?.subBrains ?? 0) < ASSET_CLASSES.length).map(String);
+    const dimYearRows = (dimData ?? []) as Array<{ dimension: string; year: number; rows: number | string | null }>;
+    nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => dimYearRows.some((r) => r.dimension === dim && r.year === y && Number(r.rows ?? 0) > 0))).length;
     setStats(next);
+    setProof(nextProof);
   }
   useEffect(() => { refreshStats(); }, []);
 
@@ -1419,11 +1470,12 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
       for (let i = 0; i < jobs.length; i++) {
         const job = jobs[i];
         setIngestProgress({ label: `${year} · ${job.kind}`, done: i, total: jobs.length });
-        const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+        const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
         if (error) throw error;
+        if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
         writtenCount += Number(data?.rows_written ?? (data?.written ?? []).length ?? 0);
         failedCount += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
-        if (i < jobs.length - 1) await new Promise((r) => setTimeout(r, 1800));
+        if (i < jobs.length - 1) await randomSleep(1200, 2800);
       }
       setIngestProgress({ label: `${kind} · ${year}`, done: jobs.length, total: jobs.length });
       toast({
@@ -1450,8 +1502,9 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         for (const job of sourceJobs(y)) {
           try {
             setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
             if (error) throw error;
+            if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
             totalWritten += Number(data?.rows_written ?? 0);
             totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
           } catch (e) {
@@ -1461,7 +1514,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
           }
           completedJobs += 1;
           setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-          if (completedJobs < totalJobs) await new Promise((r) => setTimeout(r, mode === "all-sources" ? 2200 : 1600));
+          if (completedJobs < totalJobs) await randomSleep(mode === "all-sources" ? 1600 : 900, mode === "all-sources" ? 3800 : 2400);
         }
         if (!yearOk) yearsFailed.push(y);
         if (mode === "all-sources") await refreshStats();
@@ -1487,6 +1540,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         title: `✓ Backfilled data wells · ${years.length - yearsFailed.length}/${years.length} years`,
         description: `Wrote ${totalWritten} additive corpus rows. Source-level fallbacks/errors: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}.`,
       });
+      setLastRunProof(`Completed ${completedJobs}/${totalJobs} source shards · ${totalWritten.toLocaleString()} additive rows written · ${totalFailed.toLocaleString()} source fallbacks/errors · ${yearsFailed.length ? `year retries needed: ${yearsFailed.join(", ")}` : "all requested years returned saved rows"}.`);
       if (mode === "year-batch") setBatchCursor((c) => (c + years.length) % ALL_FOUNDRY_YEARS.length);
     } finally { await refreshStats(); setBusy(null); setIngestProgress(null); }
   }
@@ -1530,6 +1584,15 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
           </Button>
         </div>
       </header>
+      <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-5">
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Saved rows</div><div className="font-mono text-foreground">{proof.totalRows.toLocaleString()}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Stored proof</div><div className="font-mono text-foreground">{fmtBytes(proof.totalStored)}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Indexed source volume</div><div className="font-mono text-foreground">{fmtBytes(proof.totalIndexed)}</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Complete years</div><div className="font-mono text-foreground">{proof.completeYears}/20</div></div>
+        <div className="rounded border border-border/40 bg-card/40 p-2"><div className="text-muted-foreground">Last DB write</div><div className="font-mono text-foreground">{proof.lastFetched ? new Date(proof.lastFetched).toLocaleTimeString() : "—"}</div></div>
+      </div>
+      {lastRunProof && <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-3 text-[11px] text-emerald-400">Proof from last execution: {lastRunProof}</div>}
+      {proof.missing.length > 0 && <div className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] text-amber-400">Coverage still missing full 8-dimension / 6-sub-brain proof for: {proof.missing.join(", ")}. Re-run all-years or the listed year batch; saved rows are additive and will not be reduced.</div>}
       {ingestProgress && (
         <div className="space-y-1 rounded border border-border/40 bg-card/40 p-3 text-xs">
           <div className="flex items-center justify-between gap-3 text-muted-foreground">
