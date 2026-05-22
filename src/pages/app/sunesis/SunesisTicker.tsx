@@ -12,9 +12,12 @@ import {
   EvidenceTree,
   SourceFreshnessSummary,
   AuditReceiptCard,
+  HorizonSelector,
   type LedgerEntry,
   type EvidenceNode,
 } from "@/components/phaos";
+import { PciCommandCenter } from "@/components/phaos/PciCommandCenter";
+import type { Horizon } from "@/lib/pciMatrix";
 import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import { toast } from "sonner";
 
