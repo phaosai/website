@@ -480,7 +480,7 @@ Deno.serve(async (req) => {
 
     // -------- CREATE --------
     if (action === "create") {
-      const { ticker, investmentType, platforms, simulationMode, idempotencyKey } = body ?? {};
+      const { ticker, investmentType, platforms, simulationMode, idempotencyKey, foundryMeta } = body ?? {};
       if (!ticker || !investmentType || !Array.isArray(platforms) || platforms.length === 0) {
         return json(400, { error: "Missing required fields" });
       }
@@ -535,6 +535,17 @@ Deno.serve(async (req) => {
         usedAddon = true;
       }
 
+      // Detailed audit metadata persisted at create time so the printable
+      // Foundry report stays accurate even before finalize.
+      const initialMeta = {
+        scope: investmentType,
+        label: String(ticker),
+        simulationMode: simulationMode ?? "Foundry Brain Vetting",
+        foundryMeta: foundryMeta ?? {},
+        submittedAt: new Date().toISOString(),
+        submittedBy: user.id,
+      };
+
       // Insert audit record first (status queued)
       const { data: inserted, error: insertErr } = await svc
         .from("quantum_audits")
@@ -544,7 +555,8 @@ Deno.serve(async (req) => {
           selected_asset_type: investmentType,
           selected_symbol: String(ticker).slice(0, 48).toUpperCase(),
           selected_platforms: platforms.slice(0, 32),
-          simulation_input_snapshot: { simulationMode: simulationMode ?? "Normalized Simulation" },
+          simulation_input_snapshot: { simulationMode: simulationMode ?? "Normalized Simulation", foundryMeta: foundryMeta ?? {} },
+          raw_result_metadata: initialMeta,
           status: "queued",
           used_addon: usedAddon,
           idempotency_key: idemKey,
