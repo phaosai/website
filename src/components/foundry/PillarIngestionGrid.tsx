@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Loader2, Play, CheckCircle2, XCircle, Clock, Database } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
+import { loadCorpusCoverage } from "@/lib/foundryEngine";
 import { cn } from "@/lib/utils";
 
 type PillarStatus = "idle" | "running" | "ok" | "error";
@@ -16,6 +17,8 @@ interface Pillar {
   name: string;
   sources: string[];
   endpoints: Array<{ fn: string; body?: Record<string, unknown>; label: string }>;
+  /** Corpus dimensions this pillar feeds (used for the verified-coverage badge). */
+  dimensions: string[];
   registryOnly?: boolean;
 }
 
@@ -27,6 +30,7 @@ const PILLARS: Pillar[] = [
     n: 1,
     name: "Insider Intent",
     sources: ["SEC Form 4", "13F", "8-K"],
+    dimensions: ["filings"],
     endpoints: [
       { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR insider/8-K sweep" },
     ],
@@ -35,6 +39,7 @@ const PILLARS: Pillar[] = [
     n: 2,
     name: "Fundamentals & Flows",
     sources: ["SEC EDGAR", "XBRL", "USAspending"],
+    dimensions: ["filings"],
     endpoints: [
       { fn: "foundry-ingest-edgar", body: { year: DEFAULT_YEAR }, label: "EDGAR full-index sweep" },
     ],
@@ -43,6 +48,7 @@ const PILLARS: Pillar[] = [
     n: 3,
     name: "Logistics & Supply Chain Pulse",
     sources: ["Baltic Dry Index", "Freight proxy"],
+    dimensions: ["shipping"],
     endpoints: [
       { fn: "foundry-ingest-shipping", body: { year: DEFAULT_YEAR }, label: "Shipping & freight pulse" },
     ],
@@ -51,6 +57,7 @@ const PILLARS: Pillar[] = [
     n: 4,
     name: "Sentiment & Attention",
     sources: ["GDELT", "Google Trends", "Geopolitical"],
+    dimensions: ["sentiment", "trends", "geopolitical"],
     endpoints: [
       { fn: "foundry-ingest-gdelt", body: { year: DEFAULT_YEAR }, label: "GDELT sentiment slice" },
       { fn: "foundry-ingest-trends", body: { year: DEFAULT_YEAR }, label: "Google Year-in-Search" },
@@ -61,6 +68,7 @@ const PILLARS: Pillar[] = [
     n: 5,
     name: "Macro Regime Context",
     sources: ["FRED", "Yield Curves", "S&P 500 Regimes", "Weather"],
+    dimensions: ["macro", "weather"],
     endpoints: [
       { fn: "foundry-ingest-macro", body: { year: DEFAULT_YEAR }, label: "FRED macro corpus" },
       { fn: "foundry-ingest-weather", body: { year: DEFAULT_YEAR }, label: "NOAA climate" },
