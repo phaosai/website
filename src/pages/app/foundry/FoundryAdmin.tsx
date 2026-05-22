@@ -1470,11 +1470,12 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
       for (let i = 0; i < jobs.length; i++) {
         const job = jobs[i];
         setIngestProgress({ label: `${year} · ${job.kind}`, done: i, total: jobs.length });
-        const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+        const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
         if (error) throw error;
+        if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
         writtenCount += Number(data?.rows_written ?? (data?.written ?? []).length ?? 0);
         failedCount += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
-        if (i < jobs.length - 1) await new Promise((r) => setTimeout(r, 1800));
+        if (i < jobs.length - 1) await randomSleep(1200, 2800);
       }
       setIngestProgress({ label: `${kind} · ${year}`, done: jobs.length, total: jobs.length });
       toast({
