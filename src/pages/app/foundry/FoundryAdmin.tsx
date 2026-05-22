@@ -355,6 +355,27 @@ function FoundryAdminInner() {
   // ---------- Bulk runners ----------
   const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep" | "hyper">(null);
   const [hyperProgress, setHyperProgress] = useState<{ sweep: number; year: number; totalSweeps: number } | null>(null);
+  const cancelHyperRef = useRef(false);
+  const [liveBrain, setLiveBrain] = useState<{ name: string; version: string } | null>(null);
+
+  // Read the actual currently-active promoted brain so the header badge always
+  // tells the truth. Falls back to v0.9 "Origin" if nothing has been promoted.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("promoted_brains")
+        .select("engine_name, version")
+        .eq("is_active", true)
+        .order("promoted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && data?.engine_name) {
+        setLiveBrain({ name: data.engine_name, version: data.version || "v1.0" });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function runAllYearsSequential() {
     setBulkRunning("sequential");
