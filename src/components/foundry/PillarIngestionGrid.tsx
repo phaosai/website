@@ -255,6 +255,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       variant: ok ? "default" : "destructive",
     });
     maybeFireAllComplete();
+    advanceBatch();
   }
 
   async function runAll() {
@@ -265,6 +266,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       if (!ok) allOk = false;
     }
     await refreshCoverage();
+    advanceBatch();
     setRunningAll(false);
     toast({
       title: allOk ? "All 6 sub-brains ingested" : "Some sub-brains had failures",
