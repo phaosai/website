@@ -368,6 +368,75 @@ export type Database = {
         }
         Relationships: []
       }
+      foundry_stage_runs: {
+        Row: {
+          accuracy: number | null
+          completed_at: string | null
+          content_units_added: number
+          created_at: string
+          dimensions: string[]
+          evidence: Json
+          id: string
+          indexed_bytes_added: number
+          rows_added: number
+          run_id: string
+          stage_key: string
+          stage_label: string
+          stage_number: number
+          started_at: string
+          status: string
+          stored_bytes_added: number
+          sub_brain_id: string | null
+          training_cycles_added: number
+          updated_at: string
+          years: number[]
+        }
+        Insert: {
+          accuracy?: number | null
+          completed_at?: string | null
+          content_units_added?: number
+          created_at?: string
+          dimensions?: string[]
+          evidence?: Json
+          id?: string
+          indexed_bytes_added?: number
+          rows_added?: number
+          run_id?: string
+          stage_key: string
+          stage_label: string
+          stage_number: number
+          started_at?: string
+          status?: string
+          stored_bytes_added?: number
+          sub_brain_id?: string | null
+          training_cycles_added?: number
+          updated_at?: string
+          years?: number[]
+        }
+        Update: {
+          accuracy?: number | null
+          completed_at?: string | null
+          content_units_added?: number
+          created_at?: string
+          dimensions?: string[]
+          evidence?: Json
+          id?: string
+          indexed_bytes_added?: number
+          rows_added?: number
+          run_id?: string
+          stage_key?: string
+          stage_label?: string
+          stage_number?: number
+          started_at?: string
+          status?: string
+          stored_bytes_added?: number
+          sub_brain_id?: string | null
+          training_cycles_added?: number
+          updated_at?: string
+          years?: number[]
+        }
+        Relationships: []
+      }
       foundry_year_corpus: {
         Row: {
           content_units: number
@@ -2584,6 +2653,26 @@ export type Database = {
           stored_bytes: number
           sub_brains: number
           year: number
+        }[]
+      }
+      foundry_stage_run_totals: {
+        Args: never
+        Returns: {
+          completed_runs: number
+          content_units_added: number
+          failed_runs: number
+          indexed_bytes_added: number
+          last_completed_at: string
+          last_started_at: string
+          latest_accuracy: number
+          latest_evidence: Json
+          rows_added: number
+          runs: number
+          stage_key: string
+          stage_label: string
+          stage_number: number
+          stored_bytes_added: number
+          training_cycles_added: number
         }[]
       }
       foundry_sub_brain_totals: {
