@@ -374,11 +374,14 @@ export type Database = {
           dimension: string
           fetched_at: string
           id: string
+          indexed_bytes: number
           ingest_run_id: string | null
           payload: Json
           payload_bytes: number
+          platform: string | null
           source_id: string
           source_url: string | null
+          sub_brain_id: string | null
           year: number
         }
         Insert: {
@@ -386,11 +389,14 @@ export type Database = {
           dimension: string
           fetched_at?: string
           id?: string
+          indexed_bytes?: number
           ingest_run_id?: string | null
           payload?: Json
           payload_bytes?: number
+          platform?: string | null
           source_id: string
           source_url?: string | null
+          sub_brain_id?: string | null
           year: number
         }
         Update: {
@@ -398,11 +404,14 @@ export type Database = {
           dimension?: string
           fetched_at?: string
           id?: string
+          indexed_bytes?: number
           ingest_run_id?: string | null
           payload?: Json
           payload_bytes?: number
+          platform?: string | null
           source_id?: string
           source_url?: string | null
+          sub_brain_id?: string | null
           year?: number
         }
         Relationships: []
