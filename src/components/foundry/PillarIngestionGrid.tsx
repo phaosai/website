@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,10 +82,16 @@ function StatusBadge({ status }: { status: PillarStatus }) {
   return <Badge variant="outline" className="border-border/60 bg-muted/30 text-muted-foreground">Idle</Badge>;
 }
 
-export function PillarIngestionGrid() {
+export interface PillarIngestionGridProps {
+  /** Fires once when every wired (non-registry-only) pillar has reached "ok". */
+  onAllWiredPillarsComplete?: () => void;
+}
+
+export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngestionGridProps = {}) {
   const [states, setStates] = useState<Record<number, PillarState>>(() =>
     PILLARS.reduce((acc, p) => ({ ...acc, [p.n]: initialState() }), {} as Record<number, PillarState>),
   );
+  const firedRef = useRef(false);
 
   async function runPillar(p: Pillar) {
     if (p.registryOnly || p.endpoints.length === 0) {
@@ -123,15 +129,24 @@ export function PillarIngestionGrid() {
     }
 
     const finalStatus: PillarStatus = okCount === total ? "ok" : okCount === 0 ? "error" : "ok";
-    setStates((s) => ({
-      ...s,
-      [p.n]: {
-        status: finalStatus,
-        lastRunAt: new Date().toISOString(),
-        progress: 100,
-        lastMessage: lastErr ? `${okCount}/${total} ok — last error: ${lastErr}` : `${okCount}/${total} sources ingested`,
-      },
-    }));
+    setStates((s) => {
+      const next = {
+        ...s,
+        [p.n]: {
+          status: finalStatus,
+          lastRunAt: new Date().toISOString(),
+          progress: 100,
+          lastMessage: lastErr ? `${okCount}/${total} ok — last error: ${lastErr}` : `${okCount}/${total} sources ingested`,
+        },
+      };
+      const wired = PILLARS.filter((pp) => !pp.registryOnly && pp.endpoints.length > 0);
+      const allOk = wired.every((pp) => next[pp.n]?.status === "ok");
+      if (allOk && !firedRef.current) {
+        firedRef.current = true;
+        onAllWiredPillarsComplete?.();
+      }
+      return next;
+    });
     toast({
       title: `Pillar ${p.n} · ${p.name}`,
       description: `${okCount}/${total} sources ingested${lastErr ? ` — ${lastErr}` : ""}.`,
