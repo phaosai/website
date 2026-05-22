@@ -42,6 +42,7 @@ const fmtPct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
 const flag = (cc: string | null) => cc ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(0x1f1a5 + c.charCodeAt(0))) : "🌐";
 
 export default function SunesisLeaderboard() {
+  const { limits } = useMembership();
   const [category, setCategory] = useState<Category>("equities_funds");
   const [windowKey, setWindowKey] = useState<WindowKey>("current_year");
   const [rows, setRows] = useState<Row[]>([]);
@@ -148,7 +149,6 @@ export default function SunesisLeaderboard() {
                 <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No public watchlists in this category yet.</td></tr>
               )}
               {!loading && (() => {
-                const { limits } = useMembership();
                 const visibleRows = rows.slice(0, limits.resultSliceMax);
                 const lockedCount = Math.max(0, rows.length - visibleRows.length);
                 return (
