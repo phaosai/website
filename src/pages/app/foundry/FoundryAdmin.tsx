@@ -1471,8 +1471,7 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
           >
-            {VALIDATION_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-            {Array.from({ length: 5 }, (_, i) => 2006 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+            {ALL_FOUNDRY_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("prices")}>
             {busy === "prices" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest Prices
@@ -1483,12 +1482,23 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
           <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("edgar")}>
             {busy === "edgar" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest EDGAR
           </Button>
-          <Button size="sm" disabled={busy !== null} onClick={ingestAllYears} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
-            {busy === "all-prices" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
-            Ingest all years (prices)
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingestYears(nextBatchYears, "year-batch")} className="gap-1">
+            {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
+            Ingest next batch ({nextBatchYears.join("/")})
+          </Button>
+          <Button size="sm" disabled={busy !== null} onClick={() => ingestYears(ALL_FOUNDRY_YEARS, "all-sources")} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
+            {busy === "all-sources" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
+            Ingest all years + all sources
           </Button>
         </div>
       </header>
+      <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+        {[2006, 2007].map((y) => (
+          <Badge key={y} variant="outline" className="gap-1 border-border/60 font-mono">
+            <HardDrive className="size-3" /> {y}: {(stats[y]?.rows ?? 0).toLocaleString()} rows · {fmtBytes(stats[y]?.stored ?? 0)} stored · {fmtBytes(stats[y]?.indexed ?? 0)} indexed
+          </Badge>
+        ))}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {ALL_DIMENSIONS.map((dim) => {
           const sources = FOUNDRY_DATA_SOURCES.filter((s) => s.dimension === dim);
