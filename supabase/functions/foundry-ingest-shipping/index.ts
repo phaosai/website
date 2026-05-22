@@ -20,8 +20,10 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const auth = req.headers.get("Authorization") ?? "";
-    const serviceRole = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-    if (auth !== serviceRole) {
+    const apikey = req.headers.get("apikey") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const isServiceCall = serviceKey.length > 0 && (auth === `Bearer ${serviceKey}` || apikey === serviceKey);
+    if (!isServiceCall) {
       const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: auth } }, auth: { persistSession: false },
       });
