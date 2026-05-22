@@ -9,12 +9,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-phaos-ua",
 };
 
+// Massively expanded universe — Stooq + CoinGecko cover all of these tickers/coins
+// for free, no API key. More symbols = more rows, more bytes, more indexed volume
+// per year × phase, which the quantum audit later cross-correlates.
 const DEFAULT_TICKERS = [
+  // Mega-cap + core US equities
   "AAPL","MSFT","GOOGL","AMZN","META","NVDA","TSLA","JPM","BAC","XOM",
-  "SPY","QQQ","DIA","IWM","VTI","TLT","GLD","SLV","USO",
-  "CVX","JNJ","UNH","WMT","PG","TIP","LQD","HYG","MUB","EMB",
+  "WFC","GS","MS","C","BLK","SCHW","AXP","V","MA","PYPL",
+  "CVX","COP","SLB","OXY","PSX","VLO","MPC","EOG","PXD","HAL",
+  "JNJ","PFE","MRK","ABBV","LLY","UNH","CVS","TMO","DHR","ABT",
+  "WMT","COST","TGT","HD","LOW","NKE","SBUX","MCD","KO","PEP",
+  "PG","CL","KMB","MDLZ","MO","PM","DIS","CMCSA","NFLX","T",
+  "VZ","CRM","ORCL","ADBE","INTC","AMD","QCOM","TXN","AVGO","IBM",
+  "CAT","DE","BA","GE","HON","LMT","RTX","UPS","FDX","UNP",
+  // Broad ETFs / factor / sector / fixed income / commodities
+  "SPY","QQQ","DIA","IWM","VTI","VOO","IVV","VEA","VWO","EFA",
+  "EEM","ACWI","XLF","XLE","XLK","XLV","XLY","XLP","XLI","XLB",
+  "XLU","XLRE","XLC","SMH","SOXX","XBI","IBB","KRE","ITB","XHB",
+  "TLT","IEF","SHY","LQD","HYG","JNK","MUB","EMB","TIP","BND",
+  "AGG","BIL","GLD","SLV","USO","UNG","DBC","DBA","UUP","FXE",
+  "FXY","GDX","GDXJ","COPX","URA","LIT","REMX","ARKK","ARKG","ARKW",
 ];
-const DEFAULT_COINS = ["bitcoin","ethereum","solana","binancecoin","ripple","cardano","dogecoin","polkadot"];
+const DEFAULT_COINS = [
+  "bitcoin","ethereum","solana","binancecoin","ripple","cardano","dogecoin",
+  "polkadot","tron","avalanche-2","chainlink","polygon","litecoin","stellar",
+  "monero","ethereum-classic","cosmos","algorand","filecoin","near","aptos",
+  "arbitrum","optimism","uniswap","aave","maker","compound-governance-token",
+  "shiba-inu","pepe","tezos","internet-computer","hedera-hashgraph","vechain",
+];
 
 function stooqSymbol(ticker: string): string {
   const overrides: Record<string,string> = { SPX:"^spx", NDX:"^ndx", RUT:"^rut", DJI:"^dji", VIX:"^vix" };
