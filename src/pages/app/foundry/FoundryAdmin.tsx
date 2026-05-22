@@ -1373,16 +1373,45 @@ function FoundryAdminInner() {
 function DataSourcesPanel({ state }: { state: ForgeState }) {
   const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
   const learnedDims = new Set(dimensionsAfterPasses(maxPasses));
-  const [year, setYear] = useState<number>(VALIDATION_YEARS[0]);
-  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-prices">(null);
+  const [year, setYear] = useState<number>(2006);
+  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
+  const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number }>>({});
+  const [batchCursor, setBatchCursor] = useState(0);
+
+  async function refreshStats() {
+    const { data } = await supabase
+      .from("foundry_year_corpus")
+      .select("year,payload_bytes,indexed_bytes")
+      .in("year", ALL_FOUNDRY_YEARS);
+    const next: Record<number, { rows: number; stored: number; indexed: number }> = {};
+    for (const r of (data ?? []) as Array<{ year: number; payload_bytes: number | null; indexed_bytes: number | null }>) {
+      next[r.year] ||= { rows: 0, stored: 0, indexed: 0 };
+      next[r.year].rows += 1;
+      next[r.year].stored += Number(r.payload_bytes ?? 0);
+      next[r.year].indexed += Number(r.indexed_bytes ?? 0);
+    }
+    setStats(next);
+  }
+  useEffect(() => { refreshStats(); }, []);
+
+  const sourceJobs = (y: number) => [
+    { kind: "prices", fn: "foundry-ingest-prices", body: { year: y } },
+    { kind: "macro", fn: "foundry-ingest-macro", body: { year: y, tag: "macro", subBrainId: "fixed_income" } },
+    { kind: "edgar", fn: "foundry-ingest-edgar", body: { year: y, subBrainId: "equities" } },
+    { kind: "gdelt", fn: "foundry-ingest-gdelt", body: { year: y, subBrainId: "alternative" } },
+    { kind: "geopolitical", fn: "foundry-ingest-geopolitical", body: { year: y, subBrainId: "alternative" } },
+    { kind: "shipping", fn: "foundry-ingest-shipping", body: { year: y, subBrainId: "fx_commodities" } },
+    { kind: "weather", fn: "foundry-ingest-weather", body: { year: y, subBrainId: "alternative" } },
+    { kind: "trends", fn: "foundry-ingest-trends", body: { year: y, subBrainId: "alternative" } },
+  ];
 
   async function ingest(kind: "prices" | "gdelt" | "edgar") {
     setBusy(kind);
     try {
       const { data, error } = await supabase.functions.invoke(`foundry-ingest-${kind}`, { body: { year } });
       if (error) throw error;
-      const writtenCount = (data?.written ?? []).length;
-      const failedCount = (data?.failed ?? []).length;
+      const writtenCount = Number(data?.rows_written ?? (data?.written ?? []).length ?? 0);
+      const failedCount = Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
       toast({
         title: `✓ Ingested ${kind} for ${year}`,
         description: `Wrote ${writtenCount} corpus rows.${failedCount ? ` Failed: ${failedCount} (${(data.failed ?? []).slice(0, 2).map((f: { id?: string; err?: string }) => f.id ?? f.err).join("; ")}…)` : ""}`,
@@ -1390,37 +1419,41 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
     } catch (e) {
       const err = e as { message?: string; details?: string };
       toast({ title: `Ingest ${kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
-    } finally { setBusy(null); }
+    } finally { await refreshStats(); setBusy(null); }
   }
 
-  async function ingestAllYears() {
-    setBusy("all-prices");
-    const years = [...Array.from({ length: 5 }, (_, i) => 2006 + i), ...VALIDATION_YEARS];
+  async function ingestYears(years: number[], mode: "all-sources" | "year-batch") {
+    setBusy(mode);
     let totalWritten = 0;
     let totalFailed = 0;
     const yearsFailed: number[] = [];
     try {
-      // Run one year per request — the edge function times out around 150s
-      // if asked to do 20 years × 35+ tickers in a single call. One year at a
-      // time keeps every request under ~15s and gives partial progress.
       for (const y of years) {
-        try {
-          const { data, error } = await supabase.functions.invoke("foundry-ingest-prices", { body: { year: y } });
-          if (error) throw error;
-          totalWritten += data?.written_count ?? 0;
-          totalFailed += data?.failed_count ?? 0;
-        } catch (e) {
-          yearsFailed.push(y);
-          const err = e as { message?: string };
-          toast({ title: `Year ${y} ingest failed`, description: err?.message ?? String(e), variant: "destructive" });
+        let yearOk = true;
+        for (const job of sourceJobs(y)) {
+          try {
+            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+            if (error) throw error;
+            totalWritten += Number(data?.rows_written ?? 0);
+            totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
+          } catch (e) {
+            yearOk = false;
+            const err = e as { message?: string };
+            toast({ title: `${y} · ${job.kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
+          }
+          await new Promise((r) => setTimeout(r, 800));
         }
+        if (!yearOk) yearsFailed.push(y);
       }
       toast({
-        title: `✓ Backfilled prices · ${years.length - yearsFailed.length}/${years.length} years`,
-        description: `Wrote ${totalWritten} corpus rows. Source-level failures: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}. Reload the page to refresh real OHLCV anchors.`,
+        title: `✓ Backfilled data wells · ${years.length - yearsFailed.length}/${years.length} years`,
+        description: `Wrote ${totalWritten} additive corpus rows. Source-level failures: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}.`,
       });
-    } finally { setBusy(null); }
+      if (mode === "year-batch") setBatchCursor((c) => (c + years.length) % ALL_FOUNDRY_YEARS.length);
+    } finally { await refreshStats(); setBusy(null); }
   }
+
+  const nextBatchYears = [ALL_FOUNDRY_YEARS[batchCursor], ALL_FOUNDRY_YEARS[(batchCursor + 1) % ALL_FOUNDRY_YEARS.length]];
 
   return (
     <section className="space-y-3">
