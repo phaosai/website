@@ -615,7 +615,8 @@ export function trainYearMultiPass(args: {
 // ---------- Quantum helpers (reuses quantum-audit edge fn) ----------
 
 export interface QuantumReport {
-  id: string;
+  id: string;                 // local id for the in-memory log
+  auditId?: string;           // durable id in public.quantum_audits
   scope: "subbrain" | "synthesis" | "year-audit";
   label: string;
   startedAt: string;
@@ -626,8 +627,11 @@ export interface QuantumReport {
   backend?: string;
   workloadId?: string;
   payloadSummary: Record<string, unknown>;
+  foundryMeta?: Record<string, unknown>; // full Foundry context (dimensions, asset classes, platforms, coverage)
+  finalStatus?: "queued" | "running" | "completed" | "failed" | "canceled";
+  resultSummary?: string;     // honest finalize summary
   result: "success" | "failed";
-  why: string;          // narrative explanation
+  why: string;                // narrative explanation
   rawError?: string;
 }
 
@@ -636,79 +640,192 @@ export interface QuantumOutcome {
   simulator: boolean;
   backend?: string;
   workloadId?: string;
+  auditId?: string;
   message: string;
   report: QuantumReport;
 }
 
-export async function runQuantumStage(args: {
+export interface QuantumRunArgs {
   scope: "subbrain" | "synthesis" | "year-audit";
   label: string;
-}): Promise<QuantumOutcome> {
+  /**
+   * Full Foundry context. Persisted into quantum_audits.raw_result_metadata so
+   * the durable, printable, retrievable audit report can show exactly what was
+   * analyzed: dimensions, asset classes, platforms, coverage snapshot, etc.
+   */
+  foundryMeta?: Record<string, unknown>;
+  /** When false, do not actually submit a workload. Caller still gets an honest report. */
+  enabled?: boolean;
+  /** Max ms to wait for the workload to finalize. Default 25s. */
+  pollTimeoutMs?: number;
+}
+
+async function callQuantumAudit(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("quantum-audit", { body });
+  if (error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const j = await context.clone().json().catch(async () => ({ error: await context.clone().text().catch(() => "") }));
+      const detail = typeof j?.error === "string" && j.error ? j.error : error.message;
+      throw new Error(detail);
+    }
+    throw error;
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function runQuantumStage(args: QuantumRunArgs): Promise<QuantumOutcome> {
   const startedAt = new Date();
   const t0 = performance.now();
+  const enabled = args.enabled !== false;
+  const pollTimeoutMs = args.pollTimeoutMs ?? 25_000;
   const payloadSummary = {
-    action: "create",
+    action: "create" as const,
     ticker: args.label.slice(0, 24).toUpperCase(),
     investmentType: args.scope,
     platforms: ["foundry"],
-    simulationMode: "Foundry Brain Vetting",
+    simulationMode: `Foundry Brain Vetting · ${args.scope}`,
+    foundryMeta: args.foundryMeta ?? {},
+    idempotencyKey: `foundry-${args.scope}-${args.label}-${Date.now()}`,
   };
-  const finalize = (extra: Partial<QuantumReport>): QuantumReport => {
-    const finishedAt = new Date();
+  const finalizeReport = (extra: Partial<QuantumReport>): QuantumReport => ({
+    id: `qr-${startedAt.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+    scope: args.scope,
+    label: args.label,
+    startedAt: startedAt.toISOString(),
+    finishedAt: new Date().toISOString(),
+    elapsedSeconds: +((performance.now() - t0) / 1000).toFixed(2),
+    ran: false,
+    simulator: false,
+    payloadSummary,
+    foundryMeta: args.foundryMeta,
+    result: "failed",
+    why: "",
+    ...extra,
+  });
+
+  if (!enabled) {
     return {
-      id: `qr-${startedAt.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
-      scope: args.scope,
-      label: args.label,
-      startedAt: startedAt.toISOString(),
-      finishedAt: finishedAt.toISOString(),
-      elapsedSeconds: +((performance.now() - t0) / 1000).toFixed(2),
       ran: false,
       simulator: false,
-      payloadSummary,
-      result: "failed",
-      why: "",
-      ...extra,
+      message: "Quantum Mode is OFF — classical-only run. Toggle Quantum Mode in the Foundry header to engage IBM Quantum.",
+      report: finalizeReport({
+        ran: false,
+        result: "failed",
+        why: "The Foundry Quantum Mode master toggle is off, so no IBM workload was submitted. Turn it on in the Foundry header to engage quantum.",
+      }),
     };
-  };
+  }
+
   try {
-    const { data, error } = await supabase.functions.invoke("quantum-audit", {
-      body: { ...payloadSummary, idempotencyKey: `foundry-${args.scope}-${args.label}-${Date.now()}` },
-    });
-    if (error) {
-      const context = (error as { context?: unknown }).context;
-      if (context instanceof Response) {
-        const body = await context.clone().json().catch(async () => ({ error: await context.clone().text().catch(() => "") }));
-        const detail = typeof body?.error === "string" && body.error ? body.error : error.message;
-        throw new Error(detail);
+    const created = await callQuantumAudit(payloadSummary);
+    const sim = String(created?.backend ?? "").includes("simulator");
+    const auditId: string | undefined = created?.auditId;
+    let finalStatus: "queued" | "running" | "completed" | "failed" | "canceled" = created?.status ?? "queued";
+
+    // Poll status until terminal or timeout
+    if (auditId) {
+      const deadline = Date.now() + pollTimeoutMs;
+      while (Date.now() < deadline && !["completed", "failed", "canceled"].includes(finalStatus)) {
+        await new Promise((r) => setTimeout(r, 1200));
+        try {
+          const st = await callQuantumAudit({ action: "status", auditId });
+          finalStatus = st?.status ?? finalStatus;
+        } catch { /* keep polling */ }
       }
-      throw error;
     }
-    if (data?.error) throw new Error(data.error);
-    const sim = String(data?.backend ?? "").includes("simulator");
+
+    // Finalize if completed → writes summary + receipt
+    let resultSummary: string | undefined;
+    if (auditId && finalStatus === "completed") {
+      try {
+        const fin = await callQuantumAudit({ action: "finalize", auditId });
+        resultSummary = fin?.receipt?.summary;
+      } catch (e) {
+        resultSummary = `Workload completed on ${created?.backend} but finalize call returned: ${e instanceof Error ? e.message : String(e)}`;
+      }
+    }
+
     const message = sim
-      ? `Quantum vetting ran on internal simulator (IBM credentials not detected) — workload ${data?.workloadId}`
-      : `Quantum vetting ran on IBM Quantum Runtime (${data?.backend}) — workload ${data?.workloadId} ✓`;
+      ? `Quantum simulator fallback · workload ${created?.workloadId} · status ${finalStatus}`
+      : `IBM Quantum (${created?.backend}) · workload ${created?.workloadId} · status ${finalStatus}`;
     const why = sim
-      ? "IBM Quantum Runtime returned a fallback to the internal simulator. The most common reasons are: (a) the IBM_Quantum_API token is missing or expired, (b) the IBM_Quantum_CRN points at an instance with no remaining runtime minutes, or (c) IBM IAM rate-limited the token exchange. The job still executed end-to-end on the simulator so the foundry pipeline kept moving."
-      : `Live IBM quantum hardware accepted the workload. Backend: ${data?.backend}. Workload id: ${data?.workloadId}. Token + CRN were validated by IBM IAM and the circuit ran on real qubits.`;
+      ? "IBM Quantum Runtime returned a fallback to the internal simulator (credentials missing, runtime minutes exhausted, or IAM rate limited). The job still produced a durable audit row you can open and print."
+      : `Live IBM quantum hardware accepted the workload. Backend: ${created?.backend}. Workload id: ${created?.workloadId}. Final status: ${finalStatus}. The full audit (input dimensions, asset classes, platforms, corpus coverage snapshot) is saved to quantum_audits and visible in Quantum Reports.`;
+
     return {
       ran: true,
       simulator: sim,
-      backend: data?.backend,
-      workloadId: data?.workloadId,
+      backend: created?.backend,
+      workloadId: created?.workloadId,
+      auditId,
       message,
-      report: finalize({ ran: true, simulator: sim, backend: data?.backend, workloadId: data?.workloadId, result: "success", why }),
+      report: finalizeReport({
+        ran: true,
+        simulator: sim,
+        backend: created?.backend,
+        workloadId: created?.workloadId,
+        auditId,
+        finalStatus,
+        resultSummary,
+        result: finalStatus === "failed" || finalStatus === "canceled" ? "failed" : "success",
+        why,
+      }),
     };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "unknown error";
-    const why = `The quantum-audit backend rejected the request or IBM rejected the live Qiskit Runtime job. Raw reason: "${msg}". Likely causes: (1) the caller is not signed in with an admin role, (2) IBM_Quantum_API / IBM_Quantum_CRN are unset or were changed without redeploying, (3) the IBM key lacks quantum-computing.job.create access, (4) the CRN has no accessible QPU backend or runtime minutes, or (5) IBM rejected/rate-limited the Runtime payload. No live quantum result is credited unless IBM returns a workload id.`;
+    const why = `The quantum-audit backend rejected the request or IBM rejected the Qiskit Runtime job. Raw reason: "${msg}". Likely causes: caller not signed in as admin; IBM_Quantum_API / IBM_Quantum_CRN unset; IAM key lacks quantum-computing.job.create access; CRN has no accessible QPU; or IBM rate-limited the Runtime payload. No quantum result is credited unless IBM returns a workload id.`;
     return {
       ran: false,
       simulator: false,
       message: `Quantum vetting could not be initiated: ${msg}`,
-      report: finalize({ ran: false, result: "failed", why, rawError: msg }),
+      report: finalizeReport({ ran: false, result: "failed", why, rawError: msg }),
     };
   }
+}
+
+// Durable audit row from quantum_audits, shaped for the Reports panel.
+export interface DurableQuantumAudit {
+  id: string;
+  created_at: string;
+  completed_at: string | null;
+  status: string;
+  selected_asset_type: string | null;
+  selected_symbol: string | null;
+  ibm_backend: string | null;
+  ibm_workload_id: string | null;
+  result_summary: string | null;
+  raw_result_metadata: Record<string, unknown> | null;
+  used_addon: boolean;
+  error_message: string | null;
+}
+
+export async function loadFoundryQuantumAudits(limit = 50): Promise<DurableQuantumAudit[]> {
+  const { data, error } = await supabase
+    .from("quantum_audits")
+    .select("id,created_at,completed_at,status,selected_asset_type,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,used_addon,error_message")
+    .in("selected_asset_type", ["subbrain", "synthesis", "year-audit"])
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error || !data) return [];
+  return data as unknown as DurableQuantumAudit[];
+}
+
+/** Coverage helper: rows per (dimension, year) from foundry_year_corpus. */
+export async function loadCorpusCoverage(): Promise<Record<string, Record<number, number>>> {
+  const out: Record<string, Record<number, number>> = {};
+  try {
+    const { data, error } = await supabase
+      .from("foundry_year_corpus")
+      .select("dimension,year");
+    if (error || !data) return out;
+    for (const r of data as Array<{ dimension: string; year: number }>) {
+      out[r.dimension] ||= {};
+      out[r.dimension][r.year] = (out[r.dimension][r.year] ?? 0) + 1;
+    }
+  } catch { /* ignore */ }
+  return out;
 }
 
 export interface QuantumPingResult {
