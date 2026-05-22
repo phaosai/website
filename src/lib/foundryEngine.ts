@@ -186,6 +186,11 @@ export interface ForgeState {
   promote: { engineName: string; version: string };
   // Total deep-training cycles run across every year (the "100 instances" button).
   totalTrainingCycles?: number;
+  // Cumulative run counters so the UI can show that every stage is additive
+  // and re-runnable — each press grows the data the final quantum sees.
+  regimeRuns?: number;
+  synthesisRuns?: number;
+  finalAuditRuns?: number;
   // Persistent per-symbol residual bias accumulated across every pass and every
   // year. Kept for backward compatibility & promotion snapshot.
   residualBias?: Record<string, number>;
