@@ -20,6 +20,8 @@ import { PciCommandCenter } from "@/components/phaos/PciCommandCenter";
 import type { Horizon } from "@/lib/pciMatrix";
 import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { horizonsForTier } from "@/lib/horizonGating";
 
 const SIGNAL_CATEGORIES = [
   { key: "insider", label: "Insider Activity" },
@@ -126,6 +128,31 @@ export default function SunesisTicker() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [horizon, setHorizon] = useState<Horizon>("1Y");
+  const [recomputing, setRecomputing] = useState(false);
+  const navigate = useNavigate();
+  const allowedHorizons = useMemo(() => horizonsForTier(ent.tier), [ent.tier]);
+
+  async function recomputeForHorizon() {
+    if (!item?.ticker) return;
+    setRecomputing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("compute-pci-score", {
+        body: { ticker: item.ticker, horizon },
+      });
+      if (error) throw error;
+      if (data?.pci != null) {
+        setItem((prev: any) => ({ ...prev, pci_score: data.pci }));
+        toast.success(`Recomputed for ${horizon} · band: ${data.band_name}`);
+      } else {
+        toast.message("Compute returned no score.");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not recompute PCI.");
+    } finally {
+      setRecomputing(false);
+    }
+  }
+
 
   useEffect(() => {
     if (!symbol) return;
@@ -232,7 +259,25 @@ export default function SunesisTicker() {
                 <div className="mt-2 text-5xl font-bold"><PCITierBadge score={item.pci_score} /></div>
               </div>
             )}
-            <HorizonSelector value={horizon} onChange={setHorizon} />
+            <HorizonSelector
+              value={horizon}
+              onChange={setHorizon}
+              allowedHorizons={allowedHorizons}
+              onLockedClick={(_h, minTier) => {
+                toast.message(`Requires ${minTier} tier`, { description: "Opening pricing…" });
+                navigate("/pricing");
+              }}
+            />
+            <div className="flex items-center justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={recomputeForHorizon}
+                disabled={recomputing}
+              >
+                {recomputing ? "Recomputing…" : `Recompute for ${horizon}`}
+              </Button>
+            </div>
             <div className="rounded-xl border border-border bg-card/50 p-6">
               <details className="group">
                 <summary className="cursor-pointer text-sm flex items-center gap-2 text-purple-deep">
