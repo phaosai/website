@@ -380,13 +380,22 @@ function FoundryAdminInner() {
   async function runHyperForge(sweeps = 1000) {
     setBulkRunning("hyper");
     setHyperProgress({ sweep: 0, year: VALIDATION_YEARS[0], totalSweeps: sweeps });
+    // Throttle progress updates so we don't fire 15,000 React re-renders.
+    let lastProgressAt = 0;
     for (let s = 0; s < sweeps; s++) {
       for (const y of stateRef.current.years) {
-        setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
+        const now = Date.now();
+        if (now - lastProgressAt > 50) {
+          setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
+          lastProgressAt = now;
+        }
         await runYear(y.year, false, { silent: true, passes: 1 });
+        // Yield a microtask between years so React commits + the useEffect
+        // that refreshes stateRef runs before the next runYear reads it.
+        // This guarantees residual gradient memory actually carries forward
+        // year-to-year inside the same sweep instead of leaking.
+        await new Promise((r) => setTimeout(r, 0));
       }
-      // yield once per sweep to keep the UI responsive
-      await new Promise((r) => setTimeout(r, 0));
     }
     setBulkRunning(null);
     setHyperProgress(null);
