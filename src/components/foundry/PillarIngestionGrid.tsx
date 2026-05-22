@@ -395,6 +395,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
   const totalRows = Object.values(coverage).reduce((s, c) => s + c.rows, 0);
   const totalBytes = Object.values(coverage).reduce((s, c) => s + c.bytes, 0);
   const totalIndexed = Object.values(coverage).reduce((s, c) => s + c.indexed, 0);
+  const totalUnits = Object.values(coverage).reduce((s, c) => s + c.units, 0);
+  const coveredYears = new Set(Object.values(coverage).flatMap((c) => Array.from({ length: Math.min(c.years, ALL_FOUNDRY_YEARS.length) }, (_, i) => i))).size;
   const allOk = SUB_BRAINS.every((b) => states[b.id]?.status === "ok");
 
   return (
@@ -423,6 +425,12 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
           </Badge>
           <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
             <HardDrive className="size-3" /> {fmtBytes(totalIndexed)} indexed
+          </Badge>
+          <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
+            <Database className="size-3" /> {totalUnits.toLocaleString()} source units
+          </Badge>
+          <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
+            <Layers className="size-3" /> {coveredYears || 0}/20 years
           </Badge>
           <Badge variant="outline" className={cn(
             "gap-1",
@@ -473,6 +481,14 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
                   <div className="rounded border border-border/40 bg-background/40 p-2">
                     <div className="text-muted-foreground">Indexed</div>
                     <div className="font-mono text-foreground">{fmtBytes(totals.indexed)}</div>
+                  </div>
+                  <div className="rounded border border-border/40 bg-background/40 p-2">
+                    <div className="text-muted-foreground">Source units</div>
+                    <div className="font-mono text-foreground">{totals.units.toLocaleString()}</div>
+                  </div>
+                  <div className="rounded border border-border/40 bg-background/40 p-2">
+                    <div className="text-muted-foreground">Years covered</div>
+                    <div className="font-mono text-foreground">{totals.years || 0}/20</div>
                   </div>
                 </div>
 
