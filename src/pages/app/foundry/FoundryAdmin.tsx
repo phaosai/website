@@ -1071,6 +1071,25 @@ function FoundryAdminInner() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="font-medium text-foreground">Final all-years quantum audit</div>
+                  <p className="text-muted-foreground">
+                    Runs the closing 2006–2025 Foundry audit after ingestion reruns, then records the coverage snapshot, sub-brain map, interval targets, residual learning, and PCI refinement metadata in Quantum Reports.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={runFinalQuantumAudit}
+                  disabled={finalAuditRunning || bulkRunning !== null || !state.years.every((y) => y.status === "scored")}
+                  className="gap-1"
+                >
+                  {finalAuditRunning ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+                  Run final 2006–2025 quantum audit
+                </Button>
+              </div>
+            </div>
             <div className="space-y-1 text-xs">
               {[
                 { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated (no minimum score required)" },
