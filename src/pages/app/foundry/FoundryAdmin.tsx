@@ -523,6 +523,16 @@ function FoundryAdminInner() {
     try {
       announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
       const coverage = await loadCorpusCoverage();
+      const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const proof = ((proofRows ?? []) as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>).reduce((acc, r) => {
+        acc.totalRows += Number(r.rows ?? 0);
+        acc.totalStored += Number(r.stored_bytes ?? 0);
+        acc.totalIndexed += Number(r.indexed_bytes ?? 0);
+        if (Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length) acc.completeYears += 1;
+        if (!acc.lastFetched || (r.last_fetched && r.last_fetched > acc.lastFetched)) acc.lastFetched = r.last_fetched;
+        return acc;
+      }, emptyCoverageProof());
+      proof.missing = ALL_FOUNDRY_YEARS.filter((y) => !((proofRows ?? []) as Array<{ year: number; dimensions: number | string | null; sub_brains: number | string | null }>).some((r) => r.year === y && Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length)).map(String);
       const coverageSnapshot = Object.fromEntries(
         Object.entries(coverage).map(([dim, rows]) => [
           dim,
@@ -541,6 +551,7 @@ function FoundryAdminInner() {
           assetClasses: ASSET_CLASSES.map((c) => c.id),
           platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
           dimensions: ALL_DIMENSIONS,
+          coverageProof: proof,
           coverageSnapshot,
           trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
           bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
