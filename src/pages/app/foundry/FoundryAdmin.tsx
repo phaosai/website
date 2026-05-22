@@ -128,11 +128,16 @@ function FoundryAdminInner() {
 
   function resetForge() {
     clearForgeState();
+    // Also clear walk-forward matrix state and the quantum-report log so a
+    // full reset really wipes every Foundry-scoped local artifact.
+    try { localStorage.removeItem("phaos.foundry.walkforward.v1"); } catch { /* ignore */ }
+    try { localStorage.removeItem(REPORTS_KEY); } catch { /* ignore */ }
+    setReports([]);
     setState(recomputeGates(initialForgeState()));
     setSelectedYear(null);
     setPromoteName("");
     setPromoteConfirm("");
-    toast({ title: "Foundry reset", description: "All sub-brains, regime, synthesis, and annual scores cleared. Start over from Stage 1." });
+    toast({ title: "Foundry reset", description: "Sub-brains, regime, synthesis, annual scores, walk-forward matrix, and quantum-report log all cleared. Start over from Stage 1." });
   }
 
   const lockedCount = useMemo(
