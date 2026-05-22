@@ -519,7 +519,14 @@ function FoundryAdminInner() {
               {pinging ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />} Ping IBM Quantum
             </Button>
           </div>
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-3 text-xs flex-wrap">
+            <div className="flex items-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-3 py-1">
+              <span className="text-muted-foreground">⚛︎ Quantum Mode</span>
+              <Switch checked={quantumMode} onCheckedChange={setQuantumMode} />
+              <span className={cn("font-mono text-[10px] uppercase tracking-wider", quantumMode ? "text-emerald-400" : "text-muted-foreground")}>
+                {quantumMode ? "ON · IBM Quantum engaged" : "OFF · classical only"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Live engine:</span>
               <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
