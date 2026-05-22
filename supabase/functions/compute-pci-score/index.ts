@@ -123,7 +123,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    return json({ ticker: t, pci, tier: tier(pci), components, sources, simulated: false });
+    return json({
+      ticker: t,
+      pci,
+      tier: tier(pci),
+      band_name: band.name,
+      band_description: band.description,
+      horizon,
+      expected_return_range: expected_return,
+      components,
+      sources,
+      simulated: false,
+    });
   } catch (e) {
     console.error("compute-pci-score error:", e);
     return json({ error: "Internal server error" }, 500);
