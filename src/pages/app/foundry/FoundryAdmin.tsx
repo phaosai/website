@@ -235,7 +235,17 @@ function FoundryAdminInner() {
   async function runSynthesis() {
     setState((prev) => ({ ...prev, synthesis: { status: "running" } }));
     announceQuantum("Stage 3 unified synthesis (Original Brain + 6 sub-brains + regime layer)");
-    const out = await runQuantumStage({ scope: "synthesis", label: "unified-2006-2010" });
+    const out = await runQuantumStage({
+      scope: "synthesis",
+      label: "unified-2006-2010",
+      enabled: quantumMode,
+      foundryMeta: {
+        assetClasses: ASSET_CLASSES.map((c) => c.id),
+        platforms: ["foundry"],
+        dimensions: ALL_DIMENSIONS,
+        anchorCount,
+      },
+    });
     recordReport(out.report);
     await new Promise((r) => setTimeout(r, 1000));
     // Combined brain absorbs all sub-brains → tighter PCI tier matching.
@@ -290,7 +300,19 @@ function FoundryAdminInner() {
     let qOut: Awaited<ReturnType<typeof runQuantumStage>> | null = null;
     if (withQuantum && !opts.silent) {
       announceQuantum(`Year ${year} integrity audit`);
-      qOut = await runQuantumStage({ scope: "year-audit", label: `audit-${year}` });
+      qOut = await runQuantumStage({
+        scope: "year-audit",
+        label: `audit-${year}`,
+        enabled: quantumMode,
+        foundryMeta: {
+          year,
+          regime: regimeOf(year),
+          shock: MACRO_SHOCKS[year] ?? null,
+          assetClasses: ASSET_CLASSES.map((c) => c.id),
+          platforms: ["foundry"],
+          dimensions: ALL_DIMENSIONS,
+        },
+      });
       recordReport(qOut.report);
       toast({ title: `⚛︎ Quantum result · ${year} audit`, description: qOut.message });
     }
