@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronDown, ExternalLink, FileText, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +20,7 @@ import { PciCommandCenter } from "@/components/phaos/PciCommandCenter";
 import type { Horizon } from "@/lib/pciMatrix";
 import { linkToLedger, linkToSandbox } from "@/lib/researchLinks";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+
 import { horizonsForTier } from "@/lib/horizonGating";
 
 const SIGNAL_CATEGORIES = [
