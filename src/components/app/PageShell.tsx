@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useEntitlements, type Tier } from "@/hooks/useEntitlements";
 import { Button } from "@/components/ui/button";
+import { getPciColorClass } from "@/constants/pciData";
+import { pciToBandName } from "@/lib/pciMatrix";
 
 interface Props {
   title: string;
@@ -56,11 +58,6 @@ export function PageShell({ title, description, minTier, actions, children }: Pr
 
 export function PCITierBadge({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-muted-foreground">—</span>;
-  // Lazy imports to avoid circular module init.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { getPciColorClass } = require("@/constants/pciData") as typeof import("@/constants/pciData");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { pciToBandName } = require("@/lib/pciMatrix") as typeof import("@/lib/pciMatrix");
   const palette = getPciColorClass(score);
   return (
     <span
