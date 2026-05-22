@@ -124,11 +124,15 @@ Deno.serve(async (req) => {
 
     // Bake rows. Use residual bias as a deterministic per-symbol seed when
     // present, otherwise fall back to a stable hash-derived score.
+    // Build new rows as is_active=false first so a mid-write failure does not
+    // leave the matrix empty. After all chunks succeed we flip the new rows
+    // active and deactivate the old ones in a single update each — closest we
+    // can get to atomic without a Postgres function.
     const flat = (brain.residual_bias as { flat?: Record<string, number> } | null)?.flat ?? {};
     const rows: Array<Record<string, unknown>> = [];
+    const bakedAt = new Date().toISOString();
     for (const ticker of tickers) {
       const bias = Number(flat?.[ticker] ?? 0);
-      // Map bias ∈ ~[-1, 1] to base PCI 30..90; clamp to 0..100.
       let base = 60 + bias * 25;
       if (!Number.isFinite(base)) base = 60;
       base = Math.max(0, Math.min(100, Math.round(base)));
@@ -143,22 +147,41 @@ Deno.serve(async (req) => {
           band_name: band,
           expected_return_low:  Number(scaleReturnForHorizon(low,  h).toFixed(3)),
           expected_return_high: Number(scaleReturnForHorizon(high, h).toFixed(3)),
-          is_active: true,
-          baked_at: new Date().toISOString(),
+          is_active: false,
+          baked_at: bakedAt,
         });
       }
     }
 
-    // Chunked insert (Postgres caps payload size).
     const CHUNK = 500;
     for (let i = 0; i < rows.length; i += CHUNK) {
       const { error: insErr } = await admin.from("live_pci_matrix").insert(rows.slice(i, i + CHUNK));
       if (insErr) {
+        // Clean up any rows we already inserted for this bake so we don't
+        // leave dangling inactive rows. Old active rows are still serving.
+        await admin.from("live_pci_matrix").delete()
+          .eq("promoted_brain_id", promoted_brain_id).eq("baked_at", bakedAt);
         return new Response(JSON.stringify({ error: `insert_failed: ${insErr.message}` }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
+
+    // All new rows landed. Flip them active, then deactivate the rest.
+    const { error: actErr } = await admin.from("live_pci_matrix")
+      .update({ is_active: true })
+      .eq("promoted_brain_id", promoted_brain_id).eq("baked_at", bakedAt);
+    if (actErr) {
+      await admin.from("live_pci_matrix").delete()
+        .eq("promoted_brain_id", promoted_brain_id).eq("baked_at", bakedAt);
+      return new Response(JSON.stringify({ error: `activate_failed: ${actErr.message}` }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    await admin.from("live_pci_matrix")
+      .update({ is_active: false })
+      .eq("is_active", true)
+      .neq("baked_at", bakedAt);
 
     return new Response(JSON.stringify({
       ok: true,
