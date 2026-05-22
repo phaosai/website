@@ -1410,6 +1410,7 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
 
   async function refreshStats() {
     const { data, error } = await (supabase as any).rpc("foundry_year_totals");
+    const { data: dimData } = await (supabase as any).rpc("foundry_dimension_year_totals");
     const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
     const nextProof = emptyCoverageProof();
     if (!error && data) {
@@ -1424,7 +1425,8 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
       }
     }
     nextProof.missing = ALL_FOUNDRY_YEARS.filter((y) => (next[y]?.dimensions ?? 0) < ALL_DIMENSIONS.length || (next[y]?.subBrains ?? 0) < ASSET_CLASSES.length).map(String);
-    nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => (next[y]?.dimensions ?? 0) >= ALL_DIMENSIONS.length)).length;
+    const dimYearRows = (dimData ?? []) as Array<{ dimension: string; year: number; rows: number | string | null }>;
+    nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => dimYearRows.some((r) => r.dimension === dim && r.year === y && Number(r.rows ?? 0) > 0))).length;
     setStats(next);
     setProof(nextProof);
   }
