@@ -1,8 +1,4 @@
-// Foundry · SEC EDGAR filings ingester.
-// Walks full-index/{year}/QTR{1-4}/form.idx, counts 10-K / 10-Q / 8-K filings,
-// and stores aggregate counts plus a sample of risk-factor filings per quarter.
-// Writes one (year, "filings", "edgar:Q{n}") row per quarter.
-
+// Foundry · SEC EDGAR filings ingester (additive).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -12,12 +8,7 @@ const corsHeaders = {
 
 async function fetchQuarter(year: number, quarter: number) {
   const url = `https://www.sec.gov/Archives/edgar/full-index/${year}/QTR${quarter}/form.idx`;
-  const r = await fetch(url, {
-    headers: {
-      "User-Agent": "PhaosFoundry foundry@phaosai.com",
-      "Accept-Encoding": "gzip, deflate",
-    },
-  });
+  const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry foundry@phaosai.com", "Accept-Encoding": "gzip, deflate" } });
   if (!r.ok) throw new Error(`EDGAR ${year} Q${quarter}: HTTP ${r.status}`);
   const text = await r.text();
   const lines = text.split("\n");
@@ -27,19 +18,15 @@ async function fetchQuarter(year: number, quarter: number) {
     if (line.length < 80 || /^Form Type|^---/.test(line)) continue;
     const form = line.slice(0, 12).trim();
     if (form in counts) {
-      counts[form as keyof typeof counts]++;
+      // deno-lint-ignore no-explicit-any
+      (counts as any)[form]++;
       counts.total++;
       if (sample.length < 5 && form === "10-K") {
-        sample.push({
-          form,
-          company: line.slice(12, 74).trim(),
-          cik: line.slice(74, 86).trim(),
-          filename: line.slice(98).trim(),
-        });
+        sample.push({ form, company: line.slice(12, 74).trim(), cik: line.slice(74, 86).trim(), filename: line.slice(98).trim() });
       }
     }
   }
-  return { quarter, counts, sample, source_url: url };
+  return { quarter, counts, sample, source_url: url, raw_bytes: text.length };
 }
 
 Deno.serve(async (req) => {
@@ -58,22 +45,32 @@ Deno.serve(async (req) => {
     if (!Number.isInteger(year) || year < 2006 || year > 2025)
       return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const runId = crypto.randomUUID();
     const written: string[] = [];
     const failed: { q: number; err: string }[] = [];
+    let bytesAdded = 0;
+    let unitsAdded = 0;
     for (const q of [1, 2, 3, 4]) {
       try {
         const data = await fetchQuarter(year, q);
-        await supabase.from("foundry_year_corpus").upsert({
-          year, dimension: "filings", source_id: `edgar:Q${q}`,
-          source_url: data.source_url,
-          payload: { counts: data.counts, sample: data.sample },
+        const payload = { counts: data.counts, sample: data.sample, ingest_run_id: runId, raw_index_bytes: data.raw_bytes };
+        const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+        const units = data.counts.total;
+        const { error } = await supabase.from("foundry_year_corpus").insert({
+          year, dimension: "filings", source_id: `edgar:Q${q}:${runId.slice(0, 8)}`,
+          source_url: data.source_url, payload, ingest_run_id: runId,
+          payload_bytes: payloadBytes, content_units: units,
         });
+        if (error) throw error;
+        bytesAdded += payloadBytes; unitsAdded += units;
         written.push(`Q${q}`);
-      } catch (e) { failed.push({ q, err: String(e) }); }
+      } catch (e) { failed.push({ q, err: String(e instanceof Error ? e.message : e) }); }
       await new Promise((r) => setTimeout(r, 250));
     }
-    return new Response(JSON.stringify({ ok: true, year, written, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, year, run_id: runId, written, failed, bytes_added: bytesAdded, units_added: unitsAdded }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

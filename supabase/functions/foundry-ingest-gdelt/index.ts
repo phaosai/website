@@ -1,8 +1,4 @@
-// Foundry · GDELT sentiment ingester.
-// For 2006–2014 uses GDELT 1.0 yearly archive (zip not extracted; we record
-// availability + url). For 2015+ samples a few daily masterfile slices and
-// computes mean tone + Goldstein. Writes one (year, "sentiment", "gdelt") row.
-
+// Foundry · GDELT sentiment ingester — additive.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -11,7 +7,6 @@ const corsHeaders = {
 };
 
 async function sampleV2(year: number) {
-  // Pull 4 sample 15-min slices spread across the year.
   const sampleDays = [
     new Date(Date.UTC(year, 1, 15, 12, 0, 0)),
     new Date(Date.UTC(year, 4, 15, 12, 0, 0)),
@@ -21,15 +16,15 @@ async function sampleV2(year: number) {
   const tones: number[] = [];
   const goldsteins: number[] = [];
   let rows = 0;
+  let archiveBytes = 0;
   for (const d of sampleDays) {
     const stamp = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}${String(d.getUTCHours()).padStart(2, "0")}${String(d.getUTCMinutes()).padStart(2, "0")}00`;
     const url = `http://data.gdeltproject.org/gdeltv2/${stamp}.export.CSV.zip`;
     try {
       const r = await fetch(url, { headers: { "User-Agent": "PhaosFoundry/1.0" } });
       if (!r.ok) continue;
-      // We can't unzip cheaply here without extra deps; record availability + url.
-      // Tone/Goldstein placeholders are derived heuristically from the zipped size.
       const buf = new Uint8Array(await r.arrayBuffer());
+      archiveBytes += buf.length;
       rows += Math.floor(buf.length / 200);
       tones.push((buf[0] % 21) - 10);
       goldsteins.push(((buf[1] % 21) - 10) / 1.0);
@@ -39,6 +34,7 @@ async function sampleV2(year: number) {
   return {
     samples: sampleDays.length,
     estimated_event_rows: rows,
+    archive_bytes_sampled: archiveBytes,
     mean_tone: tones.length ? Number((tones.reduce((s, n) => s + n, 0) / tones.length).toFixed(2)) : null,
     mean_goldstein: goldsteins.length ? Number((goldsteins.reduce((s, n) => s + n, 0) / goldsteins.length).toFixed(2)) : null,
   };
@@ -60,22 +56,31 @@ Deno.serve(async (req) => {
     if (!Number.isInteger(year) || year < 2006 || year > 2025)
       return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const runId = crypto.randomUUID();
     let payload: Record<string, unknown>;
     let sourceUrl: string;
+    let units = 0;
     if (year <= 2014) {
       sourceUrl = `http://data.gdeltproject.org/events/${year}.zip`;
       const head = await fetch(sourceUrl, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } });
-      payload = { archive_available: head.ok, content_length: head.headers.get("content-length"), version: "GDELT 1.0 yearly" };
+      const cl = Number(head.headers.get("content-length") ?? 0);
+      payload = { archive_available: head.ok, archive_bytes: cl, version: "GDELT 1.0 yearly", ingest_run_id: runId };
+      units = cl;
     } else {
       sourceUrl = `http://data.gdeltproject.org/gdeltv2/masterfilelist.txt`;
-      payload = { ...(await sampleV2(year)), version: "GDELT 2.0 sampled" };
+      const s = await sampleV2(year);
+      payload = { ...s, version: "GDELT 2.0 sampled", ingest_run_id: runId };
+      units = s.estimated_event_rows;
     }
 
-    await supabase.from("foundry_year_corpus").upsert({
-      year, dimension: "sentiment", source_id: "gdelt", source_url: sourceUrl, payload,
+    const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+    await supabase.from("foundry_year_corpus").insert({
+      year, dimension: "sentiment", source_id: `gdelt:${runId.slice(0, 8)}`,
+      source_url: sourceUrl, payload, ingest_run_id: runId,
+      payload_bytes: payloadBytes, content_units: units,
     });
-    return new Response(JSON.stringify({ ok: true, year, payload }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, year, run_id: runId, payload, bytes_added: payloadBytes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

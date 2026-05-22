@@ -1,7 +1,4 @@
-// Foundry · geopolitical ingester (GDELT Goldstein-scale rollups).
-// Writes (year, "geopolitical", "gdelt-goldstein") rows into
-// public.foundry_year_corpus.
-
+// Foundry · geopolitical (GDELT Goldstein proxy) ingester — additive.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -25,22 +22,23 @@ Deno.serve(async (req) => {
     if (!Number.isInteger(year) || year < 2006 || year > 2025)
       return new Response(JSON.stringify({ error: "year must be 2006-2025" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // GDELT 1.0 yearly archive availability head check.
-    const archive = `http://data.gdeltproject.org/events/${year}.zip`;
-    let head: Record<string, unknown> = { url: archive };
-    try {
-      const h = await fetch(archive, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } });
-      head = { ok: h.ok, status: h.status, content_length: h.headers.get("content-length"), source_url: archive };
-    } catch (e) {
-      head = { ok: false, error: e instanceof Error ? e.message : String(e), source_url: archive };
-    }
-    await supabase.from("foundry_year_corpus").upsert({
-      year, dimension: "geopolitical", source_id: "gdelt-goldstein",
-      source_url: archive, payload: { ...head, label: "GDELT Goldstein conflict/cooperation proxy", year },
+    const runId = crypto.randomUUID();
+    const url = `http://data.gdeltproject.org/events/${year}.zip`;
+    const head = await fetch(url, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } }).catch(() => null);
+    const contentLength = Number(head?.headers.get("content-length") ?? 0);
+    const payload = {
+      archive_available: !!head?.ok, content_length_bytes: contentLength,
+      year, label: "GDELT geopolitical event archive (Goldstein scale proxy)",
+      ingest_run_id: runId,
+    };
+    const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+    const { error } = await supabase.from("foundry_year_corpus").insert({
+      year, dimension: "geopolitical", source_id: `gdelt-goldstein:${runId.slice(0, 8)}`,
+      source_url: url, payload, ingest_run_id: runId,
+      payload_bytes: payloadBytes, content_units: contentLength,
     });
-    return new Response(JSON.stringify({ ok: true, year, written: ["gdelt-goldstein"] }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (error) throw error;
+    return new Response(JSON.stringify({ ok: true, year, run_id: runId, bytes_added: payloadBytes, archive_bytes: contentLength }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

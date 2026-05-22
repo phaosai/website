@@ -119,32 +119,45 @@ Deno.serve(async (req) => {
     const tickers: string[] = Array.isArray(body.tickers) && body.tickers.length ? body.tickers : DEFAULT_TICKERS;
     const coins: string[] = Array.isArray(body.coins) && body.coins.length ? body.coins : DEFAULT_COINS;
 
+    const runId = crypto.randomUUID();
     const written: string[] = [];
     const failed: { id: string; year: number; err: string }[] = [];
+    let bytesAdded = 0;
+    let unitsAdded = 0;
+    const skipCoins: boolean = body.skipCoins === true;
+    const skipStooq: boolean = body.skipStooq === true;
 
     for (const year of years) {
-      for (const t of tickers) {
+      if (!skipStooq) for (const t of tickers) {
         try {
-          const payload = await fetchStooq(t, year);
-          const { error } = await supabase.from("foundry_year_corpus").upsert({
-            year, dimension: "price", source_id: `stooq:${t}`,
+          const fetched = await fetchStooq(t, year);
+          const payload = { ...fetched, ingest_run_id: runId };
+          const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+          const { error } = await supabase.from("foundry_year_corpus").insert({
+            year, dimension: "price", source_id: `stooq:${t}:${runId.slice(0, 8)}`,
             source_url: `https://stooq.com/q/d/?s=${stooqSymbol(t)}`, payload,
+            ingest_run_id: runId, payload_bytes: payloadBytes, content_units: fetched.points,
           });
           if (error) throw error;
+          bytesAdded += payloadBytes; unitsAdded += fetched.points;
           written.push(`${year}:stooq:${t}`);
         } catch (e) { failed.push({ id: `stooq:${t}`, year, err: String(e instanceof Error ? e.message : e) }); }
         await new Promise((r) => setTimeout(r, 120));
       }
 
-      if (year >= 2014) {
+      if (!skipCoins && year >= 2014) {
         for (const c of coins) {
           try {
-            const payload = await fetchCoinGecko(c, year);
-            const { error } = await supabase.from("foundry_year_corpus").upsert({
-              year, dimension: "price", source_id: `coingecko:${c}`,
+            const fetched = await fetchCoinGecko(c, year);
+            const payload = { ...fetched, ingest_run_id: runId };
+            const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+            const { error } = await supabase.from("foundry_year_corpus").insert({
+              year, dimension: "price", source_id: `coingecko:${c}:${runId.slice(0, 8)}`,
               source_url: `https://www.coingecko.com/en/coins/${c}`, payload,
+              ingest_run_id: runId, payload_bytes: payloadBytes, content_units: fetched.points,
             });
             if (error) throw error;
+            bytesAdded += payloadBytes; unitsAdded += fetched.points;
             written.push(`${year}:coingecko:${c}`);
           } catch (e) { failed.push({ id: `coingecko:${c}`, year, err: String(e instanceof Error ? e.message : e) }); }
           await new Promise((r) => setTimeout(r, 800));
@@ -152,7 +165,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, years, written_count: written.length, failed_count: failed.length, written, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, years, run_id: runId, written_count: written.length, failed_count: failed.length, bytes_added: bytesAdded, units_added: unitsAdded, written, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

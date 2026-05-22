@@ -1,8 +1,4 @@
-// Foundry · shipping / logistics ingester.
-// Records Baltic Dry Index availability (public HTML) plus a public global
-// freight proxy snapshot for the target year. Writes (year, "shipping", ...)
-// rows into public.foundry_year_corpus.
-
+// Foundry · shipping / logistics ingester — additive.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -13,10 +9,10 @@ const corsHeaders = {
 async function probe(url: string) {
   try {
     const r = await fetch(url, { method: "GET", headers: { "User-Agent": "PhaosFoundry/1.0" } });
-    const len = Number(r.headers.get("content-length") ?? 0) || (await r.text().then((t) => t.length).catch(() => 0));
-    return { ok: r.ok, status: r.status, content_length: len };
+    const txt = await r.text().catch(() => "");
+    return { ok: r.ok, status: r.status, content_length: txt.length, sample: txt.slice(0, 2000) };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, status: 0, content_length: 0, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -42,16 +38,24 @@ Deno.serve(async (req) => {
     const balticProbe = await probe(baltic);
     const freightProbe = await probe(freight);
 
-    await supabase.from("foundry_year_corpus").upsert({
-      year, dimension: "shipping", source_id: "baltic-dry",
-      source_url: baltic, payload: { ...balticProbe, year, label: "Baltic Dry Index (public)" },
-    });
-    await supabase.from("foundry_year_corpus").upsert({
-      year, dimension: "shipping", source_id: "global-freight",
-      source_url: freight, payload: { ...freightProbe, year, label: "Global freight rate proxy (FRED)" },
-    });
+    const runId = crypto.randomUUID();
+    let bytesAdded = 0;
+    const sources = [
+      { id: "baltic-dry", url: baltic, label: "Baltic Dry Index (public)", probe: balticProbe },
+      { id: "global-freight", url: freight, label: "Global freight rate proxy (FRED)", probe: freightProbe },
+    ];
+    for (const s of sources) {
+      const payload = { ...s.probe, year, label: s.label, ingest_run_id: runId };
+      const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+      await supabase.from("foundry_year_corpus").insert({
+        year, dimension: "shipping", source_id: `${s.id}:${runId.slice(0, 8)}`,
+        source_url: s.url, payload, ingest_run_id: runId,
+        payload_bytes: payloadBytes, content_units: s.probe.content_length ?? 0,
+      });
+      bytesAdded += payloadBytes;
+    }
 
-    return new Response(JSON.stringify({ ok: true, year, written: ["baltic-dry", "global-freight"] }), {
+    return new Response(JSON.stringify({ ok: true, year, run_id: runId, written: sources.map(s => s.id), bytes_added: bytesAdded }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
