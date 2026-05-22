@@ -204,13 +204,35 @@ async function ibmChooseBackend(token: string): Promise<string> {
     throw new Error(`IBM backend discovery failed (${res.status})${body ? `: ${body.slice(0, 240)}` : ""}`);
   }
   const json = await res.json();
-  const backends = Array.isArray(json) ? json : Array.isArray(json?.backends) ? json.backends : [];
-  const names = backends
-    .map((b: any) => typeof b === "string" ? b : b?.name ?? b?.backend_name)
-    .filter((name: unknown): name is string => typeof name === "string" && name.length > 0);
-  const qpu = names.find((name) => name.startsWith("ibm_"));
-  if (!qpu) throw new Error("IBM returned no accessible QPU backend for this CRN");
-  return qpu;
+  // IBM REST returns several shapes across API versions:
+  //   - { devices: [{ name, is_simulator, status: { name } }, ...] }
+  //   - { backends: [...] }
+  //   - [ "name1", "name2", ... ]
+  const list: any[] = Array.isArray(json)
+    ? json
+    : Array.isArray(json?.devices)
+    ? json.devices
+    : Array.isArray(json?.backends)
+    ? json.backends
+    : [];
+  const items = list.map((b: any) => {
+    if (typeof b === "string") return { name: b, isSim: b.includes("simulator"), online: true };
+    const name = b?.name ?? b?.backend_name ?? "";
+    const isSim = !!(b?.is_simulator ?? (typeof name === "string" && name.includes("simulator")));
+    const online = (b?.status?.name ?? b?.status ?? "online").toString().toLowerCase() === "online";
+    return { name, isSim, online };
+  }).filter((b) => typeof b.name === "string" && b.name.length > 0);
+
+  // Prefer an online ibm_* QPU. Fall back to any non-simulator. Last resort: a simulator.
+  const qpuOnline = items.find((b) => !b.isSim && b.online && b.name.startsWith("ibm_"));
+  if (qpuOnline) return qpuOnline.name;
+  const qpuAny = items.find((b) => !b.isSim && b.name.startsWith("ibm_"));
+  if (qpuAny) return qpuAny.name;
+  const anyReal = items.find((b) => !b.isSim);
+  if (anyReal) return anyReal.name;
+  const sim = items.find((b) => b.isSim);
+  if (sim) return sim.name;
+  throw new Error(`IBM returned no usable backend for this CRN (saw ${items.length} entries)`);
 }
 
 async function ibmSubmitWorkload(payload: Record<string, unknown>): Promise<IbmSubmitResult> {
@@ -419,20 +441,34 @@ Deno.serve(async (req) => {
           return json(200, { ok: false, summary: "IBM rejected backend discovery for this CRN.", steps, recommendation, totalMs: Date.now() - t0 });
         }
         const parsed = JSON.parse(bodyText);
-        const backends = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.backends) ? parsed.backends : [];
-        const names = backends
-          .map((b: any) => typeof b === "string" ? b : b?.name ?? b?.backend_name)
-          .filter((n: unknown): n is string => typeof n === "string" && n.length > 0);
-        const qpu = names.find((n) => n.startsWith("ibm_"));
-        steps.push({ step: "ibm_backend_discovery", ok: true, ms: Date.now() - bT0, detail: `Found ${names.length} backend(s)${qpu ? `, will use: ${qpu}` : ""}` });
+        const list: any[] = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.devices)
+          ? parsed.devices
+          : Array.isArray(parsed?.backends)
+          ? parsed.backends
+          : [];
+        const items = list.map((b: any) => {
+          if (typeof b === "string") return { name: b, isSim: b.includes("simulator"), online: true };
+          const name = b?.name ?? b?.backend_name ?? "";
+          const isSim = !!(b?.is_simulator ?? (typeof name === "string" && name.includes("simulator")));
+          const online = (b?.status?.name ?? b?.status ?? "online").toString().toLowerCase() === "online";
+          return { name, isSim, online };
+        }).filter((b: { name: string }) => typeof b.name === "string" && b.name.length > 0);
+        const qpu =
+          items.find((b) => !b.isSim && b.online && b.name.startsWith("ibm_"))?.name ??
+          items.find((b) => !b.isSim && b.name.startsWith("ibm_"))?.name ??
+          items.find((b) => !b.isSim)?.name ??
+          items.find((b) => b.isSim)?.name;
+        steps.push({ step: "ibm_backend_discovery", ok: true, ms: Date.now() - bT0, detail: `Found ${items.length} backend(s)${qpu ? `, will use: ${qpu}` : ""}` });
         if (!qpu) {
-          return json(200, { ok: false, summary: "IBM responded but no QPU (ibm_*) backend is available on this CRN.", steps, recommendation: "Confirm your Quantum service plan grants access to a real ibm_* QPU. Open Plan options in IBM Cloud and upgrade if currently on a sandbox-only plan.", totalMs: Date.now() - t0 });
+          return json(200, { ok: false, summary: "IBM responded but no usable backend is available on this CRN.", steps, recommendation: "Confirm your Quantum service plan grants access to a real ibm_* QPU or a simulator. Open Plan options in IBM Cloud and verify your instance has at least one device.", totalMs: Date.now() - t0 });
         }
         return json(200, {
           ok: true,
-          summary: `End-to-end IBM Quantum reachability confirmed. Token + CRN valid; QPU '${qpu}' is accessible.`,
+          summary: `End-to-end IBM Quantum reachability confirmed. Token + CRN valid; backend '${qpu}' is accessible.`,
           steps,
-          recommendation: "All clear. Foundry quantum executions should succeed on real IBM hardware.",
+          recommendation: "All clear. Foundry quantum executions should succeed.",
           chosenBackend: qpu,
           totalMs: Date.now() - t0,
         });

@@ -7,7 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-phaos-ua",
 };
 
 const DEFAULT_TICKERS = [
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           if (error) throw error;
           written.push(`${year}:stooq:${t}`);
         } catch (e) { failed.push({ id: `stooq:${t}`, year, err: String(e instanceof Error ? e.message : e) }); }
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 120));
       }
 
       if (year >= 2014) {
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
             if (error) throw error;
             written.push(`${year}:coingecko:${c}`);
           } catch (e) { failed.push({ id: `coingecko:${c}`, year, err: String(e instanceof Error ? e.message : e) }); }
-          await new Promise((r) => setTimeout(r, 1500));
+          await new Promise((r) => setTimeout(r, 800));
         }
       }
     }

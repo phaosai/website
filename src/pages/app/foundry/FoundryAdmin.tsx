@@ -1141,16 +1141,29 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
   async function ingestAllYears() {
     setBusy("all-prices");
     const years = [...Array.from({ length: 5 }, (_, i) => 2006 + i), ...VALIDATION_YEARS];
+    let totalWritten = 0;
+    let totalFailed = 0;
+    const yearsFailed: number[] = [];
     try {
-      const { data, error } = await supabase.functions.invoke("foundry-ingest-prices", { body: { years } });
-      if (error) throw error;
+      // Run one year per request — the edge function times out around 150s
+      // if asked to do 20 years × 35+ tickers in a single call. One year at a
+      // time keeps every request under ~15s and gives partial progress.
+      for (const y of years) {
+        try {
+          const { data, error } = await supabase.functions.invoke("foundry-ingest-prices", { body: { year: y } });
+          if (error) throw error;
+          totalWritten += data?.written_count ?? 0;
+          totalFailed += data?.failed_count ?? 0;
+        } catch (e) {
+          yearsFailed.push(y);
+          const err = e as { message?: string };
+          toast({ title: `Year ${y} ingest failed`, description: err?.message ?? String(e), variant: "destructive" });
+        }
+      }
       toast({
-        title: `✓ Backfilled prices · ${years.length} years`,
-        description: `Wrote ${data?.written_count ?? 0} corpus rows. Failed: ${data?.failed_count ?? 0}. Reload the page to refresh real OHLCV anchors.`,
+        title: `✓ Backfilled prices · ${years.length - yearsFailed.length}/${years.length} years`,
+        description: `Wrote ${totalWritten} corpus rows. Source-level failures: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}. Reload the page to refresh real OHLCV anchors.`,
       });
-    } catch (e) {
-      const err = e as { message?: string };
-      toast({ title: "Backfill failed", description: err?.message ?? String(e), variant: "destructive" });
     } finally { setBusy(null); }
   }
 
