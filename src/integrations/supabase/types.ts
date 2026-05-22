@@ -370,25 +370,37 @@ export type Database = {
       }
       foundry_year_corpus: {
         Row: {
+          content_units: number
           dimension: string
           fetched_at: string
+          id: string
+          ingest_run_id: string | null
           payload: Json
+          payload_bytes: number
           source_id: string
           source_url: string | null
           year: number
         }
         Insert: {
+          content_units?: number
           dimension: string
           fetched_at?: string
+          id?: string
+          ingest_run_id?: string | null
           payload?: Json
+          payload_bytes?: number
           source_id: string
           source_url?: string | null
           year: number
         }
         Update: {
+          content_units?: number
           dimension?: string
           fetched_at?: string
+          id?: string
+          ingest_run_id?: string | null
           payload?: Json
+          payload_bytes?: number
           source_id?: string
           source_url?: string | null
           year?: number
