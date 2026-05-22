@@ -405,29 +405,35 @@ function FoundryAdminInner() {
   // 15,000 cycles and pulls every per-symbol bias toward zero.
   async function runHyperForge(sweeps = 1000) {
     setBulkRunning("hyper");
+    cancelHyperRef.current = false;
     setHyperProgress({ sweep: 0, year: VALIDATION_YEARS[0], totalSweeps: sweeps });
-    // Throttle progress updates so we don't fire 15,000 React re-renders.
     let lastProgressAt = 0;
-    for (let s = 0; s < sweeps; s++) {
+    let completedSweeps = 0;
+    outer: for (let s = 0; s < sweeps; s++) {
       for (const y of stateRef.current.years) {
+        if (cancelHyperRef.current) break outer;
         const now = Date.now();
         if (now - lastProgressAt > 50) {
           setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
           lastProgressAt = now;
         }
         await runYear(y.year, false, { silent: true, passes: 1 });
-        // Yield a microtask between years so React commits + the useEffect
-        // that refreshes stateRef runs before the next runYear reads it.
-        // This guarantees residual gradient memory actually carries forward
-        // year-to-year inside the same sweep instead of leaking.
         await new Promise((r) => setTimeout(r, 0));
       }
+      if (cancelHyperRef.current) break;
+      completedSweeps = s + 1;
     }
+    const wasCancelled = cancelHyperRef.current;
+    cancelHyperRef.current = false;
     setBulkRunning(null);
     setHyperProgress(null);
     toast({
-      title: `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
-      description: `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
+      title: wasCancelled
+        ? `Hyper-Forge cancelled · ${completedSweeps} sweeps completed`
+        : `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
+      description: wasCancelled
+        ? `Stopped at the last completed year. All progress from the ${completedSweeps} finished sweeps is saved — residuals and per-symbol bias maps are intact.`
+        : `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
     });
   }
 
