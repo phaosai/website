@@ -28,6 +28,9 @@ interface SubBrain {
 }
 
 const DEFAULT_YEAR = new Date().getFullYear() - 1;
+const ALL_FOUNDRY_YEARS = Array.from({ length: 20 }, (_, i) => 2006 + i);
+const YEAR_BATCH_SIZE = 2;
+const YEAR_BATCH_KEY = "phaos.foundry.ingestionYearCursor.v1";
 
 // Every step now passes `subBrainId` so each ingestion row is owned by exactly
 // one sub-brain in the corpus. Quantum is NOT used here — pure intake.
@@ -135,6 +138,9 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
   const [states, setStates] = useState<Record<string, SubBrainState>>(() =>
     SUB_BRAINS.reduce((acc, b) => ({ ...acc, [b.id]: initialState() }), {} as Record<string, SubBrainState>),
   );
+  const [yearCursor, setYearCursor] = useState(() => {
+    try { return Number(localStorage.getItem(YEAR_BATCH_KEY) ?? 0) || 0; } catch { return 0; }
+  });
   const firedRef = useRef(false);
   // Per-sub-brain totals { rows, bytes (stored), indexed (source archive bytes) }.
   const [coverage, setCoverage] = useState<Record<string, CoverageRow>>({});
@@ -177,21 +183,30 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
     return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, lastFetched: null };
   }
 
+  const batchYears = Array.from({ length: YEAR_BATCH_SIZE }, (_, i) => ALL_FOUNDRY_YEARS[(yearCursor + i) % ALL_FOUNDRY_YEARS.length]);
+  function advanceBatch() {
+    setYearCursor((cur) => {
+      const next = (cur + YEAR_BATCH_SIZE) % ALL_FOUNDRY_YEARS.length;
+      try { localStorage.setItem(YEAR_BATCH_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
   async function runSubBrain(b: SubBrain): Promise<boolean> {
-    setStates((s) => ({ ...s, [b.id]: { ...s[b.id], status: "running", progress: 5, lastMessage: "Engaging stealth profile…", bytesAddedLastRun: 0, indexedAddedLastRun: 0, rowsAddedLastRun: 0, failedSources: [] } }));
-    const total = b.steps.length;
+    setStates((s) => ({ ...s, [b.id]: { ...s[b.id], status: "running", progress: 5, lastMessage: `Engaging stealth profile · batch ${batchYears.join("/")}…`, bytesAddedLastRun: 0, indexedAddedLastRun: 0, rowsAddedLastRun: 0, failedSources: [] } }));
+    const total = b.steps.length * batchYears.length;
     let httpOk = 0;
     let lastErr: string | null = null;
     let bytesAdded = 0, indexedAdded = 0, rowsAdded = 0;
     const failed: { id: string; err: string }[] = [];
 
-    for (let i = 0; i < total; i++) {
-      const step = b.steps[i];
+    let i = 0;
+    for (const year of batchYears) for (const step of b.steps) {
       const ua = pickUserAgent();
-      setStates((s) => ({ ...s, [b.id]: { ...s[b.id], progress: 5 + Math.round((i / total) * 90), lastMessage: `${step.label} · UA rotated` } }));
+      setStates((s) => ({ ...s, [b.id]: { ...s[b.id], progress: 5 + Math.round((i / total) * 90), lastMessage: `${year} · ${step.label} · UA rotated` } }));
       try {
         const { data, error } = await supabase.functions.invoke(step.fn, {
-          body: step.body,
+          body: { ...step.body, year },
           headers: { "X-Phaos-UA": ua },
         });
         if (error) throw error;
@@ -204,7 +219,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       } catch (e) {
         lastErr = (e as Error).message ?? String(e);
       }
-      if (i < total - 1) await randomSleep(2000, 5000);
+      i++;
+      if (i < total) await randomSleep(1200, 3200);
     }
 
     // A sub-brain is "ok" only when every step returned 2xx AND we actually
@@ -217,7 +233,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
         lastRunAt: new Date().toISOString(),
         progress: 100,
         lastMessage: finalStatus === "ok"
-          ? `${rowsAdded} row${rowsAdded === 1 ? "" : "s"} · +${fmtBytes(bytesAdded)} stored · +${fmtBytes(indexedAdded)} indexed${failed.length ? ` · ${failed.length} source${failed.length===1?"":"s"} failed` : ""}`
+          ? `${batchYears.join("/")} · ${rowsAdded} row${rowsAdded === 1 ? "" : "s"} · +${fmtBytes(bytesAdded)} stored · +${fmtBytes(indexedAdded)} indexed${failed.length ? ` · ${failed.length} source${failed.length===1?"":"s"} failed` : ""}`
           : lastErr
             ? `${httpOk}/${total} steps ok · ${rowsAdded} rows · last error: ${lastErr}`
             : `${httpOk}/${total} steps ok · ${rowsAdded} rows — every source for this sub-brain was throttled or empty. Re-run after a short wait.`,
@@ -239,6 +255,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       variant: ok ? "default" : "destructive",
     });
     maybeFireAllComplete();
+    advanceBatch();
   }
 
   async function runAll() {
@@ -249,6 +266,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
       if (!ok) allOk = false;
     }
     await refreshCoverage();
+    advanceBatch();
     setRunningAll(false);
     toast({
       title: allOk ? "All 6 sub-brains ingested" : "Some sub-brains had failures",
@@ -287,6 +305,9 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
             <span className="rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 text-amber-400 font-mono uppercase tracking-wider">Note</span>{" "}
             Quantum is <span className="text-foreground">not</span> used for ingestion. Toggle Quantum Mode in the header for sub-brain vetting, unified synthesis, and annual audit reports.
           </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Current staggered intake batch: <span className="font-mono text-foreground">{batchYears.join(" / ")}</span>. Each click advances to the next 2-year batch across 2006–2025 and inserts new rows instead of replacing prior corpus data.
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
@@ -306,7 +327,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
           </Badge>
           <Button size="sm" onClick={runAll} disabled={runningAll} className="gap-1">
             {runningAll ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
-            Run all 6 sub-brains
+            Run all 6 sub-brains · {batchYears.join("/")}
           </Button>
         </div>
       </header>

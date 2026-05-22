@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Hammer, Lock, Loader2, CheckCircle2, XCircle, Sparkles, Cpu, Rocket,
-  ChevronRight, AlertTriangle, ShieldCheck, RotateCcw,
+  ChevronRight, AlertTriangle, ShieldCheck, RotateCcw, Database, HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -45,6 +45,16 @@ const SIMULATED = (
     Simulated · Historical Example
   </Badge>
 );
+
+const ALL_FOUNDRY_YEARS = Array.from({ length: 20 }, (_, i) => 2006 + i);
+
+function fmtBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0; let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
 
 function StagePill({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
   return (
@@ -409,6 +419,7 @@ function FoundryAdminInner() {
 
   // ---------- Bulk runners ----------
   const [bulkRunning, setBulkRunning] = useState<null | "sequential" | "deep" | "hyper">(null);
+  const [finalAuditRunning, setFinalAuditRunning] = useState(false);
   const [hyperProgress, setHyperProgress] = useState<{ sweep: number; year: number; totalSweeps: number } | null>(null);
   const cancelHyperRef = useRef(false);
   const [liveBrain, setLiveBrain] = useState<{ name: string; version: string } | null>(null);
@@ -490,6 +501,43 @@ function FoundryAdminInner() {
         ? `Stopped at the last completed year. All progress from the ${completedSweeps} finished sweeps is saved — residuals and per-symbol bias maps are intact.`
         : `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
     });
+  }
+
+  async function runFinalQuantumAudit() {
+    setFinalAuditRunning(true);
+    try {
+      announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
+      const coverage = await loadCorpusCoverage();
+      const coverageSnapshot = Object.fromEntries(
+        Object.entries(coverage).map(([dim, rows]) => [
+          dim,
+          ALL_FOUNDRY_YEARS.reduce((acc, y) => acc + (rows[y] ?? 0), 0),
+        ]),
+      );
+      const out = await runQuantumStage({
+        scope: "final-audit",
+        label: "foundry-2006-2025-final",
+        enabled: quantumMode,
+        pollTimeoutMs: 35_000,
+        foundryMeta: {
+          auditPurpose: "Finalize the Foundry brain after all additive ingestion reruns and refine PCI interval behavior across every targeted asset class and brokerage platform.",
+          years: ALL_FOUNDRY_YEARS,
+          validationYears: VALIDATION_YEARS,
+          assetClasses: ASSET_CLASSES.map((c) => c.id),
+          platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
+          dimensions: ALL_DIMENSIONS,
+          coverageSnapshot,
+          trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
+          bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
+          residualSymbols: Object.keys(stateRef.current.residualBias ?? {}).length,
+          intervalTargets: ["intraday", "daily", "weekly", "monthly", "quarterly", "annual", "multi-year"],
+        },
+      });
+      recordReport(out.report);
+      toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
+    } finally {
+      setFinalAuditRunning(false);
+    }
   }
 
   async function promote() {
@@ -1023,6 +1071,25 @@ function FoundryAdminInner() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded border border-primary/30 bg-primary/5 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="font-medium text-foreground">Final all-years quantum audit</div>
+                  <p className="text-muted-foreground">
+                    Runs the closing 2006–2025 Foundry audit after ingestion reruns, then records the coverage snapshot, sub-brain map, interval targets, residual learning, and PCI refinement metadata in Quantum Reports.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={runFinalQuantumAudit}
+                  disabled={finalAuditRunning || bulkRunning !== null || !state.years.every((y) => y.status === "scored")}
+                  className="gap-1"
+                >
+                  {finalAuditRunning ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+                  Run final 2006–2025 quantum audit
+                </Button>
+              </div>
+            </div>
             <div className="space-y-1 text-xs">
               {[
                 { ok: state.years.every((y) => y.status === "scored"), label: "All years 2011–2025 validated (no minimum score required)" },
@@ -1306,16 +1373,45 @@ function FoundryAdminInner() {
 function DataSourcesPanel({ state }: { state: ForgeState }) {
   const maxPasses = Math.max(0, ...state.years.map((y) => y.trainingPasses ?? 0));
   const learnedDims = new Set(dimensionsAfterPasses(maxPasses));
-  const [year, setYear] = useState<number>(VALIDATION_YEARS[0]);
-  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-prices">(null);
+  const [year, setYear] = useState<number>(2006);
+  const [busy, setBusy] = useState<null | "prices" | "gdelt" | "edgar" | "all-sources" | "year-batch">(null);
+  const [stats, setStats] = useState<Record<number, { rows: number; stored: number; indexed: number }>>({});
+  const [batchCursor, setBatchCursor] = useState(0);
+
+  async function refreshStats() {
+    const { data } = await supabase
+      .from("foundry_year_corpus")
+      .select("year,payload_bytes,indexed_bytes")
+      .in("year", ALL_FOUNDRY_YEARS);
+    const next: Record<number, { rows: number; stored: number; indexed: number }> = {};
+    for (const r of (data ?? []) as Array<{ year: number; payload_bytes: number | null; indexed_bytes: number | null }>) {
+      next[r.year] ||= { rows: 0, stored: 0, indexed: 0 };
+      next[r.year].rows += 1;
+      next[r.year].stored += Number(r.payload_bytes ?? 0);
+      next[r.year].indexed += Number(r.indexed_bytes ?? 0);
+    }
+    setStats(next);
+  }
+  useEffect(() => { refreshStats(); }, []);
+
+  const sourceJobs = (y: number) => [
+    { kind: "prices", fn: "foundry-ingest-prices", body: { year: y } },
+    { kind: "macro", fn: "foundry-ingest-macro", body: { year: y, tag: "macro", subBrainId: "fixed_income" } },
+    { kind: "edgar", fn: "foundry-ingest-edgar", body: { year: y, subBrainId: "equities" } },
+    { kind: "gdelt", fn: "foundry-ingest-gdelt", body: { year: y, subBrainId: "alternative" } },
+    { kind: "geopolitical", fn: "foundry-ingest-geopolitical", body: { year: y, subBrainId: "alternative" } },
+    { kind: "shipping", fn: "foundry-ingest-shipping", body: { year: y, subBrainId: "fx_commodities" } },
+    { kind: "weather", fn: "foundry-ingest-weather", body: { year: y, subBrainId: "alternative" } },
+    { kind: "trends", fn: "foundry-ingest-trends", body: { year: y, subBrainId: "alternative" } },
+  ];
 
   async function ingest(kind: "prices" | "gdelt" | "edgar") {
     setBusy(kind);
     try {
       const { data, error } = await supabase.functions.invoke(`foundry-ingest-${kind}`, { body: { year } });
       if (error) throw error;
-      const writtenCount = (data?.written ?? []).length;
-      const failedCount = (data?.failed ?? []).length;
+      const writtenCount = Number(data?.rows_written ?? (data?.written ?? []).length ?? 0);
+      const failedCount = Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
       toast({
         title: `✓ Ingested ${kind} for ${year}`,
         description: `Wrote ${writtenCount} corpus rows.${failedCount ? ` Failed: ${failedCount} (${(data.failed ?? []).slice(0, 2).map((f: { id?: string; err?: string }) => f.id ?? f.err).join("; ")}…)` : ""}`,
@@ -1323,37 +1419,41 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
     } catch (e) {
       const err = e as { message?: string; details?: string };
       toast({ title: `Ingest ${kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
-    } finally { setBusy(null); }
+    } finally { await refreshStats(); setBusy(null); }
   }
 
-  async function ingestAllYears() {
-    setBusy("all-prices");
-    const years = [...Array.from({ length: 5 }, (_, i) => 2006 + i), ...VALIDATION_YEARS];
+  async function ingestYears(years: number[], mode: "all-sources" | "year-batch") {
+    setBusy(mode);
     let totalWritten = 0;
     let totalFailed = 0;
     const yearsFailed: number[] = [];
     try {
-      // Run one year per request — the edge function times out around 150s
-      // if asked to do 20 years × 35+ tickers in a single call. One year at a
-      // time keeps every request under ~15s and gives partial progress.
       for (const y of years) {
-        try {
-          const { data, error } = await supabase.functions.invoke("foundry-ingest-prices", { body: { year: y } });
-          if (error) throw error;
-          totalWritten += data?.written_count ?? 0;
-          totalFailed += data?.failed_count ?? 0;
-        } catch (e) {
-          yearsFailed.push(y);
-          const err = e as { message?: string };
-          toast({ title: `Year ${y} ingest failed`, description: err?.message ?? String(e), variant: "destructive" });
+        let yearOk = true;
+        for (const job of sourceJobs(y)) {
+          try {
+            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body });
+            if (error) throw error;
+            totalWritten += Number(data?.rows_written ?? 0);
+            totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
+          } catch (e) {
+            yearOk = false;
+            const err = e as { message?: string };
+            toast({ title: `${y} · ${job.kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
+          }
+          await new Promise((r) => setTimeout(r, 800));
         }
+        if (!yearOk) yearsFailed.push(y);
       }
       toast({
-        title: `✓ Backfilled prices · ${years.length - yearsFailed.length}/${years.length} years`,
-        description: `Wrote ${totalWritten} corpus rows. Source-level failures: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}. Reload the page to refresh real OHLCV anchors.`,
+        title: `✓ Backfilled data wells · ${years.length - yearsFailed.length}/${years.length} years`,
+        description: `Wrote ${totalWritten} additive corpus rows. Source-level failures: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}.`,
       });
-    } finally { setBusy(null); }
+      if (mode === "year-batch") setBatchCursor((c) => (c + years.length) % ALL_FOUNDRY_YEARS.length);
+    } finally { await refreshStats(); setBusy(null); }
   }
+
+  const nextBatchYears = [ALL_FOUNDRY_YEARS[batchCursor], ALL_FOUNDRY_YEARS[(batchCursor + 1) % ALL_FOUNDRY_YEARS.length]];
 
   return (
     <section className="space-y-3">
@@ -1371,8 +1471,7 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
           >
-            {VALIDATION_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-            {Array.from({ length: 5 }, (_, i) => 2006 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+            {ALL_FOUNDRY_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("prices")}>
             {busy === "prices" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest Prices
@@ -1383,12 +1482,23 @@ function DataSourcesPanel({ state }: { state: ForgeState }) {
           <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingest("edgar")}>
             {busy === "edgar" ? <Loader2 className="size-3 animate-spin" /> : null} Ingest EDGAR
           </Button>
-          <Button size="sm" disabled={busy !== null} onClick={ingestAllYears} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
-            {busy === "all-prices" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
-            Ingest all years (prices)
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingestYears(nextBatchYears, "year-batch")} className="gap-1">
+            {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
+            Ingest next batch ({nextBatchYears.join("/")})
+          </Button>
+          <Button size="sm" disabled={busy !== null} onClick={() => ingestYears(ALL_FOUNDRY_YEARS, "all-sources")} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
+            {busy === "all-sources" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
+            Ingest all years + all sources
           </Button>
         </div>
       </header>
+      <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+        {[2006, 2007].map((y) => (
+          <Badge key={y} variant="outline" className="gap-1 border-border/60 font-mono">
+            <HardDrive className="size-3" /> {y}: {(stats[y]?.rows ?? 0).toLocaleString()} rows · {fmtBytes(stats[y]?.stored ?? 0)} stored · {fmtBytes(stats[y]?.indexed ?? 0)} indexed
+          </Badge>
+        ))}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {ALL_DIMENSIONS.map((dim) => {
           const sources = FOUNDRY_DATA_SOURCES.filter((s) => s.dimension === dim);

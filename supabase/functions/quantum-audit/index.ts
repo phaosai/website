@@ -510,7 +510,7 @@ Deno.serve(async (req) => {
 
       // Foundry admin bypass: brain-forge runs are not consumer audits and
       // must not be gated by subscription tier or monthly allowance.
-      const isFoundryScope = ["subbrain", "synthesis", "year-audit"].includes(String(investmentType));
+      const isFoundryScope = ["subbrain", "synthesis", "year-audit", "final-audit"].includes(String(investmentType));
       let isAdmin = false;
       if (isFoundryScope) {
         const { data: roleRow } = await svc
@@ -711,7 +711,7 @@ Deno.serve(async (req) => {
       // analyzed.
       if (!(audit as any).result_summary) {
         const existingMeta = ((audit as any).raw_result_metadata ?? {}) as Record<string, unknown>;
-        const isFoundry = ["subbrain", "synthesis", "year-audit"].includes(String((audit as any).selected_asset_type));
+        const isFoundry = ["subbrain", "synthesis", "year-audit", "final-audit"].includes(String((audit as any).selected_asset_type));
         const summary = isFoundry
           ? `Foundry ${(audit as any).selected_asset_type} quantum pass complete · ${(audit as any).selected_symbol} · backend ${(audit as any).ibm_backend} · workload ${(audit as any).ibm_workload_id}. Inputs and coverage snapshot recorded for audit.`
           : "Supplemental advanced-compute validation pass complete. Top filtered candidates returned a stable consensus signal across the constrained optimization set. Audit-ready research receipt generated.";

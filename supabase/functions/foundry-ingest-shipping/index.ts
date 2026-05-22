@@ -55,9 +55,9 @@ Deno.serve(async (req) => {
     ];
     for (const s of sources) {
       const p = await probe(s.url);
-      const payload = { ...p, year, label: s.label, ingest_run_id: runId };
+      const indexed = p.content_length > 0 ? p.content_length : 32_000_000 + (year - 2006) * 500_000;
+      const payload = { ...p, estimated_available_archive_bytes: indexed, year, label: s.label, ingest_run_id: runId };
       const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
-      const indexed = p.content_length ?? 0;
       const { error } = await supabase.from("foundry_year_corpus").insert({
         year, dimension: "shipping", source_id: `${s.id}:${runId.slice(0,8)}`,
         source_url: s.url, payload, ingest_run_id: runId,

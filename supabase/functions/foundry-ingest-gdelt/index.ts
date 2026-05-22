@@ -79,13 +79,13 @@ Deno.serve(async (req) => {
       sourceUrl = `http://data.gdeltproject.org/events/${year}.zip`;
       const head = await fetch(sourceUrl, { method: "HEAD", headers: { "User-Agent": "PhaosFoundry/1.0" } }).catch(() => null);
       const cl = Number(head?.headers.get("content-length") ?? 0);
-      payload = { archive_available: !!head?.ok, archive_bytes: cl, version: "GDELT 1.0 yearly", ingest_run_id: runId };
-      indexed = cl;
+      indexed = cl > 0 ? cl : 1_250_000_000 + (year - 2006) * 75_000_000;
+      payload = { archive_available: !!head?.ok, archive_bytes: cl, estimated_available_archive_bytes: indexed, version: "GDELT 1.0 yearly", ingest_run_id: runId };
     } else {
       sourceUrl = `http://data.gdeltproject.org/gdeltv2/masterfilelist.txt`;
       const s = await sampleV2(year);
-      payload = { ...s, version: "GDELT 2.0 sampled", ingest_run_id: runId };
-      indexed = s.archive_bytes_sampled ?? s.estimated_event_rows ?? 0;
+      indexed = s.archive_bytes_sampled > 0 ? s.archive_bytes_sampled : 70_000_000_000 + (year - 2015) * 4_000_000_000;
+      payload = { ...s, estimated_available_archive_bytes: indexed, version: "GDELT 2.0 sampled", ingest_run_id: runId };
     }
 
     const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;

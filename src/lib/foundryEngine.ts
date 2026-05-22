@@ -617,7 +617,7 @@ export function trainYearMultiPass(args: {
 export interface QuantumReport {
   id: string;                 // local id for the in-memory log
   auditId?: string;           // durable id in public.quantum_audits
-  scope: "subbrain" | "synthesis" | "year-audit";
+  scope: "subbrain" | "synthesis" | "year-audit" | "final-audit";
   label: string;
   startedAt: string;
   finishedAt: string;
@@ -646,7 +646,7 @@ export interface QuantumOutcome {
 }
 
 export interface QuantumRunArgs {
-  scope: "subbrain" | "synthesis" | "year-audit";
+  scope: "subbrain" | "synthesis" | "year-audit" | "final-audit";
   label: string;
   /**
    * Full Foundry context. Persisted into quantum_audits.raw_result_metadata so
@@ -805,7 +805,7 @@ export async function loadFoundryQuantumAudits(limit = 50): Promise<DurableQuant
   const { data, error } = await supabase
     .from("quantum_audits")
     .select("id,created_at,completed_at,status,selected_asset_type,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,used_addon,error_message")
-    .in("selected_asset_type", ["subbrain", "synthesis", "year-audit"])
+    .in("selected_asset_type", ["subbrain", "synthesis", "year-audit", "final-audit"])
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error || !data) return [];
