@@ -776,6 +776,41 @@ function FoundryAdminInner() {
           <ChevronRight className="size-4 self-center text-muted-foreground/60" />
           <StagePill n={5} label="Promote to Sunesis" active={stage === 5} done={false} />
         </div>
+
+        {/* ---------- Live Foundry Activity Metrics ---------- */}
+        <div className="mt-5 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4 lg:grid-cols-7">
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Corpus rows</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{foundryTotals.rows.toLocaleString()}</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Indexed</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{(foundryTotals.indexed / 1e9).toFixed(2)} GB</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Years covered</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{foundryTotals.years} / 20</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Sub-brains</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{foundryTotals.subBrains} / {ASSET_CLASSES.length}</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Regime runs</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{state.regimeRuns ?? 0}</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Synthesis runs</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{state.synthesisRuns ?? 0}</div>
+          </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-2">
+            <div className="text-muted-foreground uppercase tracking-wider">Training cycles</div>
+            <div className="mt-0.5 font-mono text-sm text-foreground">{(state.totalTrainingCycles ?? 0).toLocaleString()}</div>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Every stage is additive and re-runnable. Each press grows the corpus, regime labels, synthesis evidence, and training cycles the final quantum audit will consume.
+        </p>
       </div>
 
       {pingResult && (
