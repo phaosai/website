@@ -510,69 +510,8 @@ function FoundryAdminInner() {
         </div>
       )}
 
-      {/* ---------- 5-PILLAR INGESTION DASHBOARD (preview — Pillar 1 only) ---------- */}
+      {/* ---------- 5-PILLAR INGESTION DASHBOARD (replaces legacy Stage 1) ---------- */}
       <PillarIngestionGrid />
-
-      {/* ---------- STAGE 1 ---------- */}
-      <section className="space-y-3">
-        <header className="flex items-end justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Stage 1 — Train Asset-Class Sub-Brains</h2>
-            <p className="text-sm text-muted-foreground">Formative window: 2006–2010. Each class trains its own specialist sub-brain.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {SIMULATED}
-            <Badge variant="outline">{lockedCount} / {ASSET_CLASSES.length} forged</Badge>
-          </div>
-        </header>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {ASSET_CLASSES.map((c) => {
-            const sb = state.subBrains[c.id];
-            const isLocked = sb.status === "locked";
-            const isRunning = sb.status === "running";
-            return (
-              <Card key={c.id} className={cn("relative overflow-hidden border-border/40 bg-card/40", isLocked && "opacity-60")}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{c.label}</CardTitle>
-                    {isLocked && <Lock className="size-4 text-emerald-400" />}
-                    {isRunning && <Loader2 className="size-4 animate-spin text-primary" />}
-                  </div>
-                  <CardDescription className="text-xs">{c.blurb}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Progress value={(sb.step / PIPELINE_STEPS.length) * 100} className="h-1.5" />
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Step {sb.step} / {PIPELINE_STEPS.length}: {PIPELINE_STEPS[Math.max(0, sb.step - 1)] ?? "—"}
-                  </div>
-                  {isLocked && (
-                    <div className="rounded border border-border/40 bg-background/40 p-2 text-[11px] text-muted-foreground">
-                      <div>In-sample accuracy: <span className="text-foreground">{sb.accuracy?.toFixed(2)}%</span></div>
-                      <div className="mt-1 italic">{sb.quantumMessage}</div>
-                    </div>
-                  )}
-                  {!isLocked && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <Switch
-                          checked={quantumToggles[c.id]}
-                          onCheckedChange={(v) => setQuantumToggles((p) => ({ ...p, [c.id]: v }))}
-                          disabled={isRunning}
-                        />
-                        <span className="text-muted-foreground">Quantum vetting (final step)</span>
-                      </div>
-                      <Button size="sm" onClick={() => runSubBrain(c.id)} disabled={isRunning}>
-                        {isRunning ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                        Run pipeline
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
 
       {/* ---------- STAGE 2 ---------- */}
       <section>
