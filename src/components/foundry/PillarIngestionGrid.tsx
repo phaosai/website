@@ -305,6 +305,9 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
             <span className="rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 text-amber-400 font-mono uppercase tracking-wider">Note</span>{" "}
             Quantum is <span className="text-foreground">not</span> used for ingestion. Toggle Quantum Mode in the header for sub-brain vetting, unified synthesis, and annual audit reports.
           </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Current staggered intake batch: <span className="font-mono text-foreground">{batchYears.join(" / ")}</span>. Each click advances to the next 2-year batch across 2006–2025 and inserts new rows instead of replacing prior corpus data.
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
@@ -324,7 +327,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete }: PillarIngesti
           </Badge>
           <Button size="sm" onClick={runAll} disabled={runningAll} className="gap-1">
             {runningAll ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
-            Run all 6 sub-brains
+            Run all 6 sub-brains · {batchYears.join("/")}
           </Button>
         </div>
       </header>
