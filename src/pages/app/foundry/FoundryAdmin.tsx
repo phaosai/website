@@ -771,9 +771,12 @@ function FoundryAdminInner() {
                 : state.regime.status === "ready" ? "Ready — all sub-brains forged"
                 : "Locked until all 6 sub-brains are forged"}
             </div>
-            <Button onClick={runRegime} disabled={state.regime.status !== "ready"}>
+            <Button
+              onClick={runRegime}
+              disabled={state.regime.status === "locked" || state.regime.status === "running"}
+            >
               {state.regime.status === "running" ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />}
-              Train regime layer
+              {state.regime.status === "done" ? "Retrain regime layer" : "Train regime layer"}
             </Button>
           </CardContent>
         </Card>
