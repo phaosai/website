@@ -31,6 +31,7 @@ import { WalkForwardMatrix } from "@/components/foundry/WalkForwardMatrix";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
 
 const REPORTS_KEY = "phaos.foundry.qreports.v1";
 function loadReports(): QuantumReport[] {
@@ -54,6 +55,20 @@ function fmtBytes(n: number): string {
   let i = 0; let v = n;
   while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
   return `${v.toFixed(v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+interface FoundryCoverageProof {
+  totalRows: number;
+  totalStored: number;
+  totalIndexed: number;
+  completeYears: number;
+  completeDimensions: number;
+  missing: string[];
+  lastFetched: string | null;
+}
+
+function emptyCoverageProof(): FoundryCoverageProof {
+  return { totalRows: 0, totalStored: 0, totalIndexed: 0, completeYears: 0, completeDimensions: 0, missing: [], lastFetched: null };
 }
 
 function StagePill({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
