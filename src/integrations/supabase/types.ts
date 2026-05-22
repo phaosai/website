@@ -2675,6 +2675,19 @@ export type Database = {
           training_cycles_added: number
         }[]
       }
+      foundry_sub_brain_coverage_totals: {
+        Args: never
+        Returns: {
+          content_units: number
+          dimensions: number
+          indexed_bytes: number
+          last_fetched: string
+          rows: number
+          stored_bytes: number
+          sub_brain_id: string
+          years: number
+        }[]
+      }
       foundry_sub_brain_totals: {
         Args: never
         Returns: {

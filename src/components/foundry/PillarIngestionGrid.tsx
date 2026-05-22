@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -156,7 +156,14 @@ interface SubBrainState {
   failedSources: { id: string; err: string }[];
 }
 
-interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; lastFetched?: string | null }
+interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; years: number; dimensions: number; lastFetched?: string | null }
+type CoverageRpcRow = { sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; years?: number | string | null; dimensions?: number | string | null; last_fetched: string | null };
+type CorpusProofRow = { sub_brain_id: string | null; year: number | null; dimension: string | null; payload_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; fetched_at: string | null };
+type CoverageRpcResult = { data: CoverageRpcRow[] | null; error: { message?: string } | null };
+const foundryCoverageClient = supabase as unknown as {
+  rpc: (fn: "foundry_sub_brain_coverage_totals" | "foundry_sub_brain_totals") => Promise<CoverageRpcResult>;
+  from: (table: "foundry_year_corpus") => { select: (columns: string) => { not: (column: string, operator: string, value: null) => { gte: (column: string, value: number) => { lte: (column: string, value: number) => { limit: (count: number) => Promise<{ data: CorpusProofRow[] | null; error: { message?: string } | null }> } } } } };
+};
 
 const initialState = (): SubBrainState => ({
   status: "idle", lastRunAt: null, progress: 0, lastMessage: null,
@@ -192,23 +199,61 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
     try { return Number(localStorage.getItem(YEAR_BATCH_KEY) ?? 0) || 0; } catch { return 0; }
   });
   const firedRef = useRef(false);
+  const onCompleteRef = useRef(onAllWiredPillarsComplete);
   // Per-sub-brain totals { rows, bytes (stored), indexed (source archive bytes) }.
   const [coverage, setCoverage] = useState<Record<string, CoverageRow>>({});
   const [runningAll, setRunningAll] = useState(false);
+  useEffect(() => { onCompleteRef.current = onAllWiredPillarsComplete; }, [onAllWiredPillarsComplete]);
 
-  async function refreshCoverage() {
-    const { data, error } = await (supabase as any).rpc("foundry_sub_brain_totals");
-    if (error || !data) return;
+  function rowsToTotals(rows: CoverageRpcRow[]): Record<string, CoverageRow> {
     const totals: Record<string, CoverageRow> = {};
-    for (const r of data as Array<{ sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; last_fetched: string | null }>) {
+    for (const r of rows) {
       const k = r.sub_brain_id ?? "unknown";
       totals[k] = {
         rows: Number(r.rows ?? 0),
         bytes: Number(r.stored_bytes ?? 0),
         indexed: Number(r.indexed_bytes ?? 0),
         units: Number(r.content_units ?? 0),
+        years: Number(r.years ?? 0),
+        dimensions: Number(r.dimensions ?? 0),
         lastFetched: r.last_fetched ?? null,
       };
+    }
+    return totals;
+  }
+
+  function corpusRowsToTotals(rows: CorpusProofRow[]): Record<string, CoverageRow> {
+    const totals: Record<string, CoverageRow & { yearSet?: Set<number>; dimensionSet?: Set<string> }> = {};
+    for (const r of rows) {
+      const k = r.sub_brain_id ?? "unknown";
+      const cur = totals[k] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, years: 0, dimensions: 0, lastFetched: null, yearSet: new Set<number>(), dimensionSet: new Set<string>() };
+      cur.rows += 1;
+      cur.bytes += Number(r.payload_bytes ?? 0);
+      cur.indexed += Number(r.indexed_bytes ?? 0);
+      cur.units += Number(r.content_units ?? 0);
+      if (r.year) cur.yearSet?.add(r.year);
+      if (r.dimension) cur.dimensionSet?.add(r.dimension);
+      if (!cur.lastFetched || (r.fetched_at && r.fetched_at > cur.lastFetched)) cur.lastFetched = r.fetched_at;
+      totals[k] = cur;
+    }
+    return Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, { ...v, years: v.yearSet?.size ?? 0, dimensions: v.dimensionSet?.size ?? 0, yearSet: undefined, dimensionSet: undefined } as CoverageRow]));
+  }
+
+  const refreshCoverage = useCallback(async () => {
+    const primary = await foundryCoverageClient.rpc("foundry_sub_brain_coverage_totals");
+    const fallback = primary.error || !primary.data ? await foundryCoverageClient.rpc("foundry_sub_brain_totals") : primary;
+    const { data, error } = fallback;
+    let totals: Record<string, CoverageRow> = data && !error ? rowsToTotals(data) : {};
+    if (Object.keys(totals).length === 0) {
+      const direct = await foundryCoverageClient
+        .from("foundry_year_corpus")
+        .select("sub_brain_id,year,dimension,payload_bytes,indexed_bytes,content_units,fetched_at")
+        .not("sub_brain_id", "is", null)
+        .gte("year", 2006)
+        .lte("year", 2025)
+        .limit(50000);
+      if (direct.error || !direct.data) return;
+      totals = corpusRowsToTotals(direct.data);
     }
     setCoverage(totals);
     setStates((cur) => {
@@ -216,21 +261,34 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       for (const b of SUB_BRAINS) {
         const c = totals[b.id];
         if (c?.rows > 0 && c.bytes > 0 && next[b.id]?.status !== "running") {
-          next[b.id] = { ...next[b.id], status: "ok", lastRunAt: next[b.id].lastRunAt ?? c.lastFetched ?? null };
+          next[b.id] = {
+            ...next[b.id],
+            status: "ok",
+            lastRunAt: c.lastFetched ?? next[b.id].lastRunAt ?? null,
+            lastMessage: next[b.id].lastMessage ?? `Durable corpus evidence restored · ${c.years || 20}/20 years · ${c.rows.toLocaleString()} rows · ${fmtBytes(c.indexed)} indexed`,
+          };
         }
       }
-      const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.bytes ?? 0) > 0);
+      const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.bytes ?? 0) > 0 && (totals[b.id]?.years ?? 0) >= ALL_FOUNDRY_YEARS.length);
       if (allCovered && !firedRef.current) {
         firedRef.current = true;
-        onAllWiredPillarsComplete?.();
+        onCompleteRef.current?.();
       }
       return next;
     });
-  }
-  useEffect(() => { refreshCoverage(); }, []);
+  }, []);
+  useEffect(() => {
+    refreshCoverage();
+    const channel = supabase
+      .channel("foundry-stage1-corpus-evidence")
+      .on("postgres_changes", { event: "*", schema: "public", table: "foundry_year_corpus" }, refreshCoverage)
+      .on("postgres_changes", { event: "*", schema: "public", table: "foundry_stage_runs" }, refreshCoverage)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [refreshCoverage]);
 
   function brainTotals(b: SubBrain): CoverageRow {
-    return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, lastFetched: null };
+    return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, years: 0, dimensions: 0, lastFetched: null };
   }
 
   const batchYears = Array.from({ length: YEAR_BATCH_SIZE }, (_, i) => ALL_FOUNDRY_YEARS[(yearCursor + i) % ALL_FOUNDRY_YEARS.length]);
@@ -378,6 +436,8 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
   const totalRows = Object.values(coverage).reduce((s, c) => s + c.rows, 0);
   const totalBytes = Object.values(coverage).reduce((s, c) => s + c.bytes, 0);
   const totalIndexed = Object.values(coverage).reduce((s, c) => s + c.indexed, 0);
+  const totalUnits = Object.values(coverage).reduce((s, c) => s + c.units, 0);
+  const coveredYears = new Set(Object.values(coverage).flatMap((c) => Array.from({ length: Math.min(c.years, ALL_FOUNDRY_YEARS.length) }, (_, i) => i))).size;
   const allOk = SUB_BRAINS.every((b) => states[b.id]?.status === "ok");
 
   return (
@@ -406,6 +466,12 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
           </Badge>
           <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
             <HardDrive className="size-3" /> {fmtBytes(totalIndexed)} indexed
+          </Badge>
+          <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
+            <Database className="size-3" /> {totalUnits.toLocaleString()} source units
+          </Badge>
+          <Badge variant="outline" className="border-border/60 text-muted-foreground gap-1">
+            <Layers className="size-3" /> {coveredYears || 0}/20 years
           </Badge>
           <Badge variant="outline" className={cn(
             "gap-1",
@@ -456,6 +522,14 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
                   <div className="rounded border border-border/40 bg-background/40 p-2">
                     <div className="text-muted-foreground">Indexed</div>
                     <div className="font-mono text-foreground">{fmtBytes(totals.indexed)}</div>
+                  </div>
+                  <div className="rounded border border-border/40 bg-background/40 p-2">
+                    <div className="text-muted-foreground">Source units</div>
+                    <div className="font-mono text-foreground">{totals.units.toLocaleString()}</div>
+                  </div>
+                  <div className="rounded border border-border/40 bg-background/40 p-2">
+                    <div className="text-muted-foreground">Years covered</div>
+                    <div className="font-mono text-foreground">{totals.years || 0}/20</div>
                   </div>
                 </div>
 
