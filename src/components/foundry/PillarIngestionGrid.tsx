@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,6 +157,9 @@ interface SubBrainState {
 }
 
 interface CoverageRow { rows: number; bytes: number; indexed: number; units: number; years: number; dimensions: number; lastFetched?: string | null }
+type CoverageRpcRow = { sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; years?: number | string | null; dimensions?: number | string | null; last_fetched: string | null };
+type CoverageRpcResult = { data: CoverageRpcRow[] | null; error: { message?: string } | null };
+const foundryCoverageRpc = supabase as unknown as { rpc: (fn: "foundry_sub_brain_coverage_totals" | "foundry_sub_brain_totals") => Promise<CoverageRpcResult> };
 
 const initialState = (): SubBrainState => ({
   status: "idle", lastRunAt: null, progress: 0, lastMessage: null,
@@ -192,17 +195,19 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
     try { return Number(localStorage.getItem(YEAR_BATCH_KEY) ?? 0) || 0; } catch { return 0; }
   });
   const firedRef = useRef(false);
+  const onCompleteRef = useRef(onAllWiredPillarsComplete);
   // Per-sub-brain totals { rows, bytes (stored), indexed (source archive bytes) }.
   const [coverage, setCoverage] = useState<Record<string, CoverageRow>>({});
   const [runningAll, setRunningAll] = useState(false);
+  useEffect(() => { onCompleteRef.current = onAllWiredPillarsComplete; }, [onAllWiredPillarsComplete]);
 
-  async function refreshCoverage() {
-    const primary = await (supabase as any).rpc("foundry_sub_brain_coverage_totals");
-    const fallback = primary.error || !primary.data ? await (supabase as any).rpc("foundry_sub_brain_totals") : primary;
+  const refreshCoverage = useCallback(async () => {
+    const primary = await foundryCoverageRpc.rpc("foundry_sub_brain_coverage_totals");
+    const fallback = primary.error || !primary.data ? await foundryCoverageRpc.rpc("foundry_sub_brain_totals") : primary;
     const { data, error } = fallback;
     if (error || !data) return;
     const totals: Record<string, CoverageRow> = {};
-    for (const r of data as Array<{ sub_brain_id: string | null; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; content_units: number | string | null; years?: number | string | null; dimensions?: number | string | null; last_fetched: string | null }>) {
+    for (const r of data) {
       const k = r.sub_brain_id ?? "unknown";
       totals[k] = {
         rows: Number(r.rows ?? 0),
@@ -231,11 +236,11 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.bytes ?? 0) > 0 && (totals[b.id]?.years ?? 0) >= ALL_FOUNDRY_YEARS.length);
       if (allCovered && !firedRef.current) {
         firedRef.current = true;
-        onAllWiredPillarsComplete?.();
+        onCompleteRef.current?.();
       }
       return next;
     });
-  }
+  }, []);
   useEffect(() => {
     refreshCoverage();
     const channel = supabase
@@ -244,7 +249,7 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
       .on("postgres_changes", { event: "*", schema: "public", table: "foundry_stage_runs" }, refreshCoverage)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [refreshCoverage]);
 
   function brainTotals(b: SubBrain): CoverageRow {
     return coverage[b.id] ?? { rows: 0, bytes: 0, indexed: 0, units: 0, years: 0, dimensions: 0, lastFetched: null };
