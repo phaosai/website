@@ -524,6 +524,9 @@ function FoundryAdminInner() {
       announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
       const coverage = await loadCorpusCoverage();
       const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const missingDimensionYears = ALL_DIMENSIONS.flatMap((dim) => ALL_FOUNDRY_YEARS
+        .filter((y) => (coverage[dim]?.[y] ?? 0) === 0)
+        .map((y) => `${y}:${dim}`));
       const proof = ((proofRows ?? []) as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>).reduce((acc, r) => {
         acc.totalRows += Number(r.rows ?? 0);
         acc.totalStored += Number(r.stored_bytes ?? 0);
@@ -533,6 +536,14 @@ function FoundryAdminInner() {
         return acc;
       }, emptyCoverageProof());
       proof.missing = ALL_FOUNDRY_YEARS.filter((y) => !((proofRows ?? []) as Array<{ year: number; dimensions: number | string | null; sub_brains: number | string | null }>).some((r) => r.year === y && Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length)).map(String);
+      if (missingDimensionYears.length > 0 || proof.missing.length > 0) {
+        toast({
+          title: "Final audit blocked — corpus proof incomplete",
+          description: `Missing ${missingDimensionYears.length} year/dimension proofs and ${proof.missing.length} incomplete years. Re-run Data Sources ingestion first; saved rows remain additive.`,
+          variant: "destructive",
+        });
+        return;
+      }
       const coverageSnapshot = Object.fromEntries(
         Object.entries(coverage).map(([dim, rows]) => [
           dim,
