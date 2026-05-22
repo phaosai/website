@@ -495,6 +495,43 @@ function FoundryAdminInner() {
     });
   }
 
+  async function runFinalQuantumAudit() {
+    setFinalAuditRunning(true);
+    try {
+      announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
+      const coverage = await loadCorpusCoverage();
+      const coverageSnapshot = Object.fromEntries(
+        Object.entries(coverage).map(([dim, rows]) => [
+          dim,
+          ALL_FOUNDRY_YEARS.reduce((acc, y) => acc + (rows[y] ?? 0), 0),
+        ]),
+      );
+      const out = await runQuantumStage({
+        scope: "final-audit",
+        label: "foundry-2006-2025-final",
+        enabled: quantumMode,
+        pollTimeoutMs: 35_000,
+        foundryMeta: {
+          auditPurpose: "Finalize the Foundry brain after all additive ingestion reruns and refine PCI interval behavior across every targeted asset class and brokerage platform.",
+          years: ALL_FOUNDRY_YEARS,
+          validationYears: VALIDATION_YEARS,
+          assetClasses: ASSET_CLASSES.map((c) => c.id),
+          platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
+          dimensions: ALL_DIMENSIONS,
+          coverageSnapshot,
+          trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
+          bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
+          residualSymbols: Object.keys(stateRef.current.residualBias ?? {}).length,
+          intervalTargets: ["intraday", "daily", "weekly", "monthly", "quarterly", "annual", "multi-year"],
+        },
+      });
+      recordReport(out.report);
+      toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
+    } finally {
+      setFinalAuditRunning(false);
+    }
+  }
+
   async function promote() {
     try {
       const { supabase } = await import("@/integrations/supabase/client");
