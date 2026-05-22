@@ -23,7 +23,8 @@ import {
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
   dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
-  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit,
+  loadFoundryStageRunTotals, recordFoundryStageRun,
+  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
@@ -105,6 +106,7 @@ function FoundryAdminInner() {
   const [durableAudits, setDurableAudits] = useState<DurableQuantumAudit[]>([]);
   const [corpusCoverage, setCorpusCoverage] = useState<Record<string, Record<number, number>>>({});
   const [foundryTotals, setFoundryTotals] = useState<{ rows: number; stored: number; indexed: number; years: number; dimensions: number; subBrains: number; lastFetched: string | null }>({ rows: 0, stored: 0, indexed: 0, years: 0, dimensions: 0, subBrains: 0, lastFetched: null });
+  const [stageRunTotals, setStageRunTotals] = useState<FoundryStageRunTotal[]>([]);
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
@@ -139,6 +141,24 @@ function FoundryAdminInner() {
       }, { rows: 0, stored: 0, indexed: 0, years: rows.length, dimensions: 0, subBrains: 0, lastFetched: null as string | null });
       setFoundryTotals(agg);
     } catch { /* ignore */ }
+  }
+
+  async function refreshStageRunTotals() {
+    const totals = await loadFoundryStageRunTotals();
+    setStageRunTotals(totals);
+    setState((prev) => {
+      const stage2Runs = totals.filter((r) => r.stage_number === 2).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      const stage3Runs = totals.filter((r) => r.stage_number === 3).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      const stage4Cycles = totals.filter((r) => r.stage_number === 4).reduce((s, r) => s + Number(r.training_cycles_added ?? 0), 0);
+      const stage5Runs = totals.filter((r) => r.stage_number === 5).reduce((s, r) => s + Number(r.completed_runs ?? 0), 0);
+      return recomputeGates({
+        ...prev,
+        regimeRuns: Math.max(prev.regimeRuns ?? 0, stage2Runs),
+        synthesisRuns: Math.max(prev.synthesisRuns ?? 0, stage3Runs),
+        totalTrainingCycles: Math.max(prev.totalTrainingCycles ?? 0, stage4Cycles),
+        finalAuditRuns: Math.max(prev.finalAuditRuns ?? 0, stage5Runs),
+      });
+    });
   }
 
   /**
@@ -179,7 +199,7 @@ function FoundryAdminInner() {
     });
   }
 
-  useEffect(() => { refreshDurableAudits(); refreshCoverage(); restoreStage1FromDb(); }, []);
+  useEffect(() => { refreshDurableAudits(); refreshCoverage(); refreshStageRunTotals(); restoreStage1FromDb(); }, []);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
