@@ -1732,8 +1732,6 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
 
   async function ingestYears(years: number[], mode: "all-sources" | "year-batch") {
     setBusy(mode);
-  async function ingestYears(years: number[], mode: "all-sources" | "year-batch") {
-    setBusy(mode);
     cancelRef.current = false;
     let totalWritten = 0;
     let totalFailed = 0;
