@@ -98,16 +98,21 @@ Deno.serve(async (req) => {
       { id: "form-s1-pipeline", url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=S-1&dateb=&owner=include&count=40`, units: 900, indexed: 6_500_000 },
       { id: "insider-form4",    url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=4&dateb=&owner=include&count=40`, units: 220000, indexed: 95_000_000 },
     ];
-    for (const f of extraFeeds) {
-      const payload = { feed: f.id, year, estimated_units: f.units, estimated_indexed_bytes: f.indexed, ingest_run_id: runId };
-      const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
-      const { error } = await supabase.from("foundry_year_corpus").insert({
-        year, dimension: "filings", source_id: `edgar-feed:${f.id}:${runId.slice(0,8)}`,
-        source_url: f.url, payload, ingest_run_id: runId,
-        payload_bytes: payloadBytes, content_units: f.units,
-        sub_brain_id: subBrainId, platform: "sec_edgar", indexed_bytes: f.indexed,
-      });
-      if (!error) { bytesAdded += payloadBytes; indexedAdded += f.indexed; unitsAdded += f.units; written.push(f.id); }
+    // Parallelize manifest writes in chunks of 4
+    const chunkSize = 4;
+    for (let i = 0; i < extraFeeds.length; i += chunkSize) {
+      const chunk = extraFeeds.slice(i, i + chunkSize);
+      await Promise.all(chunk.map(async (f) => {
+        const payload = { feed: f.id, year, estimated_units: f.units, estimated_indexed_bytes: f.indexed, ingest_run_id: runId };
+        const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+        const { error } = await supabase.from("foundry_year_corpus").insert({
+          year, dimension: "filings", source_id: `edgar-feed:${f.id}:${runId.slice(0,8)}`,
+          source_url: f.url, payload, ingest_run_id: runId,
+          payload_bytes: payloadBytes, content_units: f.units,
+          sub_brain_id: subBrainId, platform: "sec_edgar", indexed_bytes: f.indexed,
+        });
+        if (!error) { bytesAdded += payloadBytes; indexedAdded += f.indexed; unitsAdded += f.units; written.push(f.id); }
+      }));
     }
     return json({
       ok: written.length > 0, year, run_id: runId, sub_brain_id: subBrainId,
