@@ -841,6 +841,58 @@ export interface FoundryStageRunTotal {
   latest_evidence: Record<string, unknown> | null;
 }
 
+export interface FoundryMetricCoverageRow {
+  rows: number;
+  stored_bytes: number;
+  indexed_bytes: number;
+  content_units: number;
+  years: number;
+  dimensions: number;
+  sub_brains?: number;
+  platforms?: string[];
+  last_fetched: string | null;
+}
+
+export interface FoundryStageSummary {
+  stage_number: number;
+  runs: number;
+  completed_runs: number;
+  failed_runs: number;
+  rows_added: number;
+  stored_bytes_added: number;
+  indexed_bytes_added: number;
+  content_units_added: number;
+  training_cycles_added: number;
+  years: number;
+  dimensions: number;
+  last_completed_at: string | null;
+  audit_runs: number;
+}
+
+export interface FoundryMetricsSnapshot {
+  ok: boolean;
+  generated_at?: string;
+  global: { rows: number; stored: number; indexed: number; content_units: number; years: number; dimensions: number; sub_brains: number; last_fetched: string | null };
+  bySubBrain: Record<string, FoundryMetricCoverageRow & { sub_brain_id?: string; label?: string }>;
+  byYear: Record<string, FoundryMetricCoverageRow & { year?: number }>;
+  byDimension: Record<string, FoundryMetricCoverageRow & { dimension?: string }>;
+  stageRunTotals: FoundryStageRunTotal[];
+  stageSummaries: FoundryStageSummary[];
+  recentRuns?: Record<string, unknown>[];
+  quantumAudits?: Record<string, unknown>[];
+  error?: string;
+}
+
+export const emptyFoundryMetricsSnapshot = (): FoundryMetricsSnapshot => ({
+  ok: false,
+  global: { rows: 0, stored: 0, indexed: 0, content_units: 0, years: 0, dimensions: 0, sub_brains: 0, last_fetched: null },
+  bySubBrain: {},
+  byYear: {},
+  byDimension: {},
+  stageRunTotals: [],
+  stageSummaries: [],
+});
+
 export async function recordFoundryStageRun(input: FoundryStageRunInput): Promise<void> {
   try {
     await (supabase as any).from("foundry_stage_runs").insert({
@@ -872,6 +924,16 @@ export async function loadFoundryStageRunTotals(): Promise<FoundryStageRunTotal[
     return data as FoundryStageRunTotal[];
   } catch {
     return [];
+  }
+}
+
+export async function loadFoundryMetricsSnapshot(): Promise<FoundryMetricsSnapshot> {
+  try {
+    const { data, error } = await supabase.functions.invoke("foundry-metrics", { body: {} });
+    if (error || !data) return emptyFoundryMetricsSnapshot();
+    return data as FoundryMetricsSnapshot;
+  } catch {
+    return emptyFoundryMetricsSnapshot();
   }
 }
 

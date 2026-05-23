@@ -23,8 +23,8 @@ import {
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
   dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
-  loadFoundryStageRunTotals, recordFoundryStageRun,
-  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal,
+  loadFoundryStageRunTotals, loadFoundryMetricsSnapshot, emptyFoundryMetricsSnapshot, recordFoundryStageRun,
+  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal, type FoundryMetricsSnapshot, type FoundryStageSummary,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
@@ -107,6 +107,7 @@ function FoundryAdminInner() {
   const [corpusCoverage, setCorpusCoverage] = useState<Record<string, Record<number, number>>>({});
   const [foundryTotals, setFoundryTotals] = useState<{ rows: number; stored: number; indexed: number; years: number; dimensions: number; subBrains: number; lastFetched: string | null }>({ rows: 0, stored: 0, indexed: 0, years: 0, dimensions: 0, subBrains: 0, lastFetched: null });
   const [stageRunTotals, setStageRunTotals] = useState<FoundryStageRunTotal[]>([]);
+  const [foundryMetrics, setFoundryMetrics] = useState<FoundryMetricsSnapshot>(() => emptyFoundryMetricsSnapshot());
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
@@ -123,9 +124,44 @@ function FoundryAdminInner() {
     const rows = await loadFoundryQuantumAudits(100);
     setDurableAudits(rows);
   }
+  function restoreCountersFromMetrics(stageSummaries: FoundryStageSummary[]) {
+    setState((prev) => {
+      const stage2Runs = stageSummaries.find((s) => s.stage_number === 2)?.completed_runs ?? 0;
+      const stage3Runs = stageSummaries.find((s) => s.stage_number === 3)?.completed_runs ?? 0;
+      const stage4Cycles = stageSummaries.find((s) => s.stage_number === 4)?.training_cycles_added ?? 0;
+      const stage5Runs = stageSummaries.find((s) => s.stage_number === 5)?.completed_runs ?? 0;
+      return recomputeGates({
+        ...prev,
+        regimeRuns: Math.max(prev.regimeRuns ?? 0, stage2Runs),
+        synthesisRuns: Math.max(prev.synthesisRuns ?? 0, stage3Runs),
+        totalTrainingCycles: Math.max(prev.totalTrainingCycles ?? 0, stage4Cycles),
+        finalAuditRuns: Math.max(prev.finalAuditRuns ?? 0, stage5Runs),
+      });
+    });
+  }
+
+  async function refreshFoundryMetrics() {
+    const snapshot = await loadFoundryMetricsSnapshot();
+    if (!snapshot.ok) return null;
+    setFoundryMetrics(snapshot);
+    setStageRunTotals(snapshot.stageRunTotals ?? []);
+    setFoundryTotals({
+      rows: Number(snapshot.global.rows ?? 0),
+      stored: Number(snapshot.global.stored ?? 0),
+      indexed: Number(snapshot.global.indexed ?? 0),
+      years: Number(snapshot.global.years ?? 0),
+      dimensions: Number(snapshot.global.dimensions ?? 0),
+      subBrains: Number(snapshot.global.sub_brains ?? 0),
+      lastFetched: snapshot.global.last_fetched ?? null,
+    });
+    restoreCountersFromMetrics(snapshot.stageSummaries ?? []);
+    return snapshot;
+  }
+
   async function refreshCoverage() {
     const cov = await loadCorpusCoverage();
     setCorpusCoverage(cov);
+    if (await refreshFoundryMetrics()) return;
     // Roll up totals for the live activity strip.
     try {
       const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
@@ -144,6 +180,8 @@ function FoundryAdminInner() {
   }
 
   async function refreshStageRunTotals() {
+    const snapshot = await refreshFoundryMetrics();
+    if (snapshot) return;
     const totals = await loadFoundryStageRunTotals();
     setStageRunTotals(totals);
     setState((prev) => {
@@ -170,7 +208,14 @@ function FoundryAdminInner() {
    * "lose" already-completed ingestion work.
    */
   async function restoreStage1FromDb() {
-    const cov = await loadSubBrainCoverage();
+    let cov = await loadSubBrainCoverage();
+    if (!cov || Object.keys(cov).length === 0) {
+      const snapshot = await loadFoundryMetricsSnapshot();
+      cov = Object.fromEntries(Object.entries(snapshot.bySubBrain ?? {}).map(([id, row]) => [
+        id,
+        row.years >= ALL_FOUNDRY_YEARS.length ? ALL_FOUNDRY_YEARS : ALL_FOUNDRY_YEARS.slice(0, Math.max(0, row.years ?? 0)),
+      ]));
+    }
     if (!cov || Object.keys(cov).length === 0) return;
     setState((prev) => {
       const subBrains = { ...prev.subBrains };
@@ -228,6 +273,8 @@ function FoundryAdminInner() {
   const stage4RestoreLoggedRef = useRef(false);
   useEffect(() => {
     if (stage4RestoreLoggedRef.current || (state.totalTrainingCycles ?? 0) <= 0) return;
+    if (!foundryMetrics.ok) return;
+    if ((foundryMetrics.stageSummaries.find((s) => s.stage_number === 4)?.runs ?? 0) > 0) return;
     stage4RestoreLoggedRef.current = true;
     recordFoundryStageRun({
       stageNumber: 4,
@@ -244,7 +291,7 @@ function FoundryAdminInner() {
         best_combined_ever: state.bestCombinedEver ?? 0,
       },
     }).then(refreshStageRunTotals);
-  }, [state.totalTrainingCycles]);
+  }, [foundryMetrics.stageSummaries, state.totalTrainingCycles]);
 
   // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
   // brain's Dec 31 (and quarterly) targets come from real data instead of
@@ -310,6 +357,17 @@ function FoundryAdminInner() {
     : state.regime.status !== "done" ? 2
     : state.synthesis.status !== "done" ? 3
     : state.years.every((y) => y.status === "scored") ? 5 : 4;
+
+  const stageSummary = (n: number) => foundryMetrics.stageSummaries.find((s) => s.stage_number === n) ?? {
+    stage_number: n, runs: 0, completed_runs: 0, failed_runs: 0, rows_added: 0, stored_bytes_added: 0,
+    indexed_bytes_added: 0, content_units_added: 0, training_cycles_added: 0, years: 0, dimensions: 0,
+    last_completed_at: null, audit_runs: 0,
+  };
+  const stage4Summary = stageSummary(4);
+  const stage5Summary = stageSummary(5);
+  const combinedStageRows = stageRunTotals.reduce((s, r) => s + Number(r.rows_added ?? 0), 0);
+  const combinedStageCycles = stageRunTotals.reduce((s, r) => s + Number(r.training_cycles_added ?? 0), 0);
+  const combinedStageEvidence = stageRunTotals.reduce((s, r) => s + Number(r.content_units_added ?? 0), 0);
 
   // ---------- Stage 1: run a sub-brain pipeline ----------
   async function runSubBrain(id: AssetClassId) {
@@ -913,6 +971,27 @@ function FoundryAdminInner() {
             <div className="mt-0.5 font-mono text-sm text-foreground">{(state.totalTrainingCycles ?? 0).toLocaleString()}</div>
           </div>
         </div>
+        <div className="mt-3 rounded-lg border border-border/40 bg-background/40 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span>Persisted execution evidence</span>
+            <span className="font-mono text-foreground">{stageRunTotals.length.toLocaleString()} records · {combinedStageRows.toLocaleString()} rows · {combinedStageEvidence.toLocaleString()} evidence units · {combinedStageCycles.toLocaleString()} cycles</span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2 lg:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((n) => {
+              const s = stageSummary(n);
+              return (
+                <div key={n} className="rounded border border-border/40 bg-card/30 p-2">
+                  <div className="font-mono text-muted-foreground">Stage {n}</div>
+                  <div className="mt-1 font-mono text-foreground">{s.completed_runs.toLocaleString()} run{s.completed_runs === 1 ? "" : "s"}</div>
+                  <div className="mt-0.5 text-muted-foreground">
+                    {s.rows_added.toLocaleString()} rows · {fmtBytes(s.indexed_bytes_added)} indexed · {s.training_cycles_added.toLocaleString()} cycles
+                  </div>
+                  <div className="mt-0.5 text-muted-foreground">{s.years}/20 years · {s.dimensions}/{ALL_DIMENSIONS.length} dimensions · {s.audit_runs} quantum audits</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
           Every stage is additive and re-runnable. Each press grows the corpus, regime labels, synthesis evidence, and training cycles the final quantum audit will consume.
         </p>
@@ -1070,6 +1149,8 @@ function FoundryAdminInner() {
           <div className="flex items-center gap-2 flex-wrap">
             {SIMULATED}
             <Badge variant="outline" className="font-mono">Total cycles: {state.totalTrainingCycles ?? 0}</Badge>
+            <Badge variant="outline" className="font-mono">Saved runs: {stage4Summary.completed_runs.toLocaleString()}</Badge>
+            <Badge variant="outline" className="font-mono">Evidence units: {stage4Summary.content_units_added.toLocaleString()}</Badge>
             <Button
               size="sm"
               variant="outline"
@@ -1354,6 +1435,9 @@ function FoundryAdminInner() {
                   <div className="font-medium text-foreground">Final all-years quantum audit</div>
                   <p className="text-muted-foreground">
                     Runs the closing 2006–2025 Foundry audit after ingestion reruns, then records the coverage snapshot, sub-brain map, interval targets, residual learning, and PCI refinement metadata in Quantum Reports.
+                  </p>
+                  <p className="font-mono text-[11px] text-muted-foreground">
+                    Persisted final-audit evidence: {stage5Summary.completed_runs.toLocaleString()} runs · {stage5Summary.audit_runs.toLocaleString()} quantum audits · {stage5Summary.training_cycles_added.toLocaleString()} audit cycles
                   </p>
                 </div>
                 <Button
