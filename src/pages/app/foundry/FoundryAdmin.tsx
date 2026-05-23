@@ -23,8 +23,8 @@ import {
   loadForgeState, saveForgeState, clearForgeState, pciTierMatchAccuracy,
   runYearForBrain, trainYearMultiPass, ASSET_SAMPLE_COUNT, MACRO_SHOCKS, pingQuantum,
   dimensionsAfterPasses, regimeOf, loadFoundryQuantumAudits, loadCorpusCoverage, loadSubBrainCoverage,
-  loadFoundryStageRunTotals, recordFoundryStageRun,
-  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal,
+  loadFoundryStageRunTotals, loadFoundryMetricsSnapshot, emptyFoundryMetricsSnapshot, recordFoundryStageRun,
+  type QuantumReport, type BrainKey, type QuantumPingResult, type DurableQuantumAudit, type FoundryStageRunTotal, type FoundryMetricsSnapshot, type FoundryStageSummary,
 } from "@/lib/foundryEngine";
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
