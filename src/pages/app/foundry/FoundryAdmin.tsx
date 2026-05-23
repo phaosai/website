@@ -1148,6 +1148,8 @@ function FoundryAdminInner() {
           <div className="flex items-center gap-2 flex-wrap">
             {SIMULATED}
             <Badge variant="outline" className="font-mono">Total cycles: {state.totalTrainingCycles ?? 0}</Badge>
+            <Badge variant="outline" className="font-mono">Saved runs: {stage4Summary.completed_runs.toLocaleString()}</Badge>
+            <Badge variant="outline" className="font-mono">Evidence units: {stage4Summary.content_units_added.toLocaleString()}</Badge>
             <Button
               size="sm"
               variant="outline"
