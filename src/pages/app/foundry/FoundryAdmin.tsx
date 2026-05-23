@@ -523,7 +523,7 @@ function FoundryAdminInner() {
   // No brain may peek beyond Jan 1 of the year being validated. Learning is
   // expressed via (a) the year-over-year `learningFactor` AND (b) the per-year
   // `trainingPasses` counter that re-trains the brain on the same shock.
-  async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number } = {}) {
+  async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number; noPersist?: boolean } = {}) {
     const cur = stateRef.current;
     const yearsCompleted = cur.years.filter((y) => (y.status === "scored") && y.year < year).length;
     const learningFactor = Math.pow(0.94, yearsCompleted);
