@@ -273,6 +273,7 @@ function FoundryAdminInner() {
   const stage4RestoreLoggedRef = useRef(false);
   useEffect(() => {
     if (stage4RestoreLoggedRef.current || (state.totalTrainingCycles ?? 0) <= 0) return;
+    if ((foundryMetrics.stageSummaries.find((s) => s.stage_number === 4)?.runs ?? 0) > 0) return;
     stage4RestoreLoggedRef.current = true;
     recordFoundryStageRun({
       stageNumber: 4,
@@ -289,7 +290,7 @@ function FoundryAdminInner() {
         best_combined_ever: state.bestCombinedEver ?? 0,
       },
     }).then(refreshStageRunTotals);
-  }, [state.totalTrainingCycles]);
+  }, [foundryMetrics.stageSummaries, state.totalTrainingCycles]);
 
   // Hydrate real OHLCV anchors from foundry_year_corpus on mount so the
   // brain's Dec 31 (and quarterly) targets come from real data instead of
