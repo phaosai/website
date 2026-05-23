@@ -147,6 +147,28 @@ function FoundryAdminInner() {
     const snapshot = await loadFoundryMetricsSnapshot();
     if (!snapshot.ok) return null;
     setFoundryMetrics(snapshot);
+    const metricCoverage = Object.fromEntries(Object.entries(snapshot.byDimensionYear ?? {}).map(([dim, years]) => [
+      dim,
+      Object.fromEntries(Object.entries(years).map(([year, row]) => [Number(year), Number(row.rows ?? 0)])),
+    ])) as Record<string, Record<number, number>>;
+    if (Object.keys(metricCoverage).length > 0) setCorpusCoverage(metricCoverage);
+    if (snapshot.quantumAudits?.length) {
+      setDurableAudits(snapshot.quantumAudits as unknown as DurableQuantumAudit[]);
+    }
+    const validationRows = Object.values(snapshot.validationYears ?? {}).filter((row) => row.validated);
+    if (validationRows.length > 0) {
+      const latestBrain = validationRows.find((row) => row.brain_name)?.brain_name;
+      if (latestBrain) setPromoteName((prev) => prev.trim() ? prev : latestBrain);
+      setState((prev) => recomputeGates({
+        ...prev,
+        years: prev.years.map((y) => {
+          const row = validationRows.find((r) => Number(r.year) === y.year);
+          if (!row || y.status === "scored") return y;
+          const score = Number(row.combined_score ?? 0);
+          return { ...y, status: "scored", phase: "complete", combined: score, notes: `Validated by durable Foundry evidence · ${row.brain_name ?? "engine"} ${row.brain_version ?? ""} · combined ${score}.` };
+        }),
+      }));
+    }
     setStageRunTotals(snapshot.stageRunTotals ?? []);
     setFoundryTotals({
       rows: Number(snapshot.global.rows ?? 0),
