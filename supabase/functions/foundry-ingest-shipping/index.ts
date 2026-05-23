@@ -67,19 +67,21 @@ Deno.serve(async (req) => {
       { id: "us-exports",       url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=EXPGS", label: "US Exports of Goods/Services", platform: "fred" },
       { id: "global-supply",    url: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=GSCPI", label: "NY Fed Global Supply Chain Index", platform: "fred" },
     ];
-    for (const s of sources) {
-      const p = await probe(s.url);
-      const indexed = p.content_length > 0 ? p.content_length : 32_000_000 + (year - 2006) * 500_000;
-      const payload = { ...p, estimated_available_archive_bytes: indexed, year, label: s.label, ingest_run_id: runId };
-      const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
-      const { error } = await supabase.from("foundry_year_corpus").insert({
-        year, dimension: "shipping", source_id: `${s.id}:${runId.slice(0,8)}`,
-        source_url: s.url, payload, ingest_run_id: runId,
-        payload_bytes: payloadBytes, content_units: indexed,
-        sub_brain_id: subBrainId, platform: s.platform, indexed_bytes: indexed,
-      });
-      if (!error) { bytesAdded += payloadBytes; indexedAdded += indexed; written.push(s.id); }
-      await new Promise(r => setTimeout(r, 220));
+    const CHUNK = 4;
+    for (let i = 0; i < sources.length; i += CHUNK) {
+      await Promise.all(sources.slice(i, i + CHUNK).map(async (s) => {
+        const p = await probe(s.url);
+        const indexed = p.content_length > 0 ? p.content_length : 32_000_000 + (year - 2006) * 500_000;
+        const payload = { ...p, estimated_available_archive_bytes: indexed, year, label: s.label, ingest_run_id: runId };
+        const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+        const { error } = await supabase.from("foundry_year_corpus").insert({
+          year, dimension: "shipping", source_id: `${s.id}:${runId.slice(0,8)}`,
+          source_url: s.url, payload, ingest_run_id: runId,
+          payload_bytes: payloadBytes, content_units: indexed,
+          sub_brain_id: subBrainId, platform: s.platform, indexed_bytes: indexed,
+        });
+        if (!error) { bytesAdded += payloadBytes; indexedAdded += indexed; written.push(s.id); }
+      }));
     }
     return json({
       ok: written.length > 0, year, run_id: runId, sub_brain_id: subBrainId,

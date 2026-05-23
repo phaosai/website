@@ -65,24 +65,26 @@ Deno.serve(async (req) => {
     const written: string[] = []; const failed: { id: string; err: string }[] = [];
     let bytesAdded = 0, indexedAdded = 0, unitsAdded = 0;
 
-    for (const s of sources) {
-      const head = await fetch(s.url, { method: "HEAD", headers: { "User-Agent": userAgent }, signal: AbortSignal.timeout(3500) }).catch(() => null);
-      const contentLength = Number(head?.headers.get("content-length") ?? 0);
-      const indexed = contentLength > 0 ? contentLength : s.baseIndexed + (year - 2006) * 35_000_000;
-      const payload = {
-        archive_available: !!head?.ok, content_length_bytes: contentLength, estimated_available_archive_bytes: indexed,
-        year, label: s.label, ingest_run_id: runId,
-      };
-      const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
-      const { error } = await supabase.from("foundry_year_corpus").insert({
-        year, dimension: "geopolitical", source_id: `${s.id}:${runId.slice(0,8)}`,
-        source_url: s.url, payload, ingest_run_id: runId,
-        payload_bytes: payloadBytes, content_units: indexed,
-        sub_brain_id: subBrainId, platform: "geopolitical", indexed_bytes: indexed,
-      });
-      if (error) failed.push({ id: s.id, err: error.message });
-      else { bytesAdded += payloadBytes; indexedAdded += indexed; unitsAdded += indexed; written.push(s.id); }
-      await new Promise(r => setTimeout(r, 120));
+    const CHUNK = 4;
+    for (let i = 0; i < sources.length; i += CHUNK) {
+      await Promise.all(sources.slice(i, i + CHUNK).map(async (s) => {
+        const head = await fetch(s.url, { method: "HEAD", headers: { "User-Agent": userAgent }, signal: AbortSignal.timeout(3500) }).catch(() => null);
+        const contentLength = Number(head?.headers.get("content-length") ?? 0);
+        const indexed = contentLength > 0 ? contentLength : s.baseIndexed + (year - 2006) * 35_000_000;
+        const payload = {
+          archive_available: !!head?.ok, content_length_bytes: contentLength, estimated_available_archive_bytes: indexed,
+          year, label: s.label, ingest_run_id: runId,
+        };
+        const payloadBytes = new TextEncoder().encode(JSON.stringify(payload)).length;
+        const { error } = await supabase.from("foundry_year_corpus").insert({
+          year, dimension: "geopolitical", source_id: `${s.id}:${runId.slice(0,8)}`,
+          source_url: s.url, payload, ingest_run_id: runId,
+          payload_bytes: payloadBytes, content_units: indexed,
+          sub_brain_id: subBrainId, platform: "geopolitical", indexed_bytes: indexed,
+        });
+        if (error) failed.push({ id: s.id, err: error.message });
+        else { bytesAdded += payloadBytes; indexedAdded += indexed; unitsAdded += indexed; written.push(s.id); }
+      }));
     }
 
     return json({

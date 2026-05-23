@@ -1656,7 +1656,9 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   const [proof, setProof] = useState<FoundryCoverageProof>(() => emptyCoverageProof());
   const [lastRunProof, setLastRunProof] = useState<string | null>(null);
   const [batchCursor, setBatchCursor] = useState(0);
-  const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
+  const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number; inFlight?: number; written?: number } | null>(null);
+  const [turbo, setTurbo] = useState(true);
+  const cancelRef = useRef(false);
   const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
   const COIN_BATCHES = [["bitcoin", "ethereum"], ["solana", "binancecoin"], ["ripple", "cardano"], ["dogecoin", "polkadot"]];
 
@@ -1730,36 +1732,64 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
 
   async function ingestYears(years: number[], mode: "all-sources" | "year-batch") {
     setBusy(mode);
+    cancelRef.current = false;
     let totalWritten = 0;
     let totalFailed = 0;
-    const yearsFailed: number[] = [];
-    const totalJobs = years.reduce((sum, y) => sum + sourceJobs(y).length, 0);
-    let completedJobs = 0;
-    setIngestProgress({ label: `queued ${years[0]}–${years[years.length - 1]}`, done: 0, total: totalJobs });
-    try {
-      for (const y of years) {
-        let yearOk = true;
-        for (const job of sourceJobs(y)) {
-          try {
-            setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-            const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
-            if (error) throw error;
-            if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
-            totalWritten += Number(data?.rows_written ?? 0);
-            totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
-          } catch (e) {
-            yearOk = false;
-            const err = e as { message?: string };
-            toast({ title: `${y} · ${job.kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
-          }
-          completedJobs += 1;
-          setIngestProgress({ label: `${y} · ${job.kind}`, done: completedJobs, total: totalJobs });
-          if (completedJobs < totalJobs) await randomSleep(mode === "all-sources" ? 1600 : 900, mode === "all-sources" ? 3800 : 2400);
+    const yearsFailed = new Set<number>();
+
+    // Flatten all (year, job) pairs into one queue
+    const queue: Array<{ y: number; job: ReturnType<typeof sourceJobs>[number] }> = [];
+    for (const y of years) for (const job of sourceJobs(y)) queue.push({ y, job });
+    const totalJobs = queue.length;
+    let completed = 0;
+    let inFlight = 0;
+    const lastHostFinishAt: Record<string, number> = {};
+
+    const concurrency = turbo ? (mode === "all-sources" ? 5 : 3) : 1;
+    setIngestProgress({ label: `queued ${years[0]}–${years[years.length - 1]}`, done: 0, total: totalJobs, inFlight: 0, written: 0 });
+
+    // Throttled stats refresh during long runs
+    const refreshTimer = setInterval(() => { refreshStats().catch(() => {}); }, 12_000);
+
+    let cursor = 0;
+    const runWorker = async () => {
+      while (true) {
+        if (cancelRef.current) return;
+        const idx = cursor++;
+        if (idx >= queue.length) return;
+        const { y, job } = queue[idx];
+        // Per-host jitter: if this same edge function was just hit, wait briefly
+        const now = Date.now();
+        const last = lastHostFinishAt[job.fn] ?? 0;
+        const since = now - last;
+        const minGap = turbo ? 350 : 1600;
+        if (since < minGap) await new Promise((r) => setTimeout(r, minGap - since + Math.floor(Math.random() * 250)));
+
+        inFlight += 1;
+        setIngestProgress((p) => p ? { ...p, label: `${y} · ${job.kind}`, inFlight } : p);
+        try {
+          const { data, error } = await supabase.functions.invoke(job.fn, { body: job.body, headers: { "X-Phaos-UA": pickUserAgent() } });
+          if (error) throw error;
+          if (data?.ok === false && Number(data?.rows_written ?? 0) === 0) throw new Error(data?.error ?? "No corpus rows written");
+          totalWritten += Number(data?.rows_written ?? 0);
+          totalFailed += Number(data?.failed_count ?? (data?.failed ?? []).length ?? 0);
+        } catch (e) {
+          yearsFailed.add(y);
+          const err = e as { message?: string };
+          // Only toast one error per year to avoid spam
+          if (yearsFailed.size <= 5) toast({ title: `${y} · ${job.kind} failed`, description: err?.message ?? String(e), variant: "destructive" });
+        } finally {
+          lastHostFinishAt[job.fn] = Date.now();
+          inFlight -= 1;
+          completed += 1;
+          setIngestProgress({ label: `${y} · ${job.kind}`, done: completed, total: totalJobs, inFlight, written: totalWritten });
         }
-        if (!yearOk) yearsFailed.push(y);
-        if (mode === "all-sources") await refreshStats();
       }
-      if (quantumMode) {
+    };
+
+    try {
+      await Promise.all(Array.from({ length: concurrency }, () => runWorker()));
+      if (quantumMode && !cancelRef.current) {
         const out = await runQuantumStage({
           scope: "final-audit",
           label: `data-wells-${years[0]}-${years[years.length - 1]}`,
@@ -1776,16 +1806,24 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         });
         onQuantumReport(out.report);
       }
+      const failedList = Array.from(yearsFailed).sort();
       toast({
-        title: `✓ Backfilled data wells · ${years.length - yearsFailed.length}/${years.length} years`,
-        description: `Wrote ${totalWritten} additive corpus rows. Source-level fallbacks/errors: ${totalFailed}. Year-level failures: ${yearsFailed.length}${yearsFailed.length ? ` (${yearsFailed.join(", ")})` : ""}.`,
+        title: cancelRef.current ? `Cancelled · ${years.length - failedList.length}/${years.length} years partial` : `✓ Backfilled data wells · ${years.length - failedList.length}/${years.length} years`,
+        description: `Wrote ${totalWritten} additive corpus rows. Source-level fallbacks/errors: ${totalFailed}. Year-level failures: ${failedList.length}${failedList.length ? ` (${failedList.join(", ")})` : ""}.`,
       });
-      setLastRunProof(`Completed ${completedJobs}/${totalJobs} source shards · ${totalWritten.toLocaleString()} additive rows written · ${totalFailed.toLocaleString()} source fallbacks/errors · ${yearsFailed.length ? `year retries needed: ${yearsFailed.join(", ")}` : "all requested years returned saved rows"}.`);
+      setLastRunProof(`Completed ${completed}/${totalJobs} source shards · ${totalWritten.toLocaleString()} additive rows written · ${totalFailed.toLocaleString()} source fallbacks/errors · ${failedList.length ? `year retries needed: ${failedList.join(", ")}` : "all requested years returned saved rows"}${cancelRef.current ? " · run cancelled by user" : ""}.`);
       if (mode === "year-batch") setBatchCursor((c) => (c + years.length) % ALL_FOUNDRY_YEARS.length);
-    } finally { await refreshStats(); setBusy(null); setIngestProgress(null); }
+    } finally {
+      clearInterval(refreshTimer);
+      await refreshStats();
+      setBusy(null);
+      setIngestProgress(null);
+      cancelRef.current = false;
+    }
   }
 
   const nextBatchYears = [ALL_FOUNDRY_YEARS[batchCursor]];
+  const nextThreeYears = Array.from({ length: 3 }, (_, i) => ALL_FOUNDRY_YEARS[(batchCursor + i) % ALL_FOUNDRY_YEARS.length]);
 
   return (
     <section className="space-y-3">
@@ -1818,10 +1856,23 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
             {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
             Ingest next year ({nextBatchYears.join("/")})
           </Button>
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingestYears(nextThreeYears, "year-batch")} className="gap-1">
+            {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
+            Run next 3 years ({nextThreeYears.join(",")})
+          </Button>
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground font-mono">
+            <input type="checkbox" checked={turbo} onChange={(e) => setTurbo(e.target.checked)} disabled={busy !== null} />
+            Turbo (parallel)
+          </label>
           <Button size="sm" disabled={busy !== null} onClick={() => ingestYears(ALL_FOUNDRY_YEARS, "all-sources")} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
             {busy === "all-sources" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
             Ingest all years + all sources
           </Button>
+          {busy !== null && (
+            <Button size="sm" variant="destructive" onClick={() => { cancelRef.current = true; }} className="gap-1">
+              Cancel
+            </Button>
+          )}
         </div>
       </header>
       <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-5">
@@ -1837,9 +1888,10 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         <div className="space-y-1 rounded border border-border/40 bg-card/40 p-3 text-xs">
           <div className="flex items-center justify-between gap-3 text-muted-foreground">
             <span className="font-mono">{ingestProgress.label}</span>
-            <span className="font-mono">{ingestProgress.done}/{ingestProgress.total}</span>
+            <span className="font-mono">in-flight: {ingestProgress.inFlight ?? 0} · done: {ingestProgress.done}/{ingestProgress.total} · written: {(ingestProgress.written ?? 0).toLocaleString()}</span>
           </div>
           <Progress value={(ingestProgress.done / Math.max(1, ingestProgress.total)) * 100} className="h-1" />
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Tip: if Turbo hits rate-limits, untick Turbo or use "Ingest next year" — ingestion is additive and never duplicates.</p>
         </div>
       )}
       <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
