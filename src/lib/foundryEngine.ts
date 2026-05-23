@@ -881,10 +881,12 @@ export interface FoundryMetricsSnapshot {
   bySubBrain: Record<string, FoundryMetricCoverageRow & { sub_brain_id?: string; label?: string }>;
   byYear: Record<string, FoundryMetricCoverageRow & { year?: number }>;
   byDimension: Record<string, FoundryMetricCoverageRow & { dimension?: string }>;
+  byDimensionYear?: Record<string, Record<string, FoundryMetricCoverageRow & { year?: number; dimension?: string }>>;
+  validationYears?: Record<string, { year: number; rows: number; validated: boolean; brain_name: string | null; brain_version: string | null; combined_score: number | string | null; validated_at: string | null; evidence: Record<string, unknown> | null }>;
   stageRunTotals: FoundryStageRunTotal[];
   stageSummaries: FoundryStageSummary[];
   recentRuns?: Record<string, unknown>[];
-  quantumAudits?: Record<string, unknown>[];
+  quantumAudits?: Array<Record<string, unknown> & { status?: string; selected_asset_type?: string; completed_at?: string | null }>;
   error?: string;
 }
 
@@ -894,6 +896,7 @@ export const emptyFoundryMetricsSnapshot = (): FoundryMetricsSnapshot => ({
   bySubBrain: {},
   byYear: {},
   byDimension: {},
+  byDimensionYear: {},
   stageRunTotals: [],
   stageSummaries: [],
 });

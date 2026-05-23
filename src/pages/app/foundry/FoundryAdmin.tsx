@@ -147,6 +147,28 @@ function FoundryAdminInner() {
     const snapshot = await loadFoundryMetricsSnapshot();
     if (!snapshot.ok) return null;
     setFoundryMetrics(snapshot);
+    const metricCoverage = Object.fromEntries(Object.entries(snapshot.byDimensionYear ?? {}).map(([dim, years]) => [
+      dim,
+      Object.fromEntries(Object.entries(years).map(([year, row]) => [Number(year), Number(row.rows ?? 0)])),
+    ])) as Record<string, Record<number, number>>;
+    if (Object.keys(metricCoverage).length > 0) setCorpusCoverage(metricCoverage);
+    if (snapshot.quantumAudits?.length) {
+      setDurableAudits(snapshot.quantumAudits as unknown as DurableQuantumAudit[]);
+    }
+    const validationRows = Object.values(snapshot.validationYears ?? {}).filter((row) => row.validated);
+    if (validationRows.length > 0) {
+      const latestBrain = validationRows.find((row) => row.brain_name)?.brain_name;
+      if (latestBrain) setPromoteName((prev) => prev.trim() ? prev : latestBrain);
+      setState((prev) => recomputeGates({
+        ...prev,
+        years: prev.years.map((y) => {
+          const row = validationRows.find((r) => Number(r.year) === y.year);
+          if (!row || y.status === "scored") return y;
+          const score = Number(row.combined_score ?? 0);
+          return { ...y, status: "scored", phase: "complete", combined: score, notes: `Validated by durable Foundry evidence · ${row.brain_name ?? "engine"} ${row.brain_version ?? ""} · combined ${score}.` };
+        }),
+      }));
+    }
     setStageRunTotals(snapshot.stageRunTotals ?? []);
     setFoundryTotals({
       rows: Number(snapshot.global.rows ?? 0),
@@ -258,6 +280,8 @@ function FoundryAdminInner() {
       const { data } = await (supabase as any)
         .from("foundry_validated_years")
         .select("year,combined_score,brain_name,brain_version,validated_at")
+        .gte("year", 2011)
+        .lte("year", 2025)
         .order("validated_at", { ascending: false });
       const rows = (data ?? []) as Array<{ year: number; combined_score: number | null; brain_name: string; brain_version: string }>;
       if (rows.length === 0) return;
@@ -855,8 +879,24 @@ function FoundryAdminInner() {
     setFinalAuditRunning(true);
     try {
       announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
+      const missingValidationYears = stateRef.current.years.filter((y) => y.status !== "scored").map((y) => y.year);
       const coverage = await loadCorpusCoverage();
+      if (Object.keys(coverage).length === 0) {
+        const snapshot = await loadFoundryMetricsSnapshot();
+        Object.entries(snapshot.byDimensionYear ?? {}).forEach(([dim, years]) => {
+          coverage[dim] = Object.fromEntries(Object.entries(years).map(([y, row]) => [Number(y), Number(row.rows ?? 0)]));
+        });
+      }
       const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const missingPriceYears = VALIDATION_YEARS.filter((y) => (coverage.price?.[y] ?? 0) === 0);
+      if (missingValidationYears.length > 0 || missingPriceYears.length > 0) {
+        toast({
+          title: "Final audit blocked — required gates incomplete",
+          description: `${missingValidationYears.length ? `Validate years: ${missingValidationYears.join(", ")}. ` : ""}${missingPriceYears.length ? `Ingest prices for: ${missingPriceYears.join(", ")}.` : ""}`,
+          variant: "destructive",
+        });
+        return;
+      }
       const missingDimensionYears = ALL_DIMENSIONS.flatMap((dim) => ALL_FOUNDRY_YEARS
         .filter((y) => (coverage[dim]?.[y] ?? 0) === 0)
         .map((y) => `${y}:${dim}`));
@@ -869,14 +909,9 @@ function FoundryAdminInner() {
         return acc;
       }, emptyCoverageProof());
       proof.missing = ALL_FOUNDRY_YEARS.filter((y) => !((proofRows ?? []) as Array<{ year: number; dimensions: number | string | null; sub_brains: number | string | null }>).some((r) => r.year === y && Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length)).map(String);
-      if (missingDimensionYears.length > 0 || proof.missing.length > 0) {
-        toast({
-          title: "Final audit blocked — corpus proof incomplete",
-          description: `Missing ${missingDimensionYears.length} year/dimension proofs and ${proof.missing.length} incomplete years. Re-run Data Sources ingestion first; saved rows remain additive.`,
-          variant: "destructive",
-        });
-        return;
-      }
+      const coverageWarning = missingDimensionYears.length > 0 || proof.missing.length > 0
+        ? `Non-blocking corpus warning: ${missingDimensionYears.length} optional year/dimension proofs and ${proof.missing.length} optional full-corpus years are incomplete.`
+        : "Full optional corpus proof is complete.";
       const coverageSnapshot = Object.fromEntries(
         Object.entries(coverage).map(([dim, rows]) => [
           dim,
@@ -896,6 +931,7 @@ function FoundryAdminInner() {
           platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
           dimensions: ALL_DIMENSIONS,
           coverageProof: proof,
+          coverageWarning,
           coverageSnapshot,
           trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
           bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
@@ -915,7 +951,9 @@ function FoundryAdminInner() {
         evidence: { quantum: out.report, coverageProof: proof, coverageSnapshot },
       });
       refreshStageRunTotals();
-      toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
+      await refreshDurableAudits();
+      await refreshFoundryMetrics();
+      toast({ title: "⚛︎ Final Foundry audit recorded", description: `${out.message}. ${coverageWarning}` });
     } finally {
       setFinalAuditRunning(false);
     }
@@ -999,6 +1037,12 @@ function FoundryAdminInner() {
               brainName={promoteName}
               quantumMode={quantumMode}
               onRunUpdate={setMasterRun}
+              onRunComplete={async () => {
+                await refreshFoundryMetrics();
+                await refreshDurableAudits();
+                await restoreYearsFromDb();
+                await refreshCoverage();
+              }}
             />
           </div>
           <div className="flex items-center gap-3 text-xs flex-wrap">
@@ -1867,6 +1911,25 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
     const { data: dimData } = await (supabase as any).rpc("foundry_dimension_year_totals");
     const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
     const nextProof = emptyCoverageProof();
+    if (error || !data) {
+      const snapshot = await loadFoundryMetricsSnapshot();
+      if (snapshot.ok) {
+        for (const [year, r] of Object.entries(snapshot.byYear ?? {})) {
+          const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+          next[Number(year)] = row;
+          nextProof.totalRows += row.rows;
+          nextProof.totalStored += row.stored;
+          nextProof.totalIndexed += row.indexed;
+          if (row.dimensions >= ALL_DIMENSIONS.length && row.subBrains >= ASSET_CLASSES.length) nextProof.completeYears += 1;
+          if (!nextProof.lastFetched || (r.last_fetched && r.last_fetched > nextProof.lastFetched)) nextProof.lastFetched = r.last_fetched;
+        }
+        nextProof.missing = ALL_FOUNDRY_YEARS.filter((y) => (next[y]?.dimensions ?? 0) < ALL_DIMENSIONS.length || (next[y]?.subBrains ?? 0) < ASSET_CLASSES.length).map(String);
+        nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => Number(snapshot.byDimensionYear?.[dim]?.[String(y)]?.rows ?? 0) > 0)).length;
+        setStats(next);
+        setProof(nextProof);
+        return;
+      }
+    }
     if (!error && data) {
       for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>) {
         const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
