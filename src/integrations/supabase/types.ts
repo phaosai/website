@@ -547,6 +547,50 @@ export type Database = {
         }
         Relationships: []
       }
+      foundry_validated_years: {
+        Row: {
+          brain_name: string
+          brain_version: string
+          combined_score: number | null
+          evidence: Json
+          id: string
+          master_run_id: string | null
+          validated_at: string
+          validated_by: string | null
+          year: number
+        }
+        Insert: {
+          brain_name: string
+          brain_version: string
+          combined_score?: number | null
+          evidence?: Json
+          id?: string
+          master_run_id?: string | null
+          validated_at?: string
+          validated_by?: string | null
+          year: number
+        }
+        Update: {
+          brain_name?: string
+          brain_version?: string
+          combined_score?: number | null
+          evidence?: Json
+          id?: string
+          master_run_id?: string | null
+          validated_at?: string
+          validated_by?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "foundry_validated_years_master_run_id_fkey"
+            columns: ["master_run_id"]
+            isOneToOne: false
+            referencedRelation: "foundry_master_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       foundry_year_corpus: {
         Row: {
           content_units: number
