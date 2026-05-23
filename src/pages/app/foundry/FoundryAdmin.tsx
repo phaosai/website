@@ -1061,6 +1061,10 @@ function FoundryAdminInner() {
         </p>
       </div>
 
+      {masterRun && <BrainGradeCard run={masterRun} />}
+
+
+
       {pingResult && (
         <div className={cn(
           "rounded-xl border p-4 text-xs space-y-2",
