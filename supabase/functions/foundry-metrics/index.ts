@@ -69,33 +69,11 @@ Deno.serve(async (req) => {
       if (!isAdmin) return json({ ok: false, error: "forbidden" }, 403);
     }
 
-    const [{ data: corpusRows, error: corpusError }, { data: runRows, error: runError }, { data: auditRows, error: auditError }] = await Promise.all([
-      service
-        .from("foundry_year_corpus")
-        .select("year,dimension,sub_brain_id,platform,payload_bytes,indexed_bytes,content_units,fetched_at")
-        .gte("year", 2006)
-        .lte("year", 2025)
-        .limit(200000),
-      service
-        .from("foundry_stage_runs")
-        .select("stage_number,stage_key,stage_label,status,sub_brain_id,years,dimensions,rows_added,stored_bytes_added,indexed_bytes_added,content_units_added,training_cycles_added,accuracy,evidence,started_at,completed_at,created_at")
-        .order("created_at", { ascending: false })
-        .limit(10000),
-      service
-        .from("quantum_audits")
-        .select("selected_asset_type,status,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,created_at,completed_at")
-        .in("selected_asset_type", ["subbrain", "synthesis", "year-audit", "final-audit"])
-        .order("created_at", { ascending: false })
-        .limit(1000),
+    const [corpus, runs, audits] = await Promise.all([
+      fetchAll<Record<string, unknown>>((from, to) => service.from("foundry_year_corpus").select("year,dimension,sub_brain_id,platform,payload_bytes,indexed_bytes,content_units,fetched_at").gte("year", 2006).lte("year", 2025).range(from, to)),
+      fetchAll<Record<string, unknown>>((from, to) => service.from("foundry_stage_runs").select("stage_number,stage_key,stage_label,status,sub_brain_id,years,dimensions,rows_added,stored_bytes_added,indexed_bytes_added,content_units_added,training_cycles_added,accuracy,evidence,started_at,completed_at,created_at").order("created_at", { ascending: false }).range(from, to)),
+      fetchAll<Record<string, unknown>>((from, to) => service.from("quantum_audits").select("selected_asset_type,status,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,created_at,completed_at").in("selected_asset_type", ["subbrain", "synthesis", "year-audit", "final-audit"]).order("created_at", { ascending: false }).range(from, to)),
     ]);
-
-    if (corpusError) return json({ ok: false, error: corpusError.message }, 500);
-    if (runError) return json({ ok: false, error: runError.message }, 500);
-    if (auditError) return json({ ok: false, error: auditError.message }, 500);
-
-    const corpus = (corpusRows ?? []) as Record<string, unknown>[];
-    const runs = (runRows ?? []) as Record<string, unknown>[];
-    const audits = (auditRows ?? []) as Record<string, unknown>[];
 
     const bySubBrain = Object.fromEntries(SUB_BRAINS.map((id) => {
       const rows = corpus.filter((row) => (row.sub_brain_id ?? "unknown") === id);
