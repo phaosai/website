@@ -1888,9 +1888,10 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
         <div className="space-y-1 rounded border border-border/40 bg-card/40 p-3 text-xs">
           <div className="flex items-center justify-between gap-3 text-muted-foreground">
             <span className="font-mono">{ingestProgress.label}</span>
-            <span className="font-mono">{ingestProgress.done}/{ingestProgress.total}</span>
+            <span className="font-mono">in-flight: {ingestProgress.inFlight ?? 0} · done: {ingestProgress.done}/{ingestProgress.total} · written: {(ingestProgress.written ?? 0).toLocaleString()}</span>
           </div>
           <Progress value={(ingestProgress.done / Math.max(1, ingestProgress.total)) * 100} className="h-1" />
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Tip: if Turbo hits rate-limits, untick Turbo or use "Ingest next year" — ingestion is additive and never duplicates.</p>
         </div>
       )}
       <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
