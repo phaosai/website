@@ -1400,7 +1400,7 @@ export type Database = {
           evidence: string | null
           headline: string
           id: string
-          organization_id: string | null
+          organization_id: string
           rank: number | null
           run_id: string | null
           source: Json | null
@@ -1415,7 +1415,7 @@ export type Database = {
           evidence?: string | null
           headline: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           rank?: number | null
           run_id?: string | null
           source?: Json | null
@@ -1430,7 +1430,7 @@ export type Database = {
           evidence?: string | null
           headline?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           rank?: number | null
           run_id?: string | null
           source?: Json | null
