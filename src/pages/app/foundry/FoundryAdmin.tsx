@@ -114,6 +114,7 @@ function FoundryAdminInner() {
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
   const [pinging, setPinging] = useState(false);
+  const [masterRun, setMasterRun] = useState<MasterRunRow | null>(null);
   const QMODE_KEY = "phaos.foundry.quantumMode.v1";
   const [quantumMode, setQuantumMode] = useState<boolean>(() => {
     try { return localStorage.getItem(QMODE_KEY) === "1"; } catch { return false; }
