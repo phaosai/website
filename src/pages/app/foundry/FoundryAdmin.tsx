@@ -879,8 +879,24 @@ function FoundryAdminInner() {
     setFinalAuditRunning(true);
     try {
       announceQuantum("Final all-years Foundry audit · 2006–2025 corpus + every asset-class sub-brain + PCI interval model");
+      const missingValidationYears = stateRef.current.years.filter((y) => y.status !== "scored").map((y) => y.year);
       const coverage = await loadCorpusCoverage();
+      if (Object.keys(coverage).length === 0) {
+        const snapshot = await loadFoundryMetricsSnapshot();
+        Object.entries(snapshot.byDimensionYear ?? {}).forEach(([dim, years]) => {
+          coverage[dim] = Object.fromEntries(Object.entries(years).map(([y, row]) => [Number(y), Number(row.rows ?? 0)]));
+        });
+      }
       const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
+      const missingPriceYears = VALIDATION_YEARS.filter((y) => (coverage.price?.[y] ?? 0) === 0);
+      if (missingValidationYears.length > 0 || missingPriceYears.length > 0) {
+        toast({
+          title: "Final audit blocked — required gates incomplete",
+          description: `${missingValidationYears.length ? `Validate years: ${missingValidationYears.join(", ")}. ` : ""}${missingPriceYears.length ? `Ingest prices for: ${missingPriceYears.join(", ")}.` : ""}`,
+          variant: "destructive",
+        });
+        return;
+      }
       const missingDimensionYears = ALL_DIMENSIONS.flatMap((dim) => ALL_FOUNDRY_YEARS
         .filter((y) => (coverage[dim]?.[y] ?? 0) === 0)
         .map((y) => `${y}:${dim}`));
@@ -893,14 +909,9 @@ function FoundryAdminInner() {
         return acc;
       }, emptyCoverageProof());
       proof.missing = ALL_FOUNDRY_YEARS.filter((y) => !((proofRows ?? []) as Array<{ year: number; dimensions: number | string | null; sub_brains: number | string | null }>).some((r) => r.year === y && Number(r.dimensions ?? 0) >= ALL_DIMENSIONS.length && Number(r.sub_brains ?? 0) >= ASSET_CLASSES.length)).map(String);
-      if (missingDimensionYears.length > 0 || proof.missing.length > 0) {
-        toast({
-          title: "Final audit blocked — corpus proof incomplete",
-          description: `Missing ${missingDimensionYears.length} year/dimension proofs and ${proof.missing.length} incomplete years. Re-run Data Sources ingestion first; saved rows remain additive.`,
-          variant: "destructive",
-        });
-        return;
-      }
+      const coverageWarning = missingDimensionYears.length > 0 || proof.missing.length > 0
+        ? `Non-blocking corpus warning: ${missingDimensionYears.length} optional year/dimension proofs and ${proof.missing.length} optional full-corpus years are incomplete.`
+        : "Full optional corpus proof is complete.";
       const coverageSnapshot = Object.fromEntries(
         Object.entries(coverage).map(([dim, rows]) => [
           dim,
@@ -920,6 +931,7 @@ function FoundryAdminInner() {
           platforms: ["foundry", "stooq", "fred", "sec_edgar", "gdelt", "noaa", "trends", "baltic", "coingecko"],
           dimensions: ALL_DIMENSIONS,
           coverageProof: proof,
+          coverageWarning,
           coverageSnapshot,
           trainingCycles: stateRef.current.totalTrainingCycles ?? 0,
           bestCombinedEver: stateRef.current.bestCombinedEver ?? 0,
@@ -939,7 +951,9 @@ function FoundryAdminInner() {
         evidence: { quantum: out.report, coverageProof: proof, coverageSnapshot },
       });
       refreshStageRunTotals();
-      toast({ title: "⚛︎ Final Foundry audit recorded", description: out.message });
+      await refreshDurableAudits();
+      await refreshFoundryMetrics();
+      toast({ title: "⚛︎ Final Foundry audit recorded", description: `${out.message}. ${coverageWarning}` });
     } finally {
       setFinalAuditRunning(false);
     }
