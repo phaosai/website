@@ -247,7 +247,51 @@ function FoundryAdminInner() {
     });
   }
 
-  useEffect(() => { refreshDurableAudits(); refreshCoverage(); refreshStageRunTotals(); restoreStage1FromDb(); }, []);
+  /**
+   * Restore per-year validation from durable foundry_validated_years rows.
+   * MASTER EXECUTE writes one row per VALIDATION_YEAR; this rehydrates the
+   * client gates so "All years 2011–2025 validated" flips green for any admin
+   * on any device, regardless of localStorage state.
+   */
+  async function restoreYearsFromDb() {
+    try {
+      const { data } = await (supabase as any)
+        .from("foundry_validated_years")
+        .select("year,combined_score,brain_name,brain_version,validated_at")
+        .order("validated_at", { ascending: false });
+      const rows = (data ?? []) as Array<{ year: number; combined_score: number | null; brain_name: string; brain_version: string }>;
+      if (rows.length === 0) return;
+      const byYear = new Map<number, { score: number; brain: string; version: string }>();
+      for (const r of rows) {
+        if (!byYear.has(r.year)) byYear.set(r.year, { score: Number(r.combined_score ?? 0), brain: r.brain_name, version: r.brain_version });
+      }
+      // Use the most recent brain_name as a sensible default for the engine field.
+      const latestBrain = rows[0]?.brain_name;
+      if (latestBrain) setPromoteName((prev) => prev.trim() ? prev : latestBrain);
+      setState((prev) => recomputeGates({
+        ...prev,
+        years: prev.years.map((y) => {
+          const m = byYear.get(y.year);
+          if (!m || y.status === "scored") return y;
+          return { ...y, status: "scored", phase: "complete", combined: m.score, notes: `Validated by MASTER EXECUTE · ${m.brain} ${m.version} · combined ${m.score}.` };
+        }),
+      }));
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => { refreshDurableAudits(); refreshCoverage(); refreshStageRunTotals(); restoreStage1FromDb(); restoreYearsFromDb(); }, []);
+
+  // When the MASTER EXECUTE run flips to "completed", re-pull every durable
+  // gate source so the readiness checklist immediately reflects new evidence.
+  useEffect(() => {
+    if (masterRun?.status === "completed") {
+      refreshDurableAudits();
+      refreshCoverage();
+      refreshStageRunTotals();
+      restoreYearsFromDb();
+      restoreStage1FromDb();
+    }
+  }, [masterRun?.id, masterRun?.status]);
   async function doPing() {
     setPinging(true);
     setPingResult(null);
