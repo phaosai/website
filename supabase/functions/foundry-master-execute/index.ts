@@ -143,8 +143,10 @@ Deno.serve(async (req) => {
   if (runErr || !runRow) return json({ error: "Could not create run", details: runErr?.message }, 500);
   const runId = runRow.id as string;
 
-  // Fire-and-forget orchestration (returns run_id immediately).
-  (async () => {
+  // Run the orchestration inline and return only after durable gate evidence is
+  // written. Previous fire-and-forget behavior could be frozen after response,
+  // which made the MASTER EXECUTE button look like it did nothing.
+  await (async () => {
     try {
       // -------- STAGE 1: ingest missing prices for VALIDATION_YEARS --------
       await svc.from("foundry_master_runs").update({ current_stage: 1 }).eq("id", runId);
@@ -323,7 +325,14 @@ Deno.serve(async (req) => {
       }).eq("id", runId);
       await appendLog(svc, runId, { stage: "fatal", error: (e as Error).message });
     }
-  })().catch(() => { /* logged */ });
+  })().catch(async (e) => {
+    await svc.from("foundry_master_runs").update({
+      status: "failed",
+      promotion_reason: (e as Error).message,
+      finished_at: new Date().toISOString(),
+    }).eq("id", runId);
+    await appendLog(svc, runId, { stage: "fatal", error: (e as Error).message });
+  });
 
   return json({ ok: true, run_id: runId, brain_name: brainName, brain_version: brainVersion });
 });
