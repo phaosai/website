@@ -970,6 +970,27 @@ function FoundryAdminInner() {
             <div className="mt-0.5 font-mono text-sm text-foreground">{(state.totalTrainingCycles ?? 0).toLocaleString()}</div>
           </div>
         </div>
+        <div className="mt-3 rounded-lg border border-border/40 bg-background/40 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span>Persisted execution evidence</span>
+            <span className="font-mono text-foreground">{stageRunTotals.length.toLocaleString()} records · {combinedStageRows.toLocaleString()} rows · {combinedStageEvidence.toLocaleString()} evidence units · {combinedStageCycles.toLocaleString()} cycles</span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2 lg:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((n) => {
+              const s = stageSummary(n);
+              return (
+                <div key={n} className="rounded border border-border/40 bg-card/30 p-2">
+                  <div className="font-mono text-muted-foreground">Stage {n}</div>
+                  <div className="mt-1 font-mono text-foreground">{s.completed_runs.toLocaleString()} run{s.completed_runs === 1 ? "" : "s"}</div>
+                  <div className="mt-0.5 text-muted-foreground">
+                    {s.rows_added.toLocaleString()} rows · {fmtBytes(s.indexed_bytes_added)} indexed · {s.training_cycles_added.toLocaleString()} cycles
+                  </div>
+                  <div className="mt-0.5 text-muted-foreground">{s.years}/20 years · {s.dimensions}/{ALL_DIMENSIONS.length} dimensions · {s.audit_runs} quantum audits</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
           Every stage is additive and re-runnable. Each press grows the corpus, regime labels, synthesis evidence, and training cycles the final quantum audit will consume.
         </p>
