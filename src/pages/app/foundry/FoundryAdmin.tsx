@@ -1435,6 +1435,9 @@ function FoundryAdminInner() {
                   <p className="text-muted-foreground">
                     Runs the closing 2006–2025 Foundry audit after ingestion reruns, then records the coverage snapshot, sub-brain map, interval targets, residual learning, and PCI refinement metadata in Quantum Reports.
                   </p>
+                  <p className="font-mono text-[11px] text-muted-foreground">
+                    Persisted final-audit evidence: {stage5Summary.completed_runs.toLocaleString()} runs · {stage5Summary.audit_runs.toLocaleString()} quantum audits · {stage5Summary.training_cycles_added.toLocaleString()} audit cycles
+                  </p>
                 </div>
                 <Button
                   size="sm"
