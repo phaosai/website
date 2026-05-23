@@ -273,6 +273,7 @@ function FoundryAdminInner() {
   const stage4RestoreLoggedRef = useRef(false);
   useEffect(() => {
     if (stage4RestoreLoggedRef.current || (state.totalTrainingCycles ?? 0) <= 0) return;
+    if (!foundryMetrics.ok) return;
     if ((foundryMetrics.stageSummaries.find((s) => s.stage_number === 4)?.runs ?? 0) > 0) return;
     stage4RestoreLoggedRef.current = true;
     recordFoundryStageRun({
