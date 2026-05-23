@@ -202,6 +202,11 @@ export interface ForgeState {
   // Anchor cache built from real ingested OHLCV (foundry_year_corpus). Maps
   // `${year}:${symbol}` → realized Dec 31 PCI derived from real returns.
   realizedAnchors?: Record<string, number>;
+  // Hyper-Forge resume cursor: number of full 15-year sweeps completed so far
+  // (0..1000). Persisted to localStorage with the rest of ForgeState so the
+  // user can click "Continue Hyper-Forge" across many short button presses
+  // and never lose progress — every batch saves residuals + cursor.
+  hyperSweepCursor?: number;
 }
 
 export const VALIDATION_YEARS = Array.from({ length: 15 }, (_, i) => 2011 + i);
