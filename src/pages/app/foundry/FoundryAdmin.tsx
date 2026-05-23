@@ -1051,7 +1051,11 @@ function FoundryAdminInner() {
                     {s.rows_added.toLocaleString()} rows · {fmtBytes(s.indexed_bytes_added)} indexed · {s.training_cycles_added.toLocaleString()} cycles
                   </div>
                   <div className="mt-0.5 text-muted-foreground">{s.years}/20 years · {s.dimensions}/{ALL_DIMENSIONS.length} dimensions · {s.audit_runs} quantum audits</div>
-                </div>
+      </div>
+
+      {masterRun && <BrainGradeCard run={masterRun} />}
+
+
               );
             })}
           </div>
