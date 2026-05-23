@@ -180,6 +180,8 @@ function FoundryAdminInner() {
   }
 
   async function refreshStageRunTotals() {
+    const snapshot = await refreshFoundryMetrics();
+    if (snapshot) return;
     const totals = await loadFoundryStageRunTotals();
     setStageRunTotals(totals);
     setState((prev) => {
