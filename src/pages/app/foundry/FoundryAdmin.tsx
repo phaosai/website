@@ -124,9 +124,44 @@ function FoundryAdminInner() {
     const rows = await loadFoundryQuantumAudits(100);
     setDurableAudits(rows);
   }
+  function restoreCountersFromMetrics(stageSummaries: FoundryStageSummary[]) {
+    setState((prev) => {
+      const stage2Runs = stageSummaries.find((s) => s.stage_number === 2)?.completed_runs ?? 0;
+      const stage3Runs = stageSummaries.find((s) => s.stage_number === 3)?.completed_runs ?? 0;
+      const stage4Cycles = stageSummaries.find((s) => s.stage_number === 4)?.training_cycles_added ?? 0;
+      const stage5Runs = stageSummaries.find((s) => s.stage_number === 5)?.completed_runs ?? 0;
+      return recomputeGates({
+        ...prev,
+        regimeRuns: Math.max(prev.regimeRuns ?? 0, stage2Runs),
+        synthesisRuns: Math.max(prev.synthesisRuns ?? 0, stage3Runs),
+        totalTrainingCycles: Math.max(prev.totalTrainingCycles ?? 0, stage4Cycles),
+        finalAuditRuns: Math.max(prev.finalAuditRuns ?? 0, stage5Runs),
+      });
+    });
+  }
+
+  async function refreshFoundryMetrics() {
+    const snapshot = await loadFoundryMetricsSnapshot();
+    if (!snapshot.ok) return null;
+    setFoundryMetrics(snapshot);
+    setStageRunTotals(snapshot.stageRunTotals ?? []);
+    setFoundryTotals({
+      rows: Number(snapshot.global.rows ?? 0),
+      stored: Number(snapshot.global.stored ?? 0),
+      indexed: Number(snapshot.global.indexed ?? 0),
+      years: Number(snapshot.global.years ?? 0),
+      dimensions: Number(snapshot.global.dimensions ?? 0),
+      subBrains: Number(snapshot.global.sub_brains ?? 0),
+      lastFetched: snapshot.global.last_fetched ?? null,
+    });
+    restoreCountersFromMetrics(snapshot.stageSummaries ?? []);
+    return snapshot;
+  }
+
   async function refreshCoverage() {
     const cov = await loadCorpusCoverage();
     setCorpusCoverage(cov);
+    if (await refreshFoundryMetrics()) return;
     // Roll up totals for the live activity strip.
     try {
       const { data: proofRows } = await (supabase as any).rpc("foundry_year_totals");
