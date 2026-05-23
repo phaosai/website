@@ -37,6 +37,18 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
+async function fetchAll<T>(makeQuery: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>, pageSize = 1000) {
+  const out: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await makeQuery(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = data ?? [];
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
