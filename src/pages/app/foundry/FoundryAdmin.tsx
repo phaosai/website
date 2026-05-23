@@ -280,6 +280,8 @@ function FoundryAdminInner() {
       const { data } = await (supabase as any)
         .from("foundry_validated_years")
         .select("year,combined_score,brain_name,brain_version,validated_at")
+        .gte("year", 2011)
+        .lte("year", 2025)
         .order("validated_at", { ascending: false });
       const rows = (data ?? []) as Array<{ year: number; combined_score: number | null; brain_name: string; brain_version: string }>;
       if (rows.length === 0) return;
