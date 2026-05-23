@@ -1233,19 +1233,23 @@ function FoundryAdminInner() {
                   className="gap-1 bg-gradient-to-r from-primary via-purple-600 to-primary text-primary-foreground"
                 >
                   {bulkRunning === "hyper" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
-                  Hyper-Forge · 1,000 sweeps × 15 years
+                  {((state.hyperSweepCursor ?? 0) > 0 && (state.hyperSweepCursor ?? 0) < 1000)
+                    ? `Continue Hyper-Forge · ${state.hyperSweepCursor}/1,000 sweeps`
+                    : (state.hyperSweepCursor ?? 0) >= 1000
+                      ? `Hyper-Forge complete · 1,000/1,000`
+                      : `Hyper-Forge · 1,000 sweeps × 15 years`}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Run Hyper-Forge?</AlertDialogTitle>
+                  <AlertDialogTitle>{(state.hyperSweepCursor ?? 0) > 0 ? "Continue Hyper-Forge?" : "Run Hyper-Forge?"}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This runs 1,000 full sweeps across all 15 years (2011–2025) — that's <span className="font-mono text-foreground">15,000 cycles</span>. Each cycle's per-symbol residual error is fed back into the next cycle (gradient memory), so the brain compounds learning toward the irreducible-surprise ceiling for every shock year. The accumulated residual map promotes with the engine. This will run for several minutes — do not close the tab.
+                    Each press runs for <span className="font-mono text-foreground">at most ~1 minute</span>, saves residuals + cursor to local + DB, then stops. Click again to run the next batch — every sweep is additive. Target: <span className="font-mono text-foreground">1,000 sweeps × 15 years = 15,000 cycles</span>. Current progress: <span className="font-mono text-foreground">{state.hyperSweepCursor ?? 0}/1,000</span>.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => runHyperForge(1000)}>Start Hyper-Forge</AlertDialogAction>
+                  <AlertDialogAction onClick={() => runHyperForge(1000)}>{(state.hyperSweepCursor ?? 0) > 0 ? "Run next batch" : "Start Hyper-Forge"}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
