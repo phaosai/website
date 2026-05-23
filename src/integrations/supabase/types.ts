@@ -2846,6 +2846,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_org_stripe_customer_id: { Args: { _org_id: string }; Returns: string }
       get_user_active_plan: {
         Args: { _user_id: string }
         Returns: {
