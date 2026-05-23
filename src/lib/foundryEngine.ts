@@ -927,6 +927,16 @@ export async function loadFoundryStageRunTotals(): Promise<FoundryStageRunTotal[
   }
 }
 
+export async function loadFoundryMetricsSnapshot(): Promise<FoundryMetricsSnapshot> {
+  try {
+    const { data, error } = await supabase.functions.invoke("foundry-metrics", { body: {} });
+    if (error || !data) return emptyFoundryMetricsSnapshot();
+    return data as FoundryMetricsSnapshot;
+  } catch {
+    return emptyFoundryMetricsSnapshot();
+  }
+}
+
 export async function loadFoundryQuantumAudits(limit = 50): Promise<DurableQuantumAudit[]> {
   const { data, error } = await supabase
     .from("quantum_audits")
