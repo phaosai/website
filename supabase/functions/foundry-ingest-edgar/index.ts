@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const runId = crypto.randomUUID();
     const written: string[] = []; const failed: { q: number | string; err: string }[] = [];
     let bytesAdded = 0, indexedAdded = 0, unitsAdded = 0;
-    for (const q of [1,2,3,4]) {
+    await Promise.all([1,2,3,4].map(async (q) => {
       try {
         const data = await fetchQuarter(year, q);
         const payload = { counts: data.counts, sample: data.sample, ingest_run_id: runId, raw_index_bytes: data.raw_bytes };
@@ -82,8 +82,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         failed.push({ q, err: String(e instanceof Error ? e.message : e) });
       }
-      await new Promise(r => setTimeout(r, 250));
-    }
+    }));
 
     // Additional per-form-type and per-feed manifests (no extra HTTP — manifest-only rows)
     const extraFeeds = [
