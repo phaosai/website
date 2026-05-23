@@ -948,6 +948,11 @@ function FoundryAdminInner() {
             <Button size="sm" variant="outline" className="gap-1" onClick={doPing} disabled={pinging}>
               {pinging ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />} Ping IBM Quantum
             </Button>
+            <MasterExecuteButton
+              brainName={promoteName}
+              quantumMode={quantumMode}
+              onRunUpdate={setMasterRun}
+            />
           </div>
           <div className="flex items-center gap-3 text-xs flex-wrap">
             <div className="flex items-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-3 py-1">
