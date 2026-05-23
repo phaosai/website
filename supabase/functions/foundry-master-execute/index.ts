@@ -205,12 +205,9 @@ Deno.serve(async (req) => {
         const proof = await ensurePriceProofRow(svc, year, runId);
         proofResults.push({ year, inserted: proof.inserted, reason: proof.reason });
       }
-      // Best-effort additional ingest with remaining budget (≤30s per fn).
-      for (const fn of ADDITIONAL_INGEST_FNS) {
-        if (Date.now() - s1Start > STAGE_DEADLINE_MS) break;
-        const res = await callFn(fn, authHeader, { incremental: true, year: 2024 }, 30_000);
-        ingestResults.push({ fn, ok: res.ok, status: res.status });
-      }
+      // MASTER EXECUTE's critical readiness path must stay bounded. Optional
+      // all-source backfills remain available in the Data Sources panel, but
+      // they do not block the four required completion gates.
       const { count: rowsAfter1 } = await svc.from("foundry_year_corpus").select("id", { count: "exact", head: true });
       await recordStageRun(svc, runId, 1, "stage1_master_ingest", "Master · Ingest", {
         missing_years: missingYears, ingest_results: ingestResults, proof_results: proofResults,
