@@ -23,6 +23,7 @@ interface Props {
   brainName: string;
   quantumMode: boolean;
   onRunUpdate: (run: MasterRunRow | null) => void;
+  onRunComplete?: (run: MasterRunRow) => void | Promise<void>;
 }
 
 const STAGE_LABELS = [
@@ -34,7 +35,7 @@ const STAGE_LABELS = [
   "Synthesis & Grade",
 ];
 
-export function MasterExecuteButton({ brainName, quantumMode, onRunUpdate }: Props) {
+export function MasterExecuteButton({ brainName, quantumMode, onRunUpdate, onRunComplete }: Props) {
   const [run, setRun] = useState<MasterRunRow | null>(null);
   const [launching, setLaunching] = useState(false);
   const isRunning = run?.status === "running";
@@ -49,8 +50,9 @@ export function MasterExecuteButton({ brainName, quantumMode, onRunUpdate }: Pro
       const row = data as unknown as MasterRunRow;
       setRun(row);
       onRunUpdate(row);
+      if (row.status === "completed") await onRunComplete?.(row);
     }
-  }, [onRunUpdate]);
+  }, [onRunUpdate, onRunComplete]);
 
   // Resume any in-flight run on mount.
   useEffect(() => {
