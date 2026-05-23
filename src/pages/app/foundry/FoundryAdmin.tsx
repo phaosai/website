@@ -1856,10 +1856,23 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
             {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
             Ingest next year ({nextBatchYears.join("/")})
           </Button>
+          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => ingestYears(nextThreeYears, "year-batch")} className="gap-1">
+            {busy === "year-batch" ? <Loader2 className="size-3 animate-spin" /> : <Database className="size-3" />}
+            Run next 3 years ({nextThreeYears.join(",")})
+          </Button>
+          <label className="flex items-center gap-1 text-[11px] text-muted-foreground font-mono">
+            <input type="checkbox" checked={turbo} onChange={(e) => setTurbo(e.target.checked)} disabled={busy !== null} />
+            Turbo (parallel)
+          </label>
           <Button size="sm" disabled={busy !== null} onClick={() => ingestYears(ALL_FOUNDRY_YEARS, "all-sources")} className="gap-1 bg-gradient-to-r from-primary to-purple-600">
             {busy === "all-sources" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
             Ingest all years + all sources
           </Button>
+          {busy !== null && (
+            <Button size="sm" variant="destructive" onClick={() => { cancelRef.current = true; }} className="gap-1">
+              Cancel
+            </Button>
+          )}
         </div>
       </header>
       <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-5">
