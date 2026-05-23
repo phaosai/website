@@ -357,6 +357,17 @@ function FoundryAdminInner() {
     : state.synthesis.status !== "done" ? 3
     : state.years.every((y) => y.status === "scored") ? 5 : 4;
 
+  const stageSummary = (n: number) => foundryMetrics.stageSummaries.find((s) => s.stage_number === n) ?? {
+    stage_number: n, runs: 0, completed_runs: 0, failed_runs: 0, rows_added: 0, stored_bytes_added: 0,
+    indexed_bytes_added: 0, content_units_added: 0, training_cycles_added: 0, years: 0, dimensions: 0,
+    last_completed_at: null, audit_runs: 0,
+  };
+  const stage4Summary = stageSummary(4);
+  const stage5Summary = stageSummary(5);
+  const combinedStageRows = stageRunTotals.reduce((s, r) => s + Number(r.rows_added ?? 0), 0);
+  const combinedStageCycles = stageRunTotals.reduce((s, r) => s + Number(r.training_cycles_added ?? 0), 0);
+  const combinedStageEvidence = stageRunTotals.reduce((s, r) => s + Number(r.content_units_added ?? 0), 0);
+
   // ---------- Stage 1: run a sub-brain pipeline ----------
   async function runSubBrain(id: AssetClassId) {
     setState((prev) => {
