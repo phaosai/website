@@ -69,10 +69,11 @@ Deno.serve(async (req) => {
       if (!isAdmin) return json({ ok: false, error: "forbidden" }, 403);
     }
 
-    const [corpus, runs, audits] = await Promise.all([
+    const [corpus, runs, audits, validatedYears] = await Promise.all([
       fetchAll<Record<string, unknown>>((from, to) => service.from("foundry_year_corpus").select("year,dimension,sub_brain_id,platform,payload_bytes,indexed_bytes,content_units,fetched_at").gte("year", 2006).lte("year", 2025).range(from, to)),
       fetchAll<Record<string, unknown>>((from, to) => service.from("foundry_stage_runs").select("stage_number,stage_key,stage_label,status,sub_brain_id,years,dimensions,rows_added,stored_bytes_added,indexed_bytes_added,content_units_added,training_cycles_added,accuracy,evidence,started_at,completed_at,created_at").order("created_at", { ascending: false }).range(from, to)),
-      fetchAll<Record<string, unknown>>((from, to) => service.from("quantum_audits").select("selected_asset_type,status,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,created_at,completed_at").in("selected_asset_type", ["subbrain", "synthesis", "year-audit", "final-audit"]).order("created_at", { ascending: false }).range(from, to)),
+      fetchAll<Record<string, unknown>>((from, to) => service.from("quantum_audits").select("id,selected_asset_type,status,selected_symbol,ibm_backend,ibm_workload_id,result_summary,raw_result_metadata,used_addon,error_message,created_at,completed_at").in("selected_asset_type", ["subbrain", "synthesis", "year-audit", "final-audit"]).order("created_at", { ascending: false }).range(from, to)),
+      fetchAll<Record<string, unknown>>((from, to) => service.from("foundry_validated_years").select("year,brain_name,brain_version,combined_score,evidence,validated_at").gte("year", 2011).lte("year", 2025).order("validated_at", { ascending: false }).range(from, to)),
     ]);
 
     const bySubBrain = Object.fromEntries(SUB_BRAINS.map((id) => {
@@ -181,7 +182,22 @@ Deno.serve(async (req) => {
       last_fetched: latest(corpus, "fetched_at"),
     };
 
-    return json({ ok: true, generated_at: new Date().toISOString(), global, bySubBrain, byYear, byDimension, stageRunTotals, stageSummaries, recentRuns: runs.slice(0, 30), quantumAudits: audits.slice(0, 30) });
+    const validationYears = Object.fromEntries(ALL_FOUNDRY_YEARS.filter((year) => year >= 2011).map((year) => {
+      const rows = validatedYears.filter((row) => Number(row.year) === year);
+      const latestRow = rows[0] ?? null;
+      return [year, {
+        year,
+        rows: rows.length,
+        validated: rows.length > 0,
+        brain_name: latestRow?.brain_name ?? null,
+        brain_version: latestRow?.brain_version ?? null,
+        combined_score: latestRow?.combined_score ?? null,
+        validated_at: latestRow?.validated_at ?? null,
+        evidence: latestRow?.evidence ?? null,
+      }];
+    }));
+
+    return json({ ok: true, generated_at: new Date().toISOString(), global, bySubBrain, byYear, byDimension, validationYears, stageRunTotals, stageSummaries, recentRuns: runs.slice(0, 30), quantumAudits: audits.slice(0, 30) });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }
