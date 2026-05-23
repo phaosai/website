@@ -107,6 +107,7 @@ function FoundryAdminInner() {
   const [corpusCoverage, setCorpusCoverage] = useState<Record<string, Record<number, number>>>({});
   const [foundryTotals, setFoundryTotals] = useState<{ rows: number; stored: number; indexed: number; years: number; dimensions: number; subBrains: number; lastFetched: string | null }>({ rows: 0, stored: 0, indexed: 0, years: 0, dimensions: 0, subBrains: 0, lastFetched: null });
   const [stageRunTotals, setStageRunTotals] = useState<FoundryStageRunTotal[]>([]);
+  const [foundryMetrics, setFoundryMetrics] = useState<FoundryMetricsSnapshot>(() => emptyFoundryMetricsSnapshot());
   const [openReport, setOpenReport] = useState<QuantumReport | null>(null);
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
