@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { pickUserAgent, randomSleep } from "@/lib/foundryStealth";
 import { cn } from "@/lib/utils";
+import { loadFoundryMetricsSnapshot } from "@/lib/foundryEngine";
 
 type SubBrainStatus = "idle" | "running" | "ok" | "error";
 
@@ -240,6 +241,40 @@ export function PillarIngestionGrid({ onAllWiredPillarsComplete, onStageEvidence
   }
 
   const refreshCoverage = useCallback(async () => {
+    const snapshot = await loadFoundryMetricsSnapshot();
+    if (snapshot.ok && Object.keys(snapshot.bySubBrain ?? {}).length > 0) {
+      const totals = Object.fromEntries(Object.entries(snapshot.bySubBrain).map(([id, row]) => [id, {
+        rows: Number(row.rows ?? 0),
+        bytes: Number(row.stored_bytes ?? 0),
+        indexed: Number(row.indexed_bytes ?? 0),
+        units: Number(row.content_units ?? 0),
+        years: Number(row.years ?? 0),
+        dimensions: Number(row.dimensions ?? 0),
+        lastFetched: row.last_fetched ?? null,
+      } satisfies CoverageRow]));
+      setCoverage(totals);
+      setStates((cur) => {
+        const next = { ...cur };
+        for (const b of SUB_BRAINS) {
+          const c = totals[b.id];
+          if (c?.rows > 0 && next[b.id]?.status !== "running") {
+            next[b.id] = {
+              ...next[b.id],
+              status: "ok",
+              lastRunAt: c.lastFetched ?? next[b.id].lastRunAt ?? null,
+              lastMessage: next[b.id].lastMessage ?? `Durable corpus evidence restored · ${c.years || 0}/20 years · ${c.rows.toLocaleString()} rows · ${fmtBytes(c.indexed)} indexed`,
+            };
+          }
+        }
+        const allCovered = SUB_BRAINS.every((b) => (totals[b.id]?.rows ?? 0) > 0 && (totals[b.id]?.years ?? 0) >= ALL_FOUNDRY_YEARS.length);
+        if (allCovered && !firedRef.current) {
+          firedRef.current = true;
+          onCompleteRef.current?.();
+        }
+        return next;
+      });
+      return;
+    }
     const primary = await foundryCoverageClient.rpc("foundry_sub_brain_coverage_totals");
     const fallback = primary.error || !primary.data ? await foundryCoverageClient.rpc("foundry_sub_brain_totals") : primary;
     const { data, error } = fallback;
