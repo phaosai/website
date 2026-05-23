@@ -1037,6 +1037,12 @@ function FoundryAdminInner() {
               brainName={promoteName}
               quantumMode={quantumMode}
               onRunUpdate={setMasterRun}
+              onRunComplete={async () => {
+                await refreshFoundryMetrics();
+                await refreshDurableAudits();
+                await restoreYearsFromDb();
+                await refreshCoverage();
+              }}
             />
           </div>
           <div className="flex items-center gap-3 text-xs flex-wrap">
