@@ -206,6 +206,37 @@ Deno.serve(async (req) => {
   // to always send to a fixed address (e.g., site owner from env var).
   const effectiveRecipient = template.to || recipientEmail
 
+  // Anon-abuse guard: templates without a hard-coded `to` (which means the
+  // caller picks the recipient) require a real signed-in user. Anon JWTs
+  // (the public publishable key) can only trigger fixed-recipient templates
+  // such as the site's contact-form lead notification.
+  if (!template.to) {
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const token = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim()
+      : ''
+    let role: string | undefined
+    if (token) {
+      try {
+        const payloadPart = token.split('.')[1]
+        if (payloadPart) {
+          const padded = payloadPart + '==='.slice((payloadPart.length + 3) % 4)
+          const json = atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
+          role = JSON.parse(json)?.role
+        }
+      } catch { /* ignore — treated as anon */ }
+    }
+    if (role !== 'authenticated' && role !== 'service_role') {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required for this template' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
+
   if (!effectiveRecipient) {
     return new Response(
       JSON.stringify({
