@@ -1656,7 +1656,9 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
   const [proof, setProof] = useState<FoundryCoverageProof>(() => emptyCoverageProof());
   const [lastRunProof, setLastRunProof] = useState<string | null>(null);
   const [batchCursor, setBatchCursor] = useState(0);
-  const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number } | null>(null);
+  const [ingestProgress, setIngestProgress] = useState<{ label: string; done: number; total: number; inFlight?: number; written?: number } | null>(null);
+  const [turbo, setTurbo] = useState(true);
+  const cancelRef = useRef(false);
   const EQUITY_BATCHES = [["AAPL", "MSFT", "GOOGL", "AMZN", "META"], ["NVDA", "TSLA", "JPM", "BAC", "XOM"], ["SPY", "QQQ", "DIA", "IWM", "VTI"], ["TLT", "GLD", "SLV", "USO", "CVX"], ["JNJ", "UNH", "WMT", "PG", "TIP"], ["LQD", "HYG", "MUB", "EMB"]];
   const COIN_BATCHES = [["bitcoin", "ethereum"], ["solana", "binancecoin"], ["ripple", "cardano"], ["dogecoin", "polkadot"]];
 
