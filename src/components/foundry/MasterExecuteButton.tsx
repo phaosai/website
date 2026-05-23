@@ -65,12 +65,14 @@ export function MasterExecuteButton({ brainName, quantumMode, onRunUpdate, onRun
         .select("id,brain_name,brain_version,status,current_stage,stage_log,overall_score,promoted,promotion_reason,started_at,finished_at")
         .eq("user_id", u.user.id).order("started_at", { ascending: false }).limit(1).maybeSingle();
       if (mounted && data) {
-        setRun(data as unknown as MasterRunRow);
-        onRunUpdate(data as unknown as MasterRunRow);
+        const row = data as unknown as MasterRunRow;
+        setRun(row);
+        onRunUpdate(row);
+        if (row.status === "completed") await onRunComplete?.(row);
       }
     })();
     return () => { mounted = false; };
-  }, [onRunUpdate]);
+  }, [onRunUpdate, onRunComplete]);
 
   // Poll while running.
   useEffect(() => {
