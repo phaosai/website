@@ -368,6 +368,116 @@ export type Database = {
         }
         Relationships: []
       }
+      foundry_brain_grades: {
+        Row: {
+          brain_name: string
+          brain_version: string
+          category_key: string
+          category_name: string
+          created_at: string
+          evidence: Json
+          group_key: string
+          id: string
+          master_run_id: string
+          score: number
+          weight: number
+        }
+        Insert: {
+          brain_name: string
+          brain_version: string
+          category_key: string
+          category_name: string
+          created_at?: string
+          evidence?: Json
+          group_key: string
+          id?: string
+          master_run_id: string
+          score: number
+          weight?: number
+        }
+        Update: {
+          brain_name?: string
+          brain_version?: string
+          category_key?: string
+          category_name?: string
+          created_at?: string
+          evidence?: Json
+          group_key?: string
+          id?: string
+          master_run_id?: string
+          score?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "foundry_brain_grades_master_run_id_fkey"
+            columns: ["master_run_id"]
+            isOneToOne: false
+            referencedRelation: "foundry_master_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      foundry_master_runs: {
+        Row: {
+          brain_name: string
+          brain_version: string
+          created_at: string
+          current_stage: number
+          finished_at: string | null
+          id: string
+          lock_until: string
+          overall_score: number | null
+          promoted: boolean
+          promoted_brain_id: string | null
+          promotion_reason: string | null
+          quantum_mode: boolean
+          stage_log: Json
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brain_name: string
+          brain_version: string
+          created_at?: string
+          current_stage?: number
+          finished_at?: string | null
+          id?: string
+          lock_until?: string
+          overall_score?: number | null
+          promoted?: boolean
+          promoted_brain_id?: string | null
+          promotion_reason?: string | null
+          quantum_mode?: boolean
+          stage_log?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brain_name?: string
+          brain_version?: string
+          created_at?: string
+          current_stage?: number
+          finished_at?: string | null
+          id?: string
+          lock_until?: string
+          overall_score?: number | null
+          promoted?: boolean
+          promoted_brain_id?: string | null
+          promotion_reason?: string | null
+          quantum_mode?: boolean
+          stage_log?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       foundry_stage_runs: {
         Row: {
           accuracy: number | null
