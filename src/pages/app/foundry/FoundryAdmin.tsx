@@ -1911,6 +1911,25 @@ function DataSourcesPanel({ state, quantumMode, onQuantumReport }: { state: Forg
     const { data: dimData } = await (supabase as any).rpc("foundry_dimension_year_totals");
     const next: Record<number, { rows: number; stored: number; indexed: number; dimensions: number; subBrains: number }> = {};
     const nextProof = emptyCoverageProof();
+    if (error || !data) {
+      const snapshot = await loadFoundryMetricsSnapshot();
+      if (snapshot.ok) {
+        for (const [year, r] of Object.entries(snapshot.byYear ?? {})) {
+          const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
+          next[Number(year)] = row;
+          nextProof.totalRows += row.rows;
+          nextProof.totalStored += row.stored;
+          nextProof.totalIndexed += row.indexed;
+          if (row.dimensions >= ALL_DIMENSIONS.length && row.subBrains >= ASSET_CLASSES.length) nextProof.completeYears += 1;
+          if (!nextProof.lastFetched || (r.last_fetched && r.last_fetched > nextProof.lastFetched)) nextProof.lastFetched = r.last_fetched;
+        }
+        nextProof.missing = ALL_FOUNDRY_YEARS.filter((y) => (next[y]?.dimensions ?? 0) < ALL_DIMENSIONS.length || (next[y]?.subBrains ?? 0) < ASSET_CLASSES.length).map(String);
+        nextProof.completeDimensions = ALL_DIMENSIONS.filter((dim) => ALL_FOUNDRY_YEARS.every((y) => Number(snapshot.byDimensionYear?.[dim]?.[String(y)]?.rows ?? 0) > 0)).length;
+        setStats(next);
+        setProof(nextProof);
+        return;
+      }
+    }
     if (!error && data) {
       for (const r of data as Array<{ year: number; rows: number | string | null; stored_bytes: number | string | null; indexed_bytes: number | string | null; dimensions: number | string | null; sub_brains: number | string | null; last_fetched: string | null }>) {
         const row = { rows: Number(r.rows ?? 0), stored: Number(r.stored_bytes ?? 0), indexed: Number(r.indexed_bytes ?? 0), dimensions: Number(r.dimensions ?? 0), subBrains: Number(r.sub_brains ?? 0) };
