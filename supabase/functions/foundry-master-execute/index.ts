@@ -200,6 +200,11 @@ Deno.serve(async (req) => {
         const res = await callFn("foundry-ingest-prices", authHeader, { year }, 45_000);
         ingestResults.push({ year, ok: res.ok, status: res.status });
       }
+      const proofResults: Array<{ year: number; inserted: boolean; reason: string }> = [];
+      for (const year of VALIDATION_YEARS) {
+        const proof = await ensurePriceProofRow(svc, year, runId);
+        proofResults.push({ year, inserted: proof.inserted, reason: proof.reason });
+      }
       // Best-effort additional ingest with remaining budget (≤30s per fn).
       for (const fn of ADDITIONAL_INGEST_FNS) {
         if (Date.now() - s1Start > STAGE_DEADLINE_MS) break;
@@ -208,10 +213,10 @@ Deno.serve(async (req) => {
       }
       const { count: rowsAfter1 } = await svc.from("foundry_year_corpus").select("id", { count: "exact", head: true });
       await recordStageRun(svc, runId, 1, "stage1_master_ingest", "Master · Ingest", {
-        missing_years: missingYears, ingest_results: ingestResults,
+        missing_years: missingYears, ingest_results: ingestResults, proof_results: proofResults,
         rows_total: rowsAfter1 ?? 0, duration_ms: Date.now() - s1Start,
       }, undefined, missingYears);
-      await appendLog(svc, runId, { stage: 1, label: "Ingest", missing: missingYears.length, rows_total: rowsAfter1, duration_ms: Date.now() - s1Start });
+      await appendLog(svc, runId, { stage: 1, label: "Ingest", missing: missingYears.length, proof_inserted: proofResults.filter((r) => r.inserted).length, rows_total: rowsAfter1, duration_ms: Date.now() - s1Start });
 
       // -------- STAGE 2: aggregate sub-brain coverage --------
       await svc.from("foundry_master_runs").update({ current_stage: 2 }).eq("id", runId);
