@@ -29,6 +29,8 @@ import {
 import { FOUNDRY_DATA_SOURCES, ALL_DIMENSIONS } from "@/lib/foundryDataSources";
 import { PillarIngestionGrid } from "@/components/foundry/PillarIngestionGrid";
 import { WalkForwardMatrix } from "@/components/foundry/WalkForwardMatrix";
+import { MasterExecuteButton, type MasterRunRow } from "@/components/foundry/MasterExecuteButton";
+import { BrainGradeCard } from "@/components/foundry/BrainGradeCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -112,6 +114,7 @@ function FoundryAdminInner() {
   const [openDurable, setOpenDurable] = useState<DurableQuantumAudit | null>(null);
   const [pingResult, setPingResult] = useState<QuantumPingResult | null>(null);
   const [pinging, setPinging] = useState(false);
+  const [masterRun, setMasterRun] = useState<MasterRunRow | null>(null);
   const QMODE_KEY = "phaos.foundry.quantumMode.v1";
   const [quantumMode, setQuantumMode] = useState<boolean>(() => {
     try { return localStorage.getItem(QMODE_KEY) === "1"; } catch { return false; }
@@ -948,6 +951,11 @@ function FoundryAdminInner() {
             <Button size="sm" variant="outline" className="gap-1" onClick={doPing} disabled={pinging}>
               {pinging ? <Loader2 className="size-3 animate-spin" /> : <Cpu className="size-3" />} Ping IBM Quantum
             </Button>
+            <MasterExecuteButton
+              brainName={promoteName}
+              quantumMode={quantumMode}
+              onRunUpdate={setMasterRun}
+            />
           </div>
           <div className="flex items-center gap-3 text-xs flex-wrap">
             <div className="flex items-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-3 py-1">
@@ -1052,6 +1060,10 @@ function FoundryAdminInner() {
           Every stage is additive and re-runnable. Each press grows the corpus, regime labels, synthesis evidence, and training cycles the final quantum audit will consume.
         </p>
       </div>
+
+      {masterRun && <BrainGradeCard run={masterRun} />}
+
+
 
       {pingResult && (
         <div className={cn(
