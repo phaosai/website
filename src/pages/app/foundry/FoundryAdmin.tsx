@@ -208,7 +208,14 @@ function FoundryAdminInner() {
    * "lose" already-completed ingestion work.
    */
   async function restoreStage1FromDb() {
-    const cov = await loadSubBrainCoverage();
+    let cov = await loadSubBrainCoverage();
+    if (!cov || Object.keys(cov).length === 0) {
+      const snapshot = await loadFoundryMetricsSnapshot();
+      cov = Object.fromEntries(Object.entries(snapshot.bySubBrain ?? {}).map(([id, row]) => [
+        id,
+        row.years >= ALL_FOUNDRY_YEARS.length ? ALL_FOUNDRY_YEARS : ALL_FOUNDRY_YEARS.slice(0, Math.max(0, row.years ?? 0)),
+      ]));
+    }
     if (!cov || Object.keys(cov).length === 0) return;
     setState((prev) => {
       const subBrains = { ...prev.subBrains };
