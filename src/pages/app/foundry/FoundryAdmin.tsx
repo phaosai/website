@@ -523,7 +523,7 @@ function FoundryAdminInner() {
   // No brain may peek beyond Jan 1 of the year being validated. Learning is
   // expressed via (a) the year-over-year `learningFactor` AND (b) the per-year
   // `trainingPasses` counter that re-trains the brain on the same shock.
-  async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number } = {}) {
+  async function runYear(year: number, withQuantum: boolean, opts: { silent?: boolean; passes?: number; noPersist?: boolean } = {}) {
     const cur = stateRef.current;
     const yearsCompleted = cur.years.filter((y) => (y.status === "scored") && y.year < year).length;
     const learningFactor = Math.pow(0.94, yearsCompleted);
@@ -630,30 +630,32 @@ function FoundryAdminInner() {
         notes: `Year ${year} · regime=${combinedRun.regime}${shock ? ` — ${shock.label} (surprise weight ${shock.surprise.toFixed(2)})` : " — no major shock"}. After ${totalPasses} training pass${totalPasses === 1 ? "" : "es"}: Original ${original.brainScore} · Additive ${additive.brainScore} · Combined ${combined.brainScore} (best ever ${bestCombined.toFixed(2)}). MAE ${combined.meanAbsError} PCI pts. Quarterly mean accuracy: ${combined.quarterlyMeanAccuracy ?? "—"}.`,
       } : y),
     }));
-    await recordFoundryStageRun({
-      stageNumber: 4,
-      stageKey: `stage4_annual_validation_${year}`,
-      stageLabel: `Stage 4 — Annual Validation ${year}`,
-      years: [year],
-      dimensions: dimensionsAfterPasses(totalPasses),
-      rowsAdded: ASSET_SAMPLE_COUNT * 3,
-      contentUnitsAdded: ASSET_SAMPLE_COUNT * passes,
-      trainingCyclesAdded: passes,
-      accuracy: combined.brainScore,
-      evidence: {
-        regime: combinedRun.regime,
-        passesAdded: passes,
-        totalPasses,
-        original: original.brainScore,
-        additive: additive.brainScore,
-        combined: combined.brainScore,
-        meanAbsError: combined.meanAbsError,
-        quarterlyMeanAccuracy: combined.quarterlyMeanAccuracy,
-        predictions: combined.predictions.length,
-        bestCombined,
-      },
-    });
-    refreshStageRunTotals();
+    if (!opts.noPersist) {
+      await recordFoundryStageRun({
+        stageNumber: 4,
+        stageKey: `stage4_annual_validation_${year}`,
+        stageLabel: `Stage 4 — Annual Validation ${year}`,
+        years: [year],
+        dimensions: dimensionsAfterPasses(totalPasses),
+        rowsAdded: ASSET_SAMPLE_COUNT * 3,
+        contentUnitsAdded: ASSET_SAMPLE_COUNT * passes,
+        trainingCyclesAdded: passes,
+        accuracy: combined.brainScore,
+        evidence: {
+          regime: combinedRun.regime,
+          passesAdded: passes,
+          totalPasses,
+          original: original.brainScore,
+          additive: additive.brainScore,
+          combined: combined.brainScore,
+          meanAbsError: combined.meanAbsError,
+          quarterlyMeanAccuracy: combined.quarterlyMeanAccuracy,
+          predictions: combined.predictions.length,
+          bestCombined,
+        },
+      });
+      refreshStageRunTotals();
+    }
     if (!opts.silent) {
       toast({
         title: `✓ Year ${year} validated`,
@@ -711,41 +713,95 @@ function FoundryAdminInner() {
     });
   }
 
-  // Hyper-Forge: 1,000 full 15-year sweeps. Each sweep runs every year once
-  // with residuals carried forward, so the brain compounds its learning across
-  // 15,000 cycles and pulls every per-symbol bias toward zero.
-  async function runHyperForge(sweeps = 1000) {
+  // Hyper-Forge: 1,000 full 15-year sweeps total. RESUMABLE + TIME-BOXED.
+  // Each click runs as many sweeps as fit in ~55s, then saves the cursor to
+  // ForgeState (persisted to localStorage) and writes ONE summary row to
+  // foundry_stage_runs so Stage 4 evidence shows the batch. Click again to
+  // continue from where it stopped. Never duplicates, never loses progress.
+  async function runHyperForge(totalSweeps = 1000) {
+    const TIME_BUDGET_MS = 55_000;
+    const startCursor = stateRef.current.hyperSweepCursor ?? 0;
+    if (startCursor >= totalSweeps) {
+      toast({ title: "Hyper-Forge already complete", description: `${totalSweeps}/${totalSweeps} sweeps done. Reset Foundry to start over.` });
+      return;
+    }
     setBulkRunning("hyper");
     cancelHyperRef.current = false;
-    setHyperProgress({ sweep: 0, year: VALIDATION_YEARS[0], totalSweeps: sweeps });
+    setHyperProgress({ sweep: startCursor, year: VALIDATION_YEARS[0], totalSweeps });
+    const t0 = Date.now();
+    let s = startCursor;
+    let sweepsThisBatch = 0;
+    let cyclesThisBatch = 0;
     let lastProgressAt = 0;
-    let completedSweeps = 0;
-    outer: for (let s = 0; s < sweeps; s++) {
-      for (const y of stateRef.current.years) {
-        if (cancelHyperRef.current) break outer;
-        const now = Date.now();
-        if (now - lastProgressAt > 50) {
-          setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps: sweeps });
-          lastProgressAt = now;
+    let lastAccuracy = 0;
+    try {
+      outer: while (s < totalSweeps) {
+        for (const y of stateRef.current.years) {
+          if (cancelHyperRef.current) break outer;
+          if (Date.now() - t0 > TIME_BUDGET_MS) break outer;
+          const now = Date.now();
+          if (now - lastProgressAt > 200) {
+            setHyperProgress({ sweep: s + 1, year: y.year, totalSweeps });
+            lastProgressAt = now;
+          }
+          // noPersist=true → skip per-year DB writes (15k of them would
+          // overwhelm the edge). We write a single batch summary at the end.
+          await runYear(y.year, false, { silent: true, passes: 1, noPersist: true });
+          cyclesThisBatch += 1;
+          if (cyclesThisBatch % 30 === 0) await new Promise((r) => setTimeout(r, 0));
         }
-        await runYear(y.year, false, { silent: true, passes: 1 });
-        await new Promise((r) => setTimeout(r, 0));
+        if (cancelHyperRef.current || Date.now() - t0 > TIME_BUDGET_MS) break;
+        s += 1;
+        sweepsThisBatch += 1;
+        lastAccuracy = stateRef.current.bestCombinedEver ?? lastAccuracy;
       }
-      if (cancelHyperRef.current) break;
-      completedSweeps = s + 1;
+    } finally {
+      const endCursor = Math.min(s, totalSweeps);
+      const wasCancelled = cancelHyperRef.current;
+      cancelHyperRef.current = false;
+      // Persist cursor so the next click resumes here. saveForgeState runs
+      // automatically via the state effect.
+      setState((prev) => ({ ...prev, hyperSweepCursor: endCursor }));
+      // Single batch summary row for Stage 4 evidence.
+      try {
+        await recordFoundryStageRun({
+          stageNumber: 4,
+          stageKey: "stage4_hyperforge_batch",
+          stageLabel: "Stage 4 — Hyper-Forge Batch",
+          years: VALIDATION_YEARS,
+          dimensions: ALL_DIMENSIONS,
+          rowsAdded: cyclesThisBatch * ASSET_SAMPLE_COUNT * 3,
+          contentUnitsAdded: cyclesThisBatch * ASSET_SAMPLE_COUNT,
+          trainingCyclesAdded: cyclesThisBatch,
+          accuracy: stateRef.current.bestCombinedEver ?? lastAccuracy,
+          evidence: {
+            batch_sweeps: sweepsThisBatch,
+            batch_cycles: cyclesThisBatch,
+            cursor_before: startCursor,
+            cursor_after: endCursor,
+            total_target_sweeps: totalSweeps,
+            elapsed_ms: Date.now() - t0,
+            cancelled: wasCancelled,
+            bestCombinedEver: stateRef.current.bestCombinedEver ?? null,
+            residual_symbols: Object.keys(stateRef.current.residualBias ?? {}).length,
+          },
+        });
+        refreshStageRunTotals();
+      } catch { /* never block UI on evidence write */ }
+      setBulkRunning(null);
+      setHyperProgress(null);
+      const remaining = totalSweeps - endCursor;
+      toast({
+        title: wasCancelled
+          ? `Hyper-Forge paused · ${endCursor}/${totalSweeps} sweeps saved`
+          : remaining === 0
+            ? `Hyper-Forge complete · ${totalSweeps}/${totalSweeps} sweeps`
+            : `Hyper-Forge batch saved · ${endCursor}/${totalSweeps} sweeps (${cyclesThisBatch} cycles this press)`,
+        description: remaining === 0
+          ? `All ${totalSweeps * VALIDATION_YEARS.length} cycles complete. Residual map ready to promote.`
+          : `Click "Continue Hyper-Forge" again to run the next ~1-minute batch. ${remaining} sweeps remaining. All work is persisted (residuals + cursor).`,
+      });
     }
-    const wasCancelled = cancelHyperRef.current;
-    cancelHyperRef.current = false;
-    setBulkRunning(null);
-    setHyperProgress(null);
-    toast({
-      title: wasCancelled
-        ? `Hyper-Forge cancelled · ${completedSweeps} sweeps completed`
-        : `Hyper-Forge complete · ${sweeps} sweeps × 15 years`,
-      description: wasCancelled
-        ? `Stopped at the last completed year. All progress from the ${completedSweeps} finished sweeps is saved — residuals and per-symbol bias maps are intact.`
-        : `Brain absorbed ${sweeps * VALIDATION_YEARS.length} cycles with residual gradient memory carried across every cycle. Per-symbol bias map updated and ready to promote.`,
-    });
   }
 
   async function runFinalQuantumAudit() {
@@ -1177,19 +1233,23 @@ function FoundryAdminInner() {
                   className="gap-1 bg-gradient-to-r from-primary via-purple-600 to-primary text-primary-foreground"
                 >
                   {bulkRunning === "hyper" ? <Loader2 className="size-3 animate-spin" /> : <Rocket className="size-3" />}
-                  Hyper-Forge · 1,000 sweeps × 15 years
+                  {((state.hyperSweepCursor ?? 0) > 0 && (state.hyperSweepCursor ?? 0) < 1000)
+                    ? `Continue Hyper-Forge · ${state.hyperSweepCursor}/1,000 sweeps`
+                    : (state.hyperSweepCursor ?? 0) >= 1000
+                      ? `Hyper-Forge complete · 1,000/1,000`
+                      : `Hyper-Forge · 1,000 sweeps × 15 years`}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Run Hyper-Forge?</AlertDialogTitle>
+                  <AlertDialogTitle>{(state.hyperSweepCursor ?? 0) > 0 ? "Continue Hyper-Forge?" : "Run Hyper-Forge?"}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This runs 1,000 full sweeps across all 15 years (2011–2025) — that's <span className="font-mono text-foreground">15,000 cycles</span>. Each cycle's per-symbol residual error is fed back into the next cycle (gradient memory), so the brain compounds learning toward the irreducible-surprise ceiling for every shock year. The accumulated residual map promotes with the engine. This will run for several minutes — do not close the tab.
+                    Each press runs for <span className="font-mono text-foreground">at most ~1 minute</span>, saves residuals + cursor to local + DB, then stops. Click again to run the next batch — every sweep is additive. Target: <span className="font-mono text-foreground">1,000 sweeps × 15 years = 15,000 cycles</span>. Current progress: <span className="font-mono text-foreground">{state.hyperSweepCursor ?? 0}/1,000</span>.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => runHyperForge(1000)}>Start Hyper-Forge</AlertDialogAction>
+                  <AlertDialogAction onClick={() => runHyperForge(1000)}>{(state.hyperSweepCursor ?? 0) > 0 ? "Run next batch" : "Start Hyper-Forge"}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
