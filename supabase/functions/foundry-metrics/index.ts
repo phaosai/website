@@ -120,6 +120,20 @@ Deno.serve(async (req) => {
       }];
     }));
 
+    const byDimensionYear = Object.fromEntries(ALL_DIMENSIONS.map((dimension) => [dimension, Object.fromEntries(ALL_FOUNDRY_YEARS.map((year) => {
+      const rows = corpus.filter((row) => row.dimension === dimension && Number(row.year) === year);
+      return [year, {
+        year,
+        dimension,
+        rows: rows.length,
+        stored_bytes: sum(rows, "payload_bytes"),
+        indexed_bytes: sum(rows, "indexed_bytes"),
+        content_units: sum(rows, "content_units"),
+        sub_brains: uniq(rows.map((row) => String(row.sub_brain_id ?? ""))).filter(Boolean).length,
+        last_fetched: latest(rows, "fetched_at"),
+      }];
+    }))]));
+
     const stageKeys = uniq(runs.map((row) => `${row.stage_number}:${row.stage_key}`));
     const stageRunTotals = stageKeys.map((key) => {
       const rows = runs.filter((row) => `${row.stage_number}:${row.stage_key}` === key);
@@ -197,7 +211,7 @@ Deno.serve(async (req) => {
       }];
     }));
 
-    return json({ ok: true, generated_at: new Date().toISOString(), global, bySubBrain, byYear, byDimension, validationYears, stageRunTotals, stageSummaries, recentRuns: runs.slice(0, 30), quantumAudits: audits.slice(0, 30) });
+    return json({ ok: true, generated_at: new Date().toISOString(), global, bySubBrain, byYear, byDimension, byDimensionYear, validationYears, stageRunTotals, stageSummaries, recentRuns: runs.slice(0, 30), quantumAudits: audits.slice(0, 30) });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }
