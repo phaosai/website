@@ -577,8 +577,9 @@ export function useVapi(): UseVapiReturn {
     // surface a clear error if mic is blocked. Without this, vapi.start()
     // can silently hang on "Connecting…" forever on mobile.
     setCallConnecting(true);
+    let micStream: MediaStream | null = null;
     try {
-      await ensureMicrophoneReady();
+      micStream = await requestMicrophoneStream();
     } catch (permErr: unknown) {
       const name = (permErr as { name?: string })?.name ?? "";
       const friendly =
@@ -598,6 +599,8 @@ export function useVapi(): UseVapiReturn {
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
     let connectionEstablished = false;
     try {
+      stopActiveMicStream();
+      activeMicStream = micStream;
       const vapi = warmVapi ?? (await prewarmVapi());
       vapi.removeAllListeners?.();
       vapiInstance = vapi;
@@ -633,6 +636,7 @@ export function useVapi(): UseVapiReturn {
       const failConnection = (message: string) => {
         if (connectionEstablished) return;
         if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+        stopActiveMicStream();
         if (vapiInstance) {
           try { void vapiInstance.stop(); } catch { /* ignore */ }
           vapiInstance = null;
@@ -670,6 +674,7 @@ export function useVapi(): UseVapiReturn {
       }) as (...args: unknown[]) => void);
 
       vapi.on("call-end", (() => {
+        stopActiveMicStream();
         setCallActive(false);
         setCallConnecting(false);
         setIsSpeaking(false);
@@ -788,10 +793,14 @@ export function useVapi(): UseVapiReturn {
 
       startPromise = vapi.start(activeAssistantId, { clientMessages: VAPI_CLIENT_MESSAGES });
       await startPromise;
+      if (activeMicStream?.getAudioTracks()[0]) {
+        await vapi.setInputDevicesAsync?.({ audioSource: activeMicStream.getAudioTracks()[0] });
+      }
       try { vapi.setMuted?.(false); } catch { /* ignore */ }
       markConnected("secure-stream");
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+      stopActiveMicStream();
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Failed to connect: ${message}`);
       setCallConnecting(false);
