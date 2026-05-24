@@ -65,9 +65,15 @@ interface VapiStartProgressEvent {
   metadata?: Record<string, unknown>;
 }
 
+interface VapiAssistantOverrides {
+  clientMessages?: string[];
+}
+
 interface VapiInstance {
-  start: (assistantId: string) => Promise<unknown>;
+  start: (assistantId: string, assistantOverrides?: VapiAssistantOverrides) => Promise<unknown>;
   stop: () => void | Promise<void>;
+  setMuted?: (mute: boolean) => void;
+  setInputDevicesAsync?: (options: { audioSource?: MediaStreamTrack }) => Promise<void>;
   on: (event: string, handler: (...args: unknown[]) => void) => void;
   removeAllListeners?: (event?: string) => void;
 }
@@ -104,12 +110,25 @@ const LeadSchema = z.object({
 
 // ─── Constants ──────────────────────────────────────────────
 
-const TIMEOUT_THRESHOLD_MS = 10_000;
+const TIMEOUT_THRESHOLD_MS = 5 * 60_000;
 const CONNECTION_WATCHDOG_MS = 45_000;
 const HIGH_LATENCY_THRESHOLD_MS = 1500;
 const MAX_TRANSCRIPT_ENTRIES = 200;
 const MAX_REASONING_ENTRIES = 200;
 const LEAD_SAVE_MAX_RETRIES = 3;
+const VAPI_CLIENT_MESSAGES = [
+  "conversation-update",
+  "function-call",
+  "metadata",
+  "model-output",
+  "speech-update",
+  "status-update",
+  "transcript",
+  "tool-calls",
+  "user-interrupted",
+  "voice-input",
+  "assistant.started",
+];
 
 // Kill native browser speechSynthesis globally
 if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -154,6 +173,21 @@ let warmVapi: VapiInstance | null = null;
 let warmVapiPromise: Promise<VapiInstance> | null = null;
 let micPrewarmed = false;
 let micPermissionConfirmed = false;
+let activeMicStream: MediaStream | null = null;
+
+const MICROPHONE_CONSTRAINTS: MediaStreamConstraints = {
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  },
+  video: false,
+};
+
+function stopActiveMicStream(): void {
+  activeMicStream?.getTracks().forEach((track) => track.stop());
+  activeMicStream = null;
+}
 
 /**
  * Eagerly construct a Vapi instance so its internal AudioContext / WebRTC
@@ -167,7 +201,7 @@ export function prewarmVapi(): Promise<VapiInstance> {
     const instance = new Vapi(
       activePublicKey,
       undefined,
-      { alwaysIncludeMicInPermissionPrompt: true },
+      { avoidEval: true, alwaysIncludeMicInPermissionPrompt: true },
       { audioSource: true, startAudioOff: false }
     ) as unknown as VapiInstance;
     warmVapi = instance;
@@ -196,13 +230,8 @@ export async function prewarmMic(): Promise<void> {
     }
 
     if (navigator.permissions?.query) {
-      const status = await navigator.permissions.query({
-        name: "microphone" as PermissionName,
-      });
-      if (status.state === "granted") {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      }
+      const status = await navigator.permissions.query({ name: "microphone" as PermissionName });
+      micPermissionConfirmed = status.state === "granted";
     }
   } catch {
     // Silent — fall back to in-call prompt
@@ -220,24 +249,19 @@ export function resumeAudioContext(): void {
   }
 }
 
-async function ensureMicrophoneReady(): Promise<void> {
-  if (micPermissionConfirmed) return;
-
-  try {
-    const status = await navigator.permissions?.query?.({
-      name: "microphone" as PermissionName,
-    });
-    if (status?.state === "granted") {
-      micPermissionConfirmed = true;
-      return;
-    }
-  } catch {
-    // Safari/iOS may not support querying microphone permission; probe below.
+async function requestMicrophoneStream(): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new DOMException("Microphone capture is not available in this browser.", "NotFoundError");
   }
 
-  const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
-  probe.getTracks().forEach((t) => t.stop());
+  const stream = await navigator.mediaDevices.getUserMedia(MICROPHONE_CONSTRAINTS);
+  const hasLiveAudio = stream.getAudioTracks().some((track) => track.readyState === "live");
+  if (!hasLiveAudio) {
+    stream.getTracks().forEach((track) => track.stop());
+    throw new DOMException("No live microphone track was created.", "NotFoundError");
+  }
   micPermissionConfirmed = true;
+  return stream;
 }
 
 // ─── Lead Extraction Helpers ────────────────────────────────
@@ -262,7 +286,7 @@ function extractLeadData(fullText: string): {
     /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
   );
   const assetIdMatch = fullText.match(
-    /(?:asset\s*(?:id|number|#)?|sticker)[:\s]*([A-Za-z0-9\-]+)/i
+    /(?:asset\s*(?:id|number|#)?|sticker)[:\s]*([A-Za-z0-9-]+)/i
   );
   const modelMatch = fullText.match(
     /(?:BP|MX|AR|DX)[-\s]?\w{2,10}/i
@@ -549,8 +573,9 @@ export function useVapi(): UseVapiReturn {
     // surface a clear error if mic is blocked. Without this, vapi.start()
     // can silently hang on "Connecting…" forever on mobile.
     setCallConnecting(true);
+    let micStream: MediaStream | null = null;
     try {
-      await ensureMicrophoneReady();
+      micStream = await requestMicrophoneStream();
     } catch (permErr: unknown) {
       const name = (permErr as { name?: string })?.name ?? "";
       const friendly =
@@ -570,6 +595,8 @@ export function useVapi(): UseVapiReturn {
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
     let connectionEstablished = false;
     try {
+      stopActiveMicStream();
+      activeMicStream = micStream;
       const vapi = warmVapi ?? (await prewarmVapi());
       vapi.removeAllListeners?.();
       vapiInstance = vapi;
@@ -605,6 +632,7 @@ export function useVapi(): UseVapiReturn {
       const failConnection = (message: string) => {
         if (connectionEstablished) return;
         if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+        stopActiveMicStream();
         if (vapiInstance) {
           try { void vapiInstance.stop(); } catch { /* ignore */ }
           vapiInstance = null;
@@ -622,10 +650,12 @@ export function useVapi(): UseVapiReturn {
       }, CONNECTION_WATCHDOG_MS);
 
       vapi.on("call-start", (() => {
+        try { vapi.setMuted?.(false); } catch { /* ignore */ }
         markConnected("voice-listening");
       }) as (...args: unknown[]) => void);
 
       vapi.on("call-start-success", ((event: VapiStartSuccessEvent) => {
+        try { vapi.setMuted?.(false); } catch { /* ignore */ }
         markConnected("secure-stream", event.totalDuration);
       }) as (...args: unknown[]) => void);
 
@@ -640,6 +670,7 @@ export function useVapi(): UseVapiReturn {
       }) as (...args: unknown[]) => void);
 
       vapi.on("call-end", (() => {
+        stopActiveMicStream();
         setCallActive(false);
         setCallConnecting(false);
         setIsSpeaking(false);
@@ -756,11 +787,16 @@ export function useVapi(): UseVapiReturn {
         failConnection(friendly);
       }) as never);
 
-      startPromise = vapi.start(activeAssistantId);
+      startPromise = vapi.start(activeAssistantId, { clientMessages: VAPI_CLIENT_MESSAGES });
       await startPromise;
+      if (activeMicStream?.getAudioTracks()[0]) {
+        await vapi.setInputDevicesAsync?.({ audioSource: activeMicStream.getAudioTracks()[0] });
+      }
+      try { vapi.setMuted?.(false); } catch { /* ignore */ }
       markConnected("secure-stream");
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+      stopActiveMicStream();
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Failed to connect: ${message}`);
       setCallConnecting(false);
