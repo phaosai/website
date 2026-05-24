@@ -53,10 +53,23 @@ interface VapiError {
   message?: string;
 }
 
+interface VapiStartSuccessEvent {
+  totalDuration?: number;
+  callId?: string;
+}
+
+interface VapiStartProgressEvent {
+  stage?: string;
+  status?: "started" | "completed" | "failed";
+  duration?: number;
+  metadata?: Record<string, unknown>;
+}
+
 interface VapiInstance {
-  start: (assistantId: string) => Promise<void>;
-  stop: () => void;
-  on: (event: string, handler: (...args: never[]) => void) => void;
+  start: (assistantId: string) => Promise<unknown>;
+  stop: () => void | Promise<void>;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeAllListeners?: (event?: string) => void;
 }
 
 export interface UseVapiReturn {
@@ -92,6 +105,7 @@ const LeadSchema = z.object({
 // ─── Constants ──────────────────────────────────────────────
 
 const TIMEOUT_THRESHOLD_MS = 10_000;
+const CONNECTION_WATCHDOG_MS = 45_000;
 const HIGH_LATENCY_THRESHOLD_MS = 1500;
 const MAX_TRANSCRIPT_ENTRIES = 200;
 const MAX_REASONING_ENTRIES = 200;
