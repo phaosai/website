@@ -753,9 +753,7 @@ export function useVapi(): UseVapiReturn {
           ? "This sandbox can't connect: the voice agent ID and the public key belong to different accounts. Open Sandbox Instances admin and paste a public key from the same workspace as the agent."
           : `Call error: ${detail}`;
         addReasoning(`Error: ${detail}`, "action");
-        toast.error(friendly, { duration: isKeyMismatch ? 12000 : 6000 });
-        setCallActive(false);
-        setCallConnecting(false);
+        failConnection(friendly);
       }) as never);
 
       startPromise = vapi.start(activeAssistantId);
