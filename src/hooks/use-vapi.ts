@@ -550,8 +550,7 @@ export function useVapi(): UseVapiReturn {
     // can silently hang on "Connecting…" forever on mobile.
     setCallConnecting(true);
     try {
-      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
-      probe.getTracks().forEach((t) => t.stop());
+      await ensureMicrophoneReady();
     } catch (permErr: unknown) {
       const name = (permErr as { name?: string })?.name ?? "";
       const friendly =
