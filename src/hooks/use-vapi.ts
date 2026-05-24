@@ -544,9 +544,8 @@ export function useVapi(): UseVapiReturn {
       return;
     }
 
-    // ── Fire the network call FIRST, before any React state work ──
-    // The Vapi SDK is already constructed (prewarmVapi on mount), so this
-    // call goes straight to ICE negotiation. Every ms before this is wasted.
+    // The Vapi SDK is already constructed (prewarmVapi on mount). Attach
+    // listeners before start() so fast success events cannot be missed.
     let startPromise: Promise<unknown> | null = null;
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
     let connectionEstablished = false;
@@ -734,6 +733,7 @@ export function useVapi(): UseVapiReturn {
         setCallConnecting(false);
       }) as never);
 
+      startPromise = vapi.start(activeAssistantId);
       await startPromise;
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
