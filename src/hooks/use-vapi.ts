@@ -755,6 +755,7 @@ export function useVapi(): UseVapiReturn {
 
       startPromise = vapi.start(activeAssistantId);
       await startPromise;
+      markConnected("secure-stream");
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
       const message = err instanceof Error ? err.message : "Unknown error";
