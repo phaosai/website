@@ -8,9 +8,6 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 type NavChild = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavChild[] };
 
-const VOICE_SANDBOX_URL = "https://voice.phaosai.com/try";
-const isExternalUrl = (to?: string) => !!to && /^https?:\/\//i.test(to);
-
 // LOCKED navigation structure — do not reorder, rename, or extend.
 const NAV: NavItem[] = [
   { label: "Home", to: "/" },
@@ -19,7 +16,7 @@ const NAV: NavItem[] = [
     label: "Voice",
     children: [
       { label: "Voice Agent", to: "/voice-ai" },
-      { label: "Test It Live!", to: VOICE_SANDBOX_URL },
+      { label: "Test It Live!", to: "/voice-ai/test-live" },
       { label: "Integrations", to: "/integrations" },
       { label: "ROI Calculator", to: "/roi-calculator" },
     ],
