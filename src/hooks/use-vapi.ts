@@ -602,18 +602,23 @@ export function useVapi(): UseVapiReturn {
         addTranscript({ role: "system", text: "Call connected — Phaos AI active", timestamp: "00:00" });
       };
 
-      // ── Connection watchdog: if the SDK never confirms join/listen, tear
-      // down and inform the user. Prevents the permanent "Connecting…" lockup
-      // that mobile networks (NAT/firewall blocking WebRTC) can cause.
-      connectWatchdog = setTimeout(() => {
+      const failConnection = (message: string) => {
         if (connectionEstablished) return;
+        if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
         if (vapiInstance) {
-          try { vapiInstance.stop(); } catch { /* ignore */ }
+          try { void vapiInstance.stop(); } catch { /* ignore */ }
           vapiInstance = null;
         }
         setCallConnecting(false);
         setCallActive(false);
-        toast.error("Connection timed out. Check your network signal and try again.", { duration: 9000 });
+        toast.error(message, { duration: 9000 });
+      };
+
+      // ── Connection watchdog: if the SDK never confirms join/listen, tear
+      // down and inform the user. Prevents the permanent "Connecting…" lockup
+      // that mobile networks (NAT/firewall blocking WebRTC) can cause.
+      connectWatchdog = setTimeout(() => {
+        failConnection("Connection timed out. Check your network signal and try again.");
       }, CONNECTION_WATCHDOG_MS);
 
       vapi.on("call-start", (() => {
