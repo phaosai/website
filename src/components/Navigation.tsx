@@ -179,18 +179,6 @@ const Navigation = () => {
                     <div className="min-w-[12rem] glass-strong border border-border/60 rounded-lg shadow-xl shadow-black/30 py-2 animate-fade-in">
                       {item.children.map((child) => {
                         const childActive = isPathActive(child.to);
-                        if (isExternalUrl(child.to)) {
-                          return (
-                            <a
-                              key={child.label}
-                              href={child.to}
-                              role="menuitem"
-                              className="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
-                            >
-                              {child.label}
-                            </a>
-                          );
-                        }
                         return (
                           <Link
                             key={child.label}
@@ -293,18 +281,6 @@ const Navigation = () => {
                   <div className="mt-2 ml-3 pl-3 border-l border-border/40 space-y-2">
                     {item.children.map((child) => {
                       const childActive = isPathActive(child.to);
-                      if (isExternalUrl(child.to)) {
-                        return (
-                          <a
-                            key={child.label}
-                            href={child.to}
-                            onClick={() => setMobileOpen(false)}
-                            className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {child.label}
-                          </a>
-                        );
-                      }
                       return (
                         <Link
                           key={child.label}
