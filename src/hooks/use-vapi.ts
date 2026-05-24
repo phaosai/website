@@ -153,6 +153,7 @@ export function setVoiceAgentOverride(opts: { assistantId?: string | null; publi
 let warmVapi: VapiInstance | null = null;
 let warmVapiPromise: Promise<VapiInstance> | null = null;
 let micPrewarmed = false;
+let micPermissionConfirmed = false;
 
 /**
  * Eagerly construct a Vapi instance so its internal AudioContext / WebRTC
@@ -217,6 +218,26 @@ export function resumeAudioContext(): void {
   if (warmAudioContext && warmAudioContext.state === "suspended") {
     warmAudioContext.resume().catch(() => { /* ignore */ });
   }
+}
+
+async function ensureMicrophoneReady(): Promise<void> {
+  if (micPermissionConfirmed) return;
+
+  try {
+    const status = await navigator.permissions?.query?.({
+      name: "microphone" as PermissionName,
+    });
+    if (status?.state === "granted") {
+      micPermissionConfirmed = true;
+      return;
+    }
+  } catch {
+    // Safari/iOS may not support querying microphone permission; probe below.
+  }
+
+  const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+  probe.getTracks().forEach((t) => t.stop());
+  micPermissionConfirmed = true;
 }
 
 // ─── Lead Extraction Helpers ────────────────────────────────
