@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
     label: "Voice",
     children: [
       { label: "Voice Agent", to: "/voice-ai" },
+      { label: "Test It Live!", to: "/voice-ai/test-live" },
       { label: "Integrations", to: "/integrations" },
       { label: "ROI Calculator", to: "/roi-calculator" },
     ],
