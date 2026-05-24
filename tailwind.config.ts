@@ -60,7 +60,7 @@ export default {
           elevated: "hsl(var(--surface-elevated))",
         },
         "primary-glow": "hsl(var(--primary-glow))",
-        warn: "hsl(var(--warning))",
+        warning: "hsl(var(--warning))",
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
