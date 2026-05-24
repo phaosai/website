@@ -25,6 +25,7 @@ const Careers = lazy(() => import("./pages/Careers.tsx"));
 const Partners = lazy(() => import("./pages/Partners.tsx"));
 const Investors = lazy(() => import("./pages/Investors.tsx"));
 const VoiceAI = lazy(() => import("./pages/VoiceAI.tsx"));
+const VoiceTestLive = lazy(() => import("./pages/VoiceTestLive.tsx"));
 const Workflows = lazy(() => import("./pages/Workflows.tsx"));
 const Security = lazy(() => import("./pages/Security.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
