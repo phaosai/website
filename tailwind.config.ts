@@ -55,6 +55,12 @@ export default {
           light: "hsl(var(--purple-light))",
           deep: "hsl(var(--purple-deep))",
         },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          elevated: "hsl(var(--surface-elevated))",
+        },
+        "primary-glow": "hsl(var(--primary-glow))",
+        warning: "hsl(var(--warning))",
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
