@@ -48,5 +48,5 @@ verify_jwt = false
 [functions.signal-cache-health]
 verify_jwt = false
 
-[functions.elevenlabs-conversation-token]
+[functions.vapi-config]
 verify_jwt = false
