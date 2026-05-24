@@ -185,7 +185,7 @@ export function prewarmVapi(): Promise<VapiInstance> {
     const instance = new Vapi(
       activePublicKey,
       undefined,
-      { alwaysIncludeMicInPermissionPrompt: true },
+      { avoidEval: true, alwaysIncludeMicInPermissionPrompt: true },
       { audioSource: true, startAudioOff: false }
     ) as unknown as VapiInstance;
     warmVapi = instance;
