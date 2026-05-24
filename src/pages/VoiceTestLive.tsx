@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Mic, MicOff, Phone, PhoneOff, Lightbulb, Loader2 } from "lucide-react";
-import { useConversation } from "@elevenlabs/react";
+import Vapi from "@vapi-ai/web";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
@@ -17,52 +17,59 @@ const RECOMMENDED_QUESTIONS = [
 
 const VoiceTestLive = () => {
   const { toast } = useToast();
+  const vapiRef = useRef<Vapi | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const conversation = useConversation({
-    onConnect: () => {
-      toast({ title: "Connected", description: "You're live with the Phaos AI voice agent." });
-    },
-    onDisconnect: () => {
-      toast({ title: "Call ended", description: "The voice agent session has ended." });
-    },
-    onError: (error) => {
-      console.error("[VoiceTestLive] conversation error:", error);
-      toast({
-        variant: "destructive",
-        title: "Voice agent error",
-        description: typeof error === "string" ? error : "Connection error. Please try again.",
-      });
-    },
-  });
-
-  const isConnected = conversation.status === "connected";
+  useEffect(() => {
+    return () => {
+      vapiRef.current?.stop();
+      vapiRef.current = null;
+    };
+  }, []);
 
   const startCall = useCallback(async () => {
     setIsConnecting(true);
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      const { data, error } = await supabase.functions.invoke("vapi-config");
       if (error) throw error;
-      if (!data?.token) throw new Error("No conversation token returned.");
+      if (!data?.publicKey || !data?.assistantId) throw new Error("VAPI not configured.");
 
-      await conversation.startSession({
-        conversationToken: data.token,
-        connectionType: "webrtc",
+      const vapi = new Vapi(data.publicKey);
+      vapiRef.current = vapi;
+
+      vapi.on("call-start", () => {
+        setIsConnected(true);
+        setIsConnecting(false);
+        toast({ title: "Connected", description: "You're live with the Phaos AI voice agent." });
       });
+      vapi.on("call-end", () => {
+        setIsConnected(false);
+        setIsSpeaking(false);
+        toast({ title: "Call ended", description: "The voice agent session has ended." });
+      });
+      vapi.on("speech-start", () => setIsSpeaking(true));
+      vapi.on("speech-end", () => setIsSpeaking(false));
+      vapi.on("error", (e: unknown) => {
+        console.error("[VoiceTestLive] vapi error:", e);
+        const msg = e instanceof Error ? e.message : "Connection error.";
+        toast({ variant: "destructive", title: "Voice agent error", description: msg });
+        setIsConnecting(false);
+      });
+
+      await vapi.start(data.assistantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start the voice agent.";
       console.error("[VoiceTestLive] start error:", err);
       toast({ variant: "destructive", title: "Couldn't start the call", description: message });
-    } finally {
       setIsConnecting(false);
     }
-  }, [conversation, toast]);
+  }, [toast]);
 
-  const endCall = useCallback(async () => {
-    await conversation.endSession();
-  }, [conversation]);
+  const endCall = useCallback(() => {
+    vapiRef.current?.stop();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -97,12 +104,10 @@ const VoiceTestLive = () => {
             <div className="flex flex-col items-center text-center gap-6">
               <div
                 className={`relative w-28 h-28 rounded-full flex items-center justify-center transition-all ${
-                  isConnected
-                    ? "bg-gradient-purple glow-purple-lg"
-                    : "bg-primary/10 border border-primary/30"
+                  isConnected ? "bg-gradient-purple glow-purple-lg" : "bg-primary/10 border border-primary/30"
                 }`}
               >
-                {conversation.isSpeaking && (
+                {isSpeaking && (
                   <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping" aria-hidden />
                 )}
                 {isConnected ? (
@@ -116,7 +121,7 @@ const VoiceTestLive = () => {
                 <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Status</p>
                 <p className="text-xl font-semibold">
                   {isConnected
-                    ? conversation.isSpeaking
+                    ? isSpeaking
                       ? "Agent is speaking…"
                       : "Listening — go ahead"
                     : "Ready to connect"}
