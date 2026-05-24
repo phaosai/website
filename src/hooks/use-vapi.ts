@@ -73,6 +73,7 @@ interface VapiInstance {
   start: (assistantId: string, assistantOverrides?: VapiAssistantOverrides) => Promise<unknown>;
   stop: () => void | Promise<void>;
   setMuted?: (mute: boolean) => void;
+  setInputDevicesAsync?: (options: { audioSource?: MediaStreamTrack }) => Promise<void>;
   on: (event: string, handler: (...args: unknown[]) => void) => void;
   removeAllListeners?: (event?: string) => void;
 }
