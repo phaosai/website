@@ -280,7 +280,7 @@ function extractLeadData(fullText: string): {
     /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
   );
   const assetIdMatch = fullText.match(
-    /(?:asset\s*(?:id|number|#)?|sticker)[:\s]*([A-Za-z0-9\-]+)/i
+    /(?:asset\s*(?:id|number|#)?|sticker)[:\s]*([A-Za-z0-9-]+)/i
   );
   const modelMatch = fullText.match(
     /(?:BP|MX|AR|DX)[-\s]?\w{2,10}/i
