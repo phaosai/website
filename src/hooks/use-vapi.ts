@@ -65,9 +65,14 @@ interface VapiStartProgressEvent {
   metadata?: Record<string, unknown>;
 }
 
+interface VapiAssistantOverrides {
+  clientMessages?: string[];
+}
+
 interface VapiInstance {
-  start: (assistantId: string) => Promise<unknown>;
+  start: (assistantId: string, assistantOverrides?: VapiAssistantOverrides) => Promise<unknown>;
   stop: () => void | Promise<void>;
+  setMuted?: (mute: boolean) => void;
   on: (event: string, handler: (...args: unknown[]) => void) => void;
   removeAllListeners?: (event?: string) => void;
 }
@@ -104,12 +109,25 @@ const LeadSchema = z.object({
 
 // ─── Constants ──────────────────────────────────────────────
 
-const TIMEOUT_THRESHOLD_MS = 10_000;
+const TIMEOUT_THRESHOLD_MS = 5 * 60_000;
 const CONNECTION_WATCHDOG_MS = 45_000;
 const HIGH_LATENCY_THRESHOLD_MS = 1500;
 const MAX_TRANSCRIPT_ENTRIES = 200;
 const MAX_REASONING_ENTRIES = 200;
 const LEAD_SAVE_MAX_RETRIES = 3;
+const VAPI_CLIENT_MESSAGES = [
+  "conversation-update",
+  "function-call",
+  "metadata",
+  "model-output",
+  "speech-update",
+  "status-update",
+  "transcript",
+  "tool-calls",
+  "user-interrupted",
+  "voice-input",
+  "assistant.started",
+];
 
 // Kill native browser speechSynthesis globally
 if (typeof window !== "undefined" && window.speechSynthesis) {
