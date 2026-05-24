@@ -1,10 +1,39 @@
-import { useEffect } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Brain, CheckCircle2, Database, HardDrive, Loader2, Mic, Phone, PhoneOff, Radio, Sparkles } from "lucide-react";
+import Vapi from "@vapi-ai/web";
+import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 
-const VOICE_SANDBOX_URL = "https://voice.phaosai.com/try";
+const VAPI_PUBLIC_KEY = "b4b4be59-182a-492b-bb0b-55aad26306ad";
+const VAPI_ASSISTANT_ID = "9b500996-850d-416f-96b1-c7aa1eeb2dc3";
+
+type TranscriptEntry = { role: "system" | "ai" | "caller"; text: string; timestamp: string; toolCall?: { name: string; args: Record<string, unknown> } };
+type ReasoningEntry = { text: string; timestamp: string; type: "intent" | "action" | "routing" };
+type VapiMessage = { type: string; transcriptType?: string; role?: string; transcript?: string; toolCalls?: Array<{ function?: { name?: string; arguments?: Record<string, unknown> } }>; functionCall?: { name?: string; arguments?: Record<string, unknown> }; latency?: number };
+type VapiError = { message?: string } | string;
+
+let warmVapi: Vapi | null = null;
+let warmVapiPromise: Promise<Vapi> | null = null;
+
+const prewarmVapi = () => {
+  if (warmVapi) return Promise.resolve(warmVapi);
+  if (warmVapiPromise) return warmVapiPromise;
+  warmVapiPromise = import("@vapi-ai/web").then(({ default: VapiSdk }) => {
+    warmVapi = new VapiSdk(VAPI_PUBLIC_KEY);
+    return warmVapi;
+  });
+  return warmVapiPromise;
+};
+
+const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
+
+const scrubPII = (text: string) =>
+  text
+    .replace(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, "••••••••")
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "••••@••••");
 
 const VoiceTestLive = () => {
   useEffect(() => {
