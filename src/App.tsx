@@ -144,6 +144,7 @@ const AppInner = () => {
             <Route path="/partners" element={<Partners />} />
             <Route path="/investors" element={<Investors />} />
             <Route path="/voice-ai" element={<VoiceAI />} />
+            <Route path="/voice-ai/test-live" element={<VoiceTestLive />} />
             <Route path="/workflows" element={<Workflows />} />
             <Route path="/security" element={<Security />} />
             <Route path="/privacy" element={<Privacy />} />
