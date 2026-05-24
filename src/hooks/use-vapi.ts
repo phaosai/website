@@ -172,6 +172,21 @@ let warmVapi: VapiInstance | null = null;
 let warmVapiPromise: Promise<VapiInstance> | null = null;
 let micPrewarmed = false;
 let micPermissionConfirmed = false;
+let activeMicStream: MediaStream | null = null;
+
+const MICROPHONE_CONSTRAINTS: MediaStreamConstraints = {
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  },
+  video: false,
+};
+
+function stopActiveMicStream(): void {
+  activeMicStream?.getTracks().forEach((track) => track.stop());
+  activeMicStream = null;
+}
 
 /**
  * Eagerly construct a Vapi instance so its internal AudioContext / WebRTC
@@ -238,24 +253,19 @@ export function resumeAudioContext(): void {
   }
 }
 
-async function ensureMicrophoneReady(): Promise<void> {
-  if (micPermissionConfirmed) return;
-
-  try {
-    const status = await navigator.permissions?.query?.({
-      name: "microphone" as PermissionName,
-    });
-    if (status?.state === "granted") {
-      micPermissionConfirmed = true;
-      return;
-    }
-  } catch {
-    // Safari/iOS may not support querying microphone permission; probe below.
+async function requestMicrophoneStream(): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new DOMException("Microphone capture is not available in this browser.", "NotFoundError");
   }
 
-  const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
-  probe.getTracks().forEach((t) => t.stop());
+  const stream = await navigator.mediaDevices.getUserMedia(MICROPHONE_CONSTRAINTS);
+  const hasLiveAudio = stream.getAudioTracks().some((track) => track.readyState === "live");
+  if (!hasLiveAudio) {
+    stream.getTracks().forEach((track) => track.stop());
+    throw new DOMException("No live microphone track was created.", "NotFoundError");
+  }
   micPermissionConfirmed = true;
+  return stream;
 }
 
 // ─── Lead Extraction Helpers ────────────────────────────────
