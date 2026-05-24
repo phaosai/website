@@ -230,13 +230,8 @@ export async function prewarmMic(): Promise<void> {
     }
 
     if (navigator.permissions?.query) {
-      const status = await navigator.permissions.query({
-        name: "microphone" as PermissionName,
-      });
-      if (status.state === "granted") {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      }
+      const status = await navigator.permissions.query({ name: "microphone" as PermissionName });
+      micPermissionConfirmed = status.state === "granted";
     }
   } catch {
     // Silent — fall back to in-call prompt
