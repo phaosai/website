@@ -46,6 +46,13 @@
     --pci-go: 142 71% 45%;
     --pci-choice: 263 70% 58%;
 
+    /* Voice Sandbox surface tokens (parity with voice.phaosai.com) */
+    --surface: 240 15% 7%;
+    --surface-elevated: 240 12% 10%;
+    --primary-glow: 270 80% 68%;
+    --warning: 38 92% 50%;
+
+
     --sidebar-background: 240 15% 6%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 263 70% 58%;
