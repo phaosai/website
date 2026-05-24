@@ -549,14 +549,14 @@ export function useVapi(): UseVapiReturn {
     // call goes straight to ICE negotiation. Every ms before this is wasted.
     let startPromise: Promise<unknown> | null = null;
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
+    let connectionEstablished = false;
     try {
       const vapi = warmVapi ?? (await prewarmVapi());
       vapi.removeAllListeners?.();
       vapiInstance = vapi;
       resumeAudioContext();
-      startPromise = vapi.start(activeAssistantId);
 
-      // ── Now do UI bookkeeping while the handshake is in flight ──
+      // ── UI bookkeeping before the handshake so listeners are attached first ──
       setCallDuration(0);
       setTranscript([]);
       setReasoning([]);
@@ -571,10 +571,23 @@ export function useVapi(): UseVapiReturn {
       addReasoning("Phaos AI Core Engine — handshake in flight", "action");
       addTranscript({ role: "system", text: "Connecting to Phaos AI Core Engine...", timestamp: "00:00" });
 
-      // ── Connection watchdog: if call-start never fires within 20s, tear
+      const markConnected = (source: string, startupMs?: number) => {
+        if (connectionEstablished) return;
+        connectionEstablished = true;
+        if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+        setCallActive(true);
+        setCallConnecting(false);
+        markActivity();
+        if (typeof startupMs === "number") setLatencyMs(startupMs);
+        addReasoning(`Secure connection established via ${source} — Phaos voice engine active`, "action");
+        addTranscript({ role: "system", text: "Call connected — Phaos AI active", timestamp: "00:00" });
+      };
+
+      // ── Connection watchdog: if the SDK never confirms join/listen, tear
       // down and inform the user. Prevents the permanent "Connecting…" lockup
       // that mobile networks (NAT/firewall blocking WebRTC) can cause.
       connectWatchdog = setTimeout(() => {
+        if (connectionEstablished) return;
         if (vapiInstance) {
           try { vapiInstance.stop(); } catch { /* ignore */ }
           vapiInstance = null;
@@ -582,16 +595,25 @@ export function useVapi(): UseVapiReturn {
         setCallConnecting(false);
         setCallActive(false);
         toast.error("Connection timed out. Check your network signal and try again.", { duration: 9000 });
-      }, 20000);
+      }, CONNECTION_WATCHDOG_MS);
 
       vapi.on("call-start", (() => {
-        if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
-        setCallActive(true);
-        setCallConnecting(false);
-        markActivity();
-        addReasoning("Secure connection established — Phaos voice engine active", "action");
-        addTranscript({ role: "system", text: "Call connected — Phaos AI active", timestamp: "00:00" });
-      }) as never);
+        markConnected("voice-listening");
+      }) as (...args: unknown[]) => void);
+
+      vapi.on("call-start-success", ((event: VapiStartSuccessEvent) => {
+        markConnected("secure-stream", event.totalDuration);
+      }) as (...args: unknown[]) => void);
+
+      vapi.on("call-start-progress", ((event: VapiStartProgressEvent) => {
+        if (event.status === "failed") {
+          addReasoning(`Startup stage failed: ${event.stage ?? "unknown"}`, "action");
+          return;
+        }
+        if (event.status === "completed" && event.stage) {
+          markActivity();
+        }
+      }) as (...args: unknown[]) => void);
 
       vapi.on("call-end", (() => {
         setCallActive(false);
