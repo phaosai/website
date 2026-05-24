@@ -547,10 +547,11 @@ export function useVapi(): UseVapiReturn {
     // ── Fire the network call FIRST, before any React state work ──
     // The Vapi SDK is already constructed (prewarmVapi on mount), so this
     // call goes straight to ICE negotiation. Every ms before this is wasted.
-    let startPromise: Promise<void> | null = null;
+    let startPromise: Promise<unknown> | null = null;
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
     try {
       const vapi = warmVapi ?? (await prewarmVapi());
+      vapi.removeAllListeners?.();
       vapiInstance = vapi;
       resumeAudioContext();
       startPromise = vapi.start(activeAssistantId);
