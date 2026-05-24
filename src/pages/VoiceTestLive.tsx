@@ -5,8 +5,11 @@ import Vapi from "@vapi-ai/web";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+// Mirrors voice.phaosai.com defaults (VAPI public key is safe in the browser)
+const VAPI_PUBLIC_KEY = "b4b4be59-182a-492b-bb0b-55aad26306ad";
+const VAPI_ASSISTANT_ID = "9b500996-850d-416f-96b1-c7aa1eeb2dc3";
 
 const RECOMMENDED_QUESTIONS = [
   "Can you order me a color toner?",
@@ -14,6 +17,7 @@ const RECOMMENDED_QUESTIONS = [
   "Can you tell me how many months I have left on my copier lease?",
   "Can I get a quote for a new MFP?",
 ];
+
 
 const VoiceTestLive = () => {
   const { toast } = useToast();
@@ -32,11 +36,15 @@ const VoiceTestLive = () => {
   const startCall = useCallback(async () => {
     setIsConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("vapi-config");
-      if (error) throw error;
-      if (!data?.publicKey || !data?.assistantId) throw new Error("VAPI not configured.");
+      // Pre-flight mic permission inside the user gesture (iOS Safari / Android Chrome reliability)
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch {
+        throw new Error("Microphone permission denied. Enable it in your browser settings and try again.");
+      }
 
-      const vapi = new Vapi(data.publicKey);
+      const vapi = new Vapi(VAPI_PUBLIC_KEY);
       vapiRef.current = vapi;
 
       vapi.on("call-start", () => {
@@ -58,7 +66,7 @@ const VoiceTestLive = () => {
         setIsConnecting(false);
       });
 
-      await vapi.start(data.assistantId);
+      await vapi.start(VAPI_ASSISTANT_ID);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start the voice agent.";
       console.error("[VoiceTestLive] start error:", err);
@@ -66,6 +74,7 @@ const VoiceTestLive = () => {
       setIsConnecting(false);
     }
   }, [toast]);
+
 
   const endCall = useCallback(() => {
     vapiRef.current?.stop();
