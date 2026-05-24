@@ -640,10 +640,12 @@ export function useVapi(): UseVapiReturn {
       }, CONNECTION_WATCHDOG_MS);
 
       vapi.on("call-start", (() => {
+        try { vapi.setMuted?.(false); } catch { /* ignore */ }
         markConnected("voice-listening");
       }) as (...args: unknown[]) => void);
 
       vapi.on("call-start-success", ((event: VapiStartSuccessEvent) => {
+        try { vapi.setMuted?.(false); } catch { /* ignore */ }
         markConnected("secure-stream", event.totalDuration);
       }) as (...args: unknown[]) => void);
 
@@ -774,8 +776,9 @@ export function useVapi(): UseVapiReturn {
         failConnection(friendly);
       }) as never);
 
-      startPromise = vapi.start(activeAssistantId);
+      startPromise = vapi.start(activeAssistantId, { clientMessages: VAPI_CLIENT_MESSAGES });
       await startPromise;
+      try { vapi.setMuted?.(false); } catch { /* ignore */ }
       markConnected("secure-stream");
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
