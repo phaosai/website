@@ -53,10 +53,23 @@ interface VapiError {
   message?: string;
 }
 
+interface VapiStartSuccessEvent {
+  totalDuration?: number;
+  callId?: string;
+}
+
+interface VapiStartProgressEvent {
+  stage?: string;
+  status?: "started" | "completed" | "failed";
+  duration?: number;
+  metadata?: Record<string, unknown>;
+}
+
 interface VapiInstance {
-  start: (assistantId: string) => Promise<void>;
-  stop: () => void;
-  on: (event: string, handler: (...args: never[]) => void) => void;
+  start: (assistantId: string) => Promise<unknown>;
+  stop: () => void | Promise<void>;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeAllListeners?: (event?: string) => void;
 }
 
 export interface UseVapiReturn {
@@ -92,6 +105,7 @@ const LeadSchema = z.object({
 // ─── Constants ──────────────────────────────────────────────
 
 const TIMEOUT_THRESHOLD_MS = 10_000;
+const CONNECTION_WATCHDOG_MS = 45_000;
 const HIGH_LATENCY_THRESHOLD_MS = 1500;
 const MAX_TRANSCRIPT_ENTRIES = 200;
 const MAX_REASONING_ENTRIES = 200;
@@ -139,6 +153,7 @@ export function setVoiceAgentOverride(opts: { assistantId?: string | null; publi
 let warmVapi: VapiInstance | null = null;
 let warmVapiPromise: Promise<VapiInstance> | null = null;
 let micPrewarmed = false;
+let micPermissionConfirmed = false;
 
 /**
  * Eagerly construct a Vapi instance so its internal AudioContext / WebRTC
@@ -149,7 +164,12 @@ export function prewarmVapi(): Promise<VapiInstance> {
   if (warmVapi) return Promise.resolve(warmVapi);
   if (warmVapiPromise) return warmVapiPromise;
   warmVapiPromise = vapiModulePromise.then(({ default: Vapi }) => {
-    const instance = new Vapi(activePublicKey) as unknown as VapiInstance;
+    const instance = new Vapi(
+      activePublicKey,
+      undefined,
+      { alwaysIncludeMicInPermissionPrompt: true },
+      { audioSource: true, startAudioOff: false }
+    ) as unknown as VapiInstance;
     warmVapi = instance;
     return instance;
   });
@@ -198,6 +218,26 @@ export function resumeAudioContext(): void {
   if (warmAudioContext && warmAudioContext.state === "suspended") {
     warmAudioContext.resume().catch(() => { /* ignore */ });
   }
+}
+
+async function ensureMicrophoneReady(): Promise<void> {
+  if (micPermissionConfirmed) return;
+
+  try {
+    const status = await navigator.permissions?.query?.({
+      name: "microphone" as PermissionName,
+    });
+    if (status?.state === "granted") {
+      micPermissionConfirmed = true;
+      return;
+    }
+  } catch {
+    // Safari/iOS may not support querying microphone permission; probe below.
+  }
+
+  const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+  probe.getTracks().forEach((t) => t.stop());
+  micPermissionConfirmed = true;
 }
 
 // ─── Lead Extraction Helpers ────────────────────────────────
@@ -510,8 +550,7 @@ export function useVapi(): UseVapiReturn {
     // can silently hang on "Connecting…" forever on mobile.
     setCallConnecting(true);
     try {
-      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
-      probe.getTracks().forEach((t) => t.stop());
+      await ensureMicrophoneReady();
     } catch (permErr: unknown) {
       const name = (permErr as { name?: string })?.name ?? "";
       const friendly =
@@ -525,18 +564,18 @@ export function useVapi(): UseVapiReturn {
       return;
     }
 
-    // ── Fire the network call FIRST, before any React state work ──
-    // The Vapi SDK is already constructed (prewarmVapi on mount), so this
-    // call goes straight to ICE negotiation. Every ms before this is wasted.
-    let startPromise: Promise<void> | null = null;
+    // The Vapi SDK is already constructed (prewarmVapi on mount). Attach
+    // listeners before start() so fast success events cannot be missed.
+    let startPromise: Promise<unknown> | null = null;
     let connectWatchdog: ReturnType<typeof setTimeout> | null = null;
+    let connectionEstablished = false;
     try {
       const vapi = warmVapi ?? (await prewarmVapi());
+      vapi.removeAllListeners?.();
       vapiInstance = vapi;
       resumeAudioContext();
-      startPromise = vapi.start(activeAssistantId);
 
-      // ── Now do UI bookkeeping while the handshake is in flight ──
+      // ── UI bookkeeping before the handshake so listeners are attached first ──
       setCallDuration(0);
       setTranscript([]);
       setReasoning([]);
@@ -551,27 +590,54 @@ export function useVapi(): UseVapiReturn {
       addReasoning("Phaos AI Core Engine — handshake in flight", "action");
       addTranscript({ role: "system", text: "Connecting to Phaos AI Core Engine...", timestamp: "00:00" });
 
-      // ── Connection watchdog: if call-start never fires within 20s, tear
-      // down and inform the user. Prevents the permanent "Connecting…" lockup
-      // that mobile networks (NAT/firewall blocking WebRTC) can cause.
-      connectWatchdog = setTimeout(() => {
-        if (vapiInstance) {
-          try { vapiInstance.stop(); } catch { /* ignore */ }
-          vapiInstance = null;
-        }
-        setCallConnecting(false);
-        setCallActive(false);
-        toast.error("Connection timed out. Check your network signal and try again.", { duration: 9000 });
-      }, 20000);
-
-      vapi.on("call-start", (() => {
+      const markConnected = (source: string, startupMs?: number) => {
+        if (connectionEstablished) return;
+        connectionEstablished = true;
         if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
         setCallActive(true);
         setCallConnecting(false);
         markActivity();
-        addReasoning("Secure connection established — Phaos voice engine active", "action");
+        if (typeof startupMs === "number") setLatencyMs(startupMs);
+        addReasoning(`Secure connection established via ${source} — Phaos voice engine active`, "action");
         addTranscript({ role: "system", text: "Call connected — Phaos AI active", timestamp: "00:00" });
-      }) as never);
+      };
+
+      const failConnection = (message: string) => {
+        if (connectionEstablished) return;
+        if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
+        if (vapiInstance) {
+          try { void vapiInstance.stop(); } catch { /* ignore */ }
+          vapiInstance = null;
+        }
+        setCallConnecting(false);
+        setCallActive(false);
+        toast.error(message, { duration: 9000 });
+      };
+
+      // ── Connection watchdog: if the SDK never confirms join/listen, tear
+      // down and inform the user. Prevents the permanent "Connecting…" lockup
+      // that mobile networks (NAT/firewall blocking WebRTC) can cause.
+      connectWatchdog = setTimeout(() => {
+        failConnection("Connection timed out. Check your network signal and try again.");
+      }, CONNECTION_WATCHDOG_MS);
+
+      vapi.on("call-start", (() => {
+        markConnected("voice-listening");
+      }) as (...args: unknown[]) => void);
+
+      vapi.on("call-start-success", ((event: VapiStartSuccessEvent) => {
+        markConnected("secure-stream", event.totalDuration);
+      }) as (...args: unknown[]) => void);
+
+      vapi.on("call-start-progress", ((event: VapiStartProgressEvent) => {
+        if (event.status === "failed") {
+          addReasoning(`Startup stage failed: ${event.stage ?? "unknown"}`, "action");
+          return;
+        }
+        if (event.status === "completed" && event.stage) {
+          markActivity();
+        }
+      }) as (...args: unknown[]) => void);
 
       vapi.on("call-end", (() => {
         setCallActive(false);
@@ -687,12 +753,12 @@ export function useVapi(): UseVapiReturn {
           ? "This sandbox can't connect: the voice agent ID and the public key belong to different accounts. Open Sandbox Instances admin and paste a public key from the same workspace as the agent."
           : `Call error: ${detail}`;
         addReasoning(`Error: ${detail}`, "action");
-        toast.error(friendly, { duration: isKeyMismatch ? 12000 : 6000 });
-        setCallActive(false);
-        setCallConnecting(false);
+        failConnection(friendly);
       }) as never);
 
+      startPromise = vapi.start(activeAssistantId);
       await startPromise;
+      markConnected("secure-stream");
     } catch (err: unknown) {
       if (connectWatchdog) { clearTimeout(connectWatchdog); connectWatchdog = null; }
       const message = err instanceof Error ? err.message : "Unknown error";
