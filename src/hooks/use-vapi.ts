@@ -490,27 +490,17 @@ export function useVapi(): UseVapiReturn {
       lead_score: lead.leadScore,
     };
 
-    try {
-      await retryAsync(async () => {
-        const { error } = await supabase.from("leads").insert(insertData);
-        if (error) throw error;
-      }, LEAD_SAVE_MAX_RETRIES);
-
-      if (lead.leadScore > 80) {
-        toast.success(`🔥 High-Value Lead Captured: ${lead.customerName}`, {
-          description: `Lead Score: ${lead.leadScore}/100 — Immediate follow-up recommended`,
-          duration: 8000,
-        });
-      } else {
-        toast.success(`Lead captured: ${lead.customerName}`, {
-          description: `Score: ${lead.leadScore}/100 • ${Object.keys(lead.printSpecs).length} specs detected`,
-        });
-      }
-      addReasoning(`Lead saved → ${lead.customerName} (Score: ${lead.leadScore}) | Model: ${lead.machineModel} | Intent: ${lead.customerIntent}`, "action");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      toast.error(`Failed to save lead after ${LEAD_SAVE_MAX_RETRIES} attempts: ${message}`);
+    // Lead persistence intentionally disabled in this project (no `leads` table).
+    // Keeping the parsed lead in memory only.
+    void insertData;
+    addReasoning(`Lead extracted (in-memory) → ${lead.customerName} (Score: ${lead.leadScore}) | Model: ${lead.machineModel} | Intent: ${lead.customerIntent}`, "action");
+    if (lead.leadScore > 80) {
+      toast.success(`🔥 High-Value Lead: ${lead.customerName}`, {
+        description: `Score: ${lead.leadScore}/100`,
+        duration: 6000,
+      });
     }
+
   }, [addReasoning]);
 
   const startCall = useCallback(async () => {
