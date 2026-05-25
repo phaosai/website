@@ -130,7 +130,7 @@ const WorkflowTeardownPopup = () => {
                     Personally experience your customer&rsquo;s new reality!
                   </p>
                   <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-relaxed`}>
-                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps &amp; Marketing synergy and the type of value you&rsquo;ve always wanted to be able to provide. Unparalleled.
+                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps + Marketing. No friction. Pure growth. The powerhouse differentiator you&rsquo;ve been seeking.
                   </p>
                 </div>
               </div>
