@@ -13,9 +13,9 @@ for (const bp of BREAKPOINTS) {
     await page.setViewportSize({ width: bp.width, height: bp.height });
     await page.goto("/");
     // Popup auto-opens 1.5s after load on the home page.
-    await page.waitForSelector("text=Let’s Hear What", { timeout: 10000 });
+    await page.waitForSelector("text=World-Class", { timeout: 10000 });
     const dialog = page
-      .locator("text=Let’s Hear What")
+      .locator("text=World-Class")
       .locator("xpath=ancestor::div[contains(@class,'rounded-3xl')]")
       .first();
     await expect(dialog).toHaveScreenshot(`teardown-${bp.name}.png`, {
@@ -28,5 +28,5 @@ for (const bp of BREAKPOINTS) {
 test("voice demo popup — does NOT appear on /pricing", async ({ page }) => {
   await page.goto("/pricing");
   await page.waitForTimeout(3000);
-  await expect(page.locator("text=Let’s Hear What")).toHaveCount(0);
+  await expect(page.locator("text=World-Class")).toHaveCount(0);
 });
