@@ -25,7 +25,7 @@ describe("WorkflowTeardownPopup auto-open suppression", () => {
       act(() => {
         vi.advanceTimersByTime(3000);
       });
-      expect(screen.queryByText(/This Is What A/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/World-Class/i)).not.toBeInTheDocument();
     });
   }
 
@@ -35,6 +35,6 @@ describe("WorkflowTeardownPopup auto-open suppression", () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText(/This Is What A/i)).toBeInTheDocument();
+    expect(screen.getByText(/World-Class/i)).toBeInTheDocument();
   });
 });
