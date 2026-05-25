@@ -129,8 +129,17 @@ const WorkflowTeardownPopup = () => {
                   <p className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-white mb-1`}>
                     Personally experience your customer&rsquo;s new reality!
                   </p>
-                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-relaxed`}>
-                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps + Marketing. No friction. Pure growth. The powerhouse differentiator you&rsquo;ve been seeking.
+                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-snug`}>
+                    THIS is what AI was built for!
+                  </p>
+                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-snug mt-1`}>
+                    Personalization, revenue generation, enhanced communication, RevOps + Marketing.
+                  </p>
+                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-snug mt-1`}>
+                    No friction. Pure growth. Staff refocused.
+                  </p>
+                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-snug mt-1`}>
+                    The powerhouse differentiator you&rsquo;ve been seeking.
                   </p>
                 </div>
               </div>
@@ -147,9 +156,6 @@ const WorkflowTeardownPopup = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
-              <p className="text-[11px] text-center text-white/30 mt-4 leading-relaxed">
-                Opens our live voice sandbox in a new tab. No signup required.
-              </p>
             </div>
           </motion.div>
         </motion.div>
