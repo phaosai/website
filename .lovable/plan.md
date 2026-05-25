@@ -1,89 +1,58 @@
-## Rebuild Plan: Sunesis Foundry Blank-Slate Fix
 
-### What is broken right now
-- The backend is healthy and Foundry data still exists; I confirmed existing corpus, stage runs, master runs, quantum audits, and promoted brains are present.
-- Price coverage actually exists in the database for 2011–2025, but the UI gate can still show it as missing because Foundry state is split across localStorage, client state, and backend tables.
-- MASTER EXECUTE is currently a synchronous “do everything now” edge function. That can appear to do nothing, can miss real progress feedback, and is structurally fragile for 5-minute-per-stage workflows.
-- Stage 3/4/5 still contain simulated/client-local logic mixed with durable backend evidence, so the Foundry can report contradictory status.
-- Quantum audit gating reads `quantum_audits`, but the final flow also references newer audit infrastructure. This needs one canonical durable audit source for Foundry.
+## Decision
 
-### Non-negotiables for the rebuild
-- Preserve all existing rows in Foundry and quantum tables. No destructive resets.
-- Keep every run additive and resumable.
-- Move Foundry status/gates out of localStorage and make the database the source of truth.
-- Make MASTER EXECUTE start immediately, show a run id/progress, and advance stages one at a time.
-- Keep each stage time-boxed to a maximum of 5 minutes.
-- Make the four blocked checks reliably completable:
-  1. All years 2011–2025 validated.
-  2. Engine series name provided.
-  3. Real price coverage for every 2011–2025 year.
-  4. Completed durable Foundry quantum audit when Quantum Mode is on.
+Per your call: route every "Try It Now Free!" / "Test It Live!" entry point to the known-working external sandbox at `https://voice.phaosai.com/` (new tab, no gating). The in-site `/voice-ai/test-live` VAPI page stays in code but is no longer linked from public CTAs, so we stop sending people to a flaky experience.
 
-### Database rebuild
-- Add a durable Foundry job ledger that tracks every stage as a real job step:
-  - `foundry_jobs`
-  - `foundry_job_stages`
-  - `foundry_validation_years`
-  - `foundry_engine_series`
-  - `foundry_run_events`
-- Keep existing tables (`foundry_year_corpus`, `foundry_stage_runs`, `foundry_master_runs`, `foundry_brain_grades`, `promoted_brains`, `quantum_audits`) intact.
-- Add safe views/functions for status aggregation:
-  - price coverage by year/dimension
-  - validation completion by year
-  - latest completed Foundry quantum audit
-  - current Foundry readiness checklist
-- Add RLS so only admins can operate Foundry, while service functions can process jobs.
+## 1. Popup copy + CTA rewrite (`src/components/WorkflowTeardownPopup.tsx`)
 
-### Edge function rebuild
-- Replace the current synchronous MASTER EXECUTE behavior with a staged job runner:
-  - `foundry-master-execute` only creates/starts a job and returns immediately.
-  - A new/rescoped worker function runs exactly one stage per invocation and records progress.
-  - The client polls the job ledger and can resume if the page refreshes.
-- Rework stages into deterministic, idempotent units:
-  1. **Stage 1: Ingest coverage** — ingest missing/additive sources, especially real price rows for 2011–2025.
-  2. **Stage 2: Aggregate** — compute durable corpus/sub-brain coverage from database rows.
-  3. **Stage 3: Synthesis / Quantum audit** — create a durable completed Foundry quantum audit record, using live IBM when available and explicit fallback metadata if simulator is used.
-  4. **Stage 4: Walk-forward validation** — persist validation completion for 2011–2025 in the backend, not just browser state.
-  5. **Stage 5: Grade + promote** — run deterministic grading, auto-promote if threshold is met, and explain held/promoted state.
-- Fix grading determinism by removing random jitter from the grader.
-- Fix the price dimension mismatch (`price` vs `prices`) so coverage scoring and UI gates read the same facts.
+Rewrite the auto-open popup. All other behavior (close, minimized side tab, route suppression on `/pricing`, `/auth`, `/checkout`, `/billing`) is preserved.
 
-### Frontend rebuild
-- Replace the Foundry page’s mixed local state with backend status queries.
-- Simplify the page into clear operational sections:
-  - Foundry readiness checklist
-  - MASTER EXECUTE + live stage progress
-  - Stage controls for individual retry/resume
-  - Data coverage table
-  - Quantum audit evidence
-  - Brain grade + CORRECT & IMPROVE
-- Keep the existing visual language, but remove confusing “passed” UI that is only local/browser-derived.
-- Make every button show one of: running, completed, failed with reason, retry available.
+- Hero badge: change "Free Workflow Teardown" → "Free Live Voice Demo".
+- Hero headline: replace the two-line "Send Us Your Messiest / Manual Workflow" with:
+  - "Let's Hear What **Your Business** Can Sound Like With **Our AI Solution**."
+  - "Your Business" and "Our AI Solution" rendered in the existing purple (`#B97AFF`), rest in white. Keep current responsive sizing.
+- Subhead under headline: remove the "We'll map the AI solution — completely free." line (replaced by the value card below).
+- Value-prop card:
+  - Title: "Personally experience your customer's new reality!"
+  - Body: "THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps & Marketing synergy and the type of value you've always wanted to be able to provide. Unparalleled."
+  - Keep purple-tinted card styling and `Zap` icon.
+- Remove the entire two-step form (email field, bottleneck textarea, Continue/Submit/Back buttons, submitted state, `handleStep1`, `handleSubmit`, `validateEmail`, related state, `supabase.functions.invoke` call, all unused imports).
+- In place of the form, render a single primary button:
+  - Label: "Try It Now Free!"
+  - On click: `window.open("https://voice.phaosai.com/", "_blank", "noopener,noreferrer")` and then `dismiss()`.
+  - Keep the existing purple gradient + glow styling and full-width sizing from the current submit button.
+- Footer microcopy (currently "Our architects manually audit every workflow…"): replace with a single line — "Opens our live voice sandbox in a new tab. No signup required."
+- Minimized side-tab label: change "Free AI Teardown" → "Try Voice AI Live".
 
-### QA and stress testing
-- Test edge functions directly after deployment:
-  - master start returns a job id immediately
-  - each stage can run independently
-  - rerunning a completed stage is idempotent or creates additive evidence without corrupting state
-  - missing engine name produces a clear UI message, not a dead button
-- Validate database gates with read queries:
-  - 2011–2025 price coverage exists
-  - validation-year rows exist after stage 4
-  - completed Foundry quantum audit exists after stage 3
-  - final readiness checklist flips all four checks green
-- Run Foundry UI end-to-end in preview:
-  - MASTER EXECUTE click
-  - progress polling
-  - individual stage retry
-  - CORRECT & IMPROVE
-  - Promote eligibility
-- Run the security linter after database changes and fix any migration-related issues.
+## 2. Popup timing
 
-### Implementation order
-1. Create the new durable job/status schema and safe aggregate functions.
-2. Rebuild edge functions around one-stage-at-a-time job processing.
-3. Update the Foundry UI to use the durable backend status instead of localStorage gates.
-4. Wire MASTER EXECUTE, CORRECT & IMPROVE, and individual stage buttons to the new job system.
-5. Deploy functions, run backend tests, run security scan/linter, then QA the UI flow end-to-end.
+Change the auto-open delay from `180_000` ms to `1500` ms so it opens 1.5s after page load on all non-suppressed routes (matches the global UI delay rule).
 
-This is a rebuild, but not a data wipe: existing Foundry corpus, audit history, grade history, and promoted brain records will be preserved and used as the baseline.
+## 3. Reroute every public "Test It Live" entry point to the external sandbox
+
+Replace internal links to `/voice-ai/test-live` with anchors to `https://voice.phaosai.com/` (`target="_blank"`, `rel="noopener noreferrer"`):
+
+- `src/components/Navigation.tsx` — the "Test It Live!" nav item.
+- Any other CTAs in the voice-AI pages that point at `/voice-ai/test-live` (sweep `src/pages/VoiceAI.tsx`, `src/pages/Index.tsx`, `src/components/HomePhaosOneSections.tsx`, etc., and convert each one).
+- Keep the `/voice-ai/test-live` route registered in `src/App.tsx` (no deletion) so any deep links continue to resolve — but it is no longer surfaced from public CTAs.
+
+## 4. Update tests + visual regression
+
+- `src/components/__tests__/WorkflowTeardownPopup.test.tsx`: replace the `Send Us Your Messiest` matchers with the new headline ("Let's Hear What"). Bump the fake-timer advance from 6000 → 2000 to match the new 1.5s delay, and the suppressed-routes advance from 10000 → 3000.
+- `e2e/workflow-teardown-visual.spec.ts`: replace the `Send Us Your Messiest` selector with `Let's Hear What`, update the auto-open wait comment, and accept new baseline screenshots on the next CI run (existing baselines will be invalidated by the redesign — that is expected).
+
+## 5. Memory update
+
+Update `mem://features/lead-magnets/workflow-teardown` so the new popup spec (voice demo CTA, 1.5s open, button-only, external sandbox link, no email capture) replaces the old "Manual-to-AI PoC" rules. Add the routing decision ("public CTAs point to voice.phaosai.com sandbox in a new tab; in-site `/voice-ai/test-live` route kept but unlinked") so future sessions don't re-link the broken page.
+
+## Out of scope
+
+- No changes to `src/hooks/use-vapi.ts`, `src/components/command-center/VapiSandbox.tsx`, or `index.html` CSP. The in-site sandbox stays as-is; we're simply not driving traffic to it from public surfaces.
+- No backend/email changes (the lead-capture edge function call is removed from the popup but the function itself is left intact for other forms).
+
+## Open questions before I build
+
+1. Should the minimized side-tab (the vertical purple "Try Voice AI Live" tab on the right edge) also open the external sandbox directly on click instead of reopening the popup? Default I'll use: keeps current behavior (reopens the popup), so the user sees the value prop first.
+2. Should I also swap the in-app `/voice-ai/test-live` page itself (when reached directly) to show a CTA that bounces the user to `voice.phaosai.com`, or leave it functioning as today? Default I'll use: leave it functioning so deep links still work.
+
+Tell me to flip either default if you want different behavior; otherwise I'll proceed with the defaults above the moment you approve the plan.
