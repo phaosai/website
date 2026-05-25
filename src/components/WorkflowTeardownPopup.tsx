@@ -106,11 +106,10 @@ const WorkflowTeardownPopup = () => {
                 >
                   Free Live Voice Demo
                 </span>
-                <h2 className={`${headingSize} font-extrabold text-white leading-tight`}>
-                  Let&rsquo;s Hear What{" "}
-                  <span style={{ color: purple }}>Your Business</span>{" "}
-                  Can Sound Like With{" "}
-                  <span style={{ color: purple }}>Our AI Solution</span>.
+                <h2 className={`${headingSize} font-extrabold text-white leading-tight flex flex-col items-center`}>
+                  <span>Let&rsquo;s Hear What <span style={{ color: purple }}>Your Business</span></span>
+                  <span>Can Sound Like With</span>
+                  <span style={{ color: purple }}>Our AI Solution</span>
                 </h2>
               </div>
             </div>
@@ -131,7 +130,7 @@ const WorkflowTeardownPopup = () => {
                     Personally experience your customer&rsquo;s new reality!
                   </p>
                   <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-relaxed`}>
-                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps &amp; Marketing synergy and the type of value you&rsquo;ve always wanted to be able to provide. Unparalleled.
+                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps + Marketing. No friction. Pure growth. The powerhouse differentiator you&rsquo;ve been seeking.
                   </p>
                 </div>
               </div>
