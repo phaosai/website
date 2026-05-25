@@ -2,10 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import WorkflowTeardownPopup from "../WorkflowTeardownPopup";
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { functions: { invoke: vi.fn() } },
-}));
-
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 
 const setPath = (p: string) => {
@@ -27,9 +23,9 @@ describe("WorkflowTeardownPopup auto-open suppression", () => {
       setPath(path);
       render(<WorkflowTeardownPopup />);
       act(() => {
-        vi.advanceTimersByTime(10000);
+        vi.advanceTimersByTime(3000);
       });
-      expect(screen.queryByText(/Send Us Your Messiest/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Let.s Hear What/i)).not.toBeInTheDocument();
     });
   }
 
@@ -37,8 +33,8 @@ describe("WorkflowTeardownPopup auto-open suppression", () => {
     setPath("/");
     render(<WorkflowTeardownPopup />);
     act(() => {
-      vi.advanceTimersByTime(6000);
+      vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText(/Send Us Your Messiest/i)).toBeInTheDocument();
+    expect(screen.getByText(/Let.s Hear What/i)).toBeInTheDocument();
   });
 });

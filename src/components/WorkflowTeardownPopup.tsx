@@ -1,35 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, ArrowRight, CheckCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { X, Zap, ArrowRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import phaosCrown from "@/assets/phaos-crown-transparent.png";
+
+const SANDBOX_URL = "https://voice.phaosai.com/";
 
 const WorkflowTeardownPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [minimized, setMinimized] = useState(true);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [email, setEmail] = useState("");
-  const [bottleneck, setBottleneck] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [emailError, setEmailError] = useState("");
-  const openedAt = useRef(0);
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Default behavior: stay minimized as a side tab. Only auto-open the
-    // full modal once the visitor has been on the site for 3+ minutes,
-    // and never auto-open on high-intent routes.
+    // Auto-open 1.5s after load on public routes (matches global UI delay).
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const suppressedRoutes = ["/pricing", "/auth", "/checkout", "/billing"];
     if (suppressedRoutes.some((p) => path.startsWith(p))) return;
     const timer = setTimeout(() => {
       setIsOpen(true);
       setMinimized(false);
-      openedAt.current = Date.now();
-    }, 180_000);
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -41,45 +31,11 @@ const WorkflowTeardownPopup = () => {
   const reopen = () => {
     setIsOpen(true);
     setMinimized(false);
-    openedAt.current = Date.now();
   };
 
-  const validateEmail = (val: string) => {
-    if (!val.trim()) return "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Enter a valid email";
-    return "";
-  };
-
-  const handleStep1 = () => {
-    const err = validateEmail(email);
-    if (err) { setEmailError(err); return; }
-    setEmailError("");
-    setStep(2);
-  };
-
-  const handleSubmit = async () => {
-    if (Date.now() - openedAt.current < 3000) return;
-    setSubmitting(true);
-    try {
-      const id = crypto.randomUUID();
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "lead-notification",
-          recipientEmail: "info@phaosai.com",
-          idempotencyKey: `teardown-${id}`,
-          templateData: {
-            source: "Workflow Teardown Popup",
-            name: "Popup Lead",
-            message: `Work Email: ${email}\n\nBiggest Manual Bottleneck: ${bottleneck || "Not provided"}`,
-          },
-        },
-      });
-      setSubmitted(true);
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+  const launchSandbox = () => {
+    window.open(SANDBOX_URL, "_blank", "noopener,noreferrer");
+    dismiss();
   };
 
   // Responsive values
@@ -87,13 +43,10 @@ const WorkflowTeardownPopup = () => {
   const maxW = isMobile ? "max-w-lg" : "max-w-xl";
   const heroPx = isMobile ? "px-6 pt-8 pb-6" : "px-10 pt-12 pb-8";
   const bodyPx = isMobile ? "px-6 pb-6 pt-2" : "px-10 pb-10 pt-2";
-  
-  const headingSize = isMobile ? "text-xl" : "text-3xl sm:text-4xl";
+  const headingSize = isMobile ? "text-xl" : "text-2xl sm:text-3xl";
   const badgeSize = isMobile ? "text-[11px]" : "text-xs";
-  const bodyText = isMobile ? "text-sm" : "text-base";
-  const inputPy = isMobile ? "py-3 text-sm" : "py-4 text-base";
   const btnPy = isMobile ? "py-3.5 text-sm" : "py-4 text-base";
-  const textareaRows = isMobile ? 3 : 4;
+  const purple = "#B97AFF";
 
   return (
     <AnimatePresence>
@@ -151,150 +104,53 @@ const WorkflowTeardownPopup = () => {
                     border: "1px solid rgba(138,43,226,0.4)",
                   }}
                 >
-                  Free Workflow Teardown
+                  Free Live Voice Demo
                 </span>
-                <h2 className={`${headingSize} font-extrabold text-white leading-tight mb-3`}>
-                  Send Us Your Messiest<br />
-                  <span style={{ color: "#B97AFF" }}>Manual Workflow</span>
+                <h2 className={`${headingSize} font-extrabold text-white leading-tight`}>
+                  Let&rsquo;s Hear What{" "}
+                  <span style={{ color: purple }}>Your Business</span>{" "}
+                  Can Sound Like With{" "}
+                  <span style={{ color: purple }}>Our AI Solution</span>.
                 </h2>
-                <p className={`${bodyText} text-white/55 leading-relaxed max-w-sm mx-auto`}>
-                  We'll map the AI solution —{" "}
-                  <span className="font-semibold text-white/90">completely free</span>.
-                </p>
               </div>
             </div>
 
             {/* Body */}
             <div className={bodyPx}>
-              {submitted ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-8"
-                >
-                  <CheckCircle className="w-14 h-14 mx-auto mb-4" style={{ color: "#00FF41" }} />
-                  <h3 className="text-xl font-bold text-white mb-2">You're In!</h3>
-                  <p className="text-sm text-white/55 leading-relaxed max-w-xs mx-auto">
-                    Our team will review your workflow and send back a personalized AI solution map within 48 hours.
+              {/* Value prop */}
+              <div
+                className="flex items-start gap-4 rounded-2xl p-4 mb-6"
+                style={{
+                  background: "rgba(138,43,226,0.06)",
+                  border: "1px solid rgba(138,43,226,0.12)",
+                }}
+              >
+                <Zap className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: purple }} />
+                <div>
+                  <p className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-white mb-1`}>
+                    Personally experience your customer&rsquo;s new reality!
                   </p>
-                  <button
-                    onClick={dismiss}
-                    className="mt-5 text-sm font-semibold transition-colors hover:text-white"
-                    style={{ color: "#B97AFF" }}
-                  >
-                    Close
-                  </button>
-                </motion.div>
-              ) : (
-                <>
-                  {/* Value prop */}
-                  <div
-                    className="flex items-start gap-4 rounded-2xl p-4 mb-6"
-                    style={{
-                      background: "rgba(138,43,226,0.06)",
-                      border: "1px solid rgba(138,43,226,0.12)",
-                    }}
-                  >
-                    <Zap className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "#B97AFF" }} />
-                    <div>
-                      <p className={`${isMobile ? "text-sm" : "text-base"} font-semibold text-white mb-1`}>15-Minute Workflow Teardown</p>
-                      <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/45 leading-relaxed`}>
-                        You describe your manual process. We send back a detailed AI solution map showing exactly how automation handles it.
-                      </p>
-                    </div>
-                  </div>
+                  <p className={`${isMobile ? "text-xs" : "text-sm"} text-white/55 leading-relaxed`}>
+                    THIS is what AI was built for! Personalization, revenue generation, enhanced communication, RevOps &amp; Marketing synergy and the type of value you&rsquo;ve always wanted to be able to provide. Unparalleled.
+                  </p>
+                </div>
+              </div>
 
-                  {step === 1 ? (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="space-y-5"
-                    >
-                      <div>
-                        <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
-                          Email Address <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-                          placeholder="you@company.com"
-                          className={`w-full rounded-xl px-5 ${inputPy} text-white placeholder:text-white/25 focus:outline-none focus:ring-2`}
-                          style={{
-                            background: "rgba(255,255,255,0.06)",
-                            border: emailError ? "1px solid #ef4444" : "1px solid rgba(138,43,226,0.2)",
-                          }}
-                          onKeyDown={(e) => e.key === "Enter" && handleStep1()}
-                        />
-                        {emailError && (
-                          <p className="text-xs mt-1.5 text-red-400">{emailError}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={handleStep1}
-                        disabled={!email.trim()}
-                        className={`w-full flex items-center justify-center gap-2 rounded-xl ${btnPy} font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed group`}
-                        style={{
-                          background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
-                          boxShadow: "0 0 25px rgba(138,43,226,0.35)",
-                        }}
-                      >
-                        Continue
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="space-y-5"
-                    >
-                      <div>
-                        <label className={`block ${isMobile ? "text-sm" : "text-base"} font-medium text-white/70 mb-2`}>
-                          What's your biggest manual bottleneck?{" "}
-                          <span className="text-white/30">(Optional)</span>
-                        </label>
-                        <textarea
-                          value={bottleneck}
-                          onChange={(e) => setBottleneck(e.target.value)}
-                          placeholder="e.g. 'We manually process 200+ invoices per week' or 'Our team spends 3 hours daily answering the same support calls...'"
-                          rows={textareaRows}
-                          className={`w-full rounded-xl px-5 ${inputPy} text-white placeholder:text-white/25 focus:outline-none focus:ring-2 resize-none`}
-                          style={{
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(138,43,226,0.2)",
-                          }}
-                        />
-                        <p className="text-[11px] mt-1.5 text-white/30">
-                          This helps us build a more tailored solution map.
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleSubmit}
-                        disabled={submitting}
-                        className={`w-full flex items-center justify-center gap-2 rounded-xl ${btnPy} font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        style={{
-                          background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
-                          boxShadow: "0 0 25px rgba(138,43,226,0.35)",
-                        }}
-                      >
-                        {submitting ? "Submitting..." : "Get My Free Teardown"}
-                      </button>
-                      <button
-                        onClick={() => setStep(1)}
-                        className="w-full text-center text-xs text-white/30 hover:text-white/50 transition-colors"
-                      >
-                        ← Back
-                      </button>
-                    </motion.div>
-                  )}
+              <button
+                onClick={launchSandbox}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl ${btnPy} font-semibold text-white transition-all hover:opacity-90 group`}
+                style={{
+                  background: "linear-gradient(135deg, #8A2BE2, #6B21A8)",
+                  boxShadow: "0 0 25px rgba(138,43,226,0.35)",
+                }}
+              >
+                Try It Now Free!
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
 
-                  <div className="text-[11px] text-center text-white/25 mt-5 leading-relaxed">
-                    <p>Our architects manually audit every workflow.</p>
-                    <p>Please allow up to 3 business days for delivery.</p>
-                  </div>
-                </>
-              )}
+              <p className="text-[11px] text-center text-white/30 mt-4 leading-relaxed">
+                Opens our live voice sandbox in a new tab. No signup required.
+              </p>
             </div>
           </motion.div>
         </motion.div>
@@ -313,10 +169,10 @@ const WorkflowTeardownPopup = () => {
             writingMode: "vertical-rl",
             textOrientation: "mixed",
           }}
-          aria-label="Open Workflow Teardown"
+          aria-label="Try Voice AI Live"
         >
           <Zap className="w-4 h-4 text-white rotate-90" />
-          <span className="text-[11px] font-bold text-white tracking-wider uppercase">Free AI Teardown</span>
+          <span className="text-[11px] font-bold text-white tracking-wider uppercase">Try Voice AI Live</span>
         </motion.button>
       )}
     </AnimatePresence>

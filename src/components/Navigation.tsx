@@ -5,7 +5,7 @@ import PhaosLogo from "@/components/PhaosLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-type NavChild = { label: string; to: string };
+type NavChild = { label: string; to: string; external?: boolean };
 type NavItem = { label: string; to?: string; children?: NavChild[] };
 
 // LOCKED navigation structure — do not reorder, rename, or extend.
@@ -16,7 +16,7 @@ const NAV: NavItem[] = [
     label: "Voice",
     children: [
       { label: "Voice Agent", to: "/voice-ai" },
-      { label: "Test It Live!", to: "/voice-ai/test-live" },
+      { label: "Test It Live!", to: "https://voice.phaosai.com/", external: true },
       { label: "Integrations", to: "/integrations" },
       { label: "ROI Calculator", to: "/roi-calculator" },
     ],
@@ -178,7 +178,25 @@ const Navigation = () => {
                   >
                     <div className="min-w-[12rem] glass-strong border border-border/60 rounded-lg shadow-xl shadow-black/30 py-2 animate-fade-in">
                       {item.children.map((child) => {
-                        const childActive = isPathActive(child.to);
+                        const childActive = !child.external && isPathActive(child.to);
+                        const className = `block px-4 py-2 text-sm hover:bg-muted/40 hover:text-foreground transition-colors ${
+                          childActive ? "text-foreground" : "text-muted-foreground"
+                        }`;
+                        if (child.external) {
+                          return (
+                            <a
+                              key={child.label}
+                              href={child.to}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              role="menuitem"
+                              onClick={() => setOpenMenu(null)}
+                              className={className}
+                            >
+                              {child.label}
+                            </a>
+                          );
+                        }
                         return (
                           <Link
                             key={child.label}
@@ -186,9 +204,7 @@ const Navigation = () => {
                             role="menuitem"
                             aria-current={childActive ? "page" : undefined}
                             onClick={() => setOpenMenu(null)}
-                            className={`block px-4 py-2 text-sm hover:bg-muted/40 hover:text-foreground transition-colors ${
-                              childActive ? "text-foreground" : "text-muted-foreground"
-                            }`}
+                            className={className}
                           >
                             {child.label}
                           </Link>
@@ -280,16 +296,31 @@ const Navigation = () => {
                 {expanded && (
                   <div className="mt-2 ml-3 pl-3 border-l border-border/40 space-y-2">
                     {item.children.map((child) => {
-                      const childActive = isPathActive(child.to);
+                      const childActive = !child.external && isPathActive(child.to);
+                      const className = `block text-sm hover:text-foreground transition-colors ${
+                        childActive ? "text-foreground" : "text-muted-foreground"
+                      }`;
+                      if (child.external) {
+                        return (
+                          <a
+                            key={child.label}
+                            href={child.to}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setMobileOpen(false)}
+                            className={className}
+                          >
+                            {child.label}
+                          </a>
+                        );
+                      }
                       return (
                         <Link
                           key={child.label}
                           to={child.to}
                           onClick={() => setMobileOpen(false)}
                           aria-current={childActive ? "page" : undefined}
-                          className={`block text-sm hover:text-foreground transition-colors ${
-                            childActive ? "text-foreground" : "text-muted-foreground"
-                          }`}
+                          className={className}
                         >
                           {child.label}
                         </Link>

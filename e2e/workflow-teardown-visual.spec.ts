@@ -1,5 +1,5 @@
 // Visual regression: catches unintended styling/layout changes for the
-// Workflow Teardown popup across mobile, tablet, and desktop breakpoints.
+// Voice Demo popup across mobile, tablet, and desktop breakpoints.
 import { test, expect } from "../playwright-fixture";
 
 const BREAKPOINTS = [
@@ -9,12 +9,15 @@ const BREAKPOINTS = [
 ];
 
 for (const bp of BREAKPOINTS) {
-  test(`workflow teardown popup — ${bp.name}`, async ({ page }) => {
+  test(`voice demo popup — ${bp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: bp.width, height: bp.height });
     await page.goto("/");
-    // Popup auto-opens after 5s on the home page.
-    await page.waitForSelector("text=Send Us Your Messiest", { timeout: 10000 });
-    const dialog = page.locator("text=Send Us Your Messiest").locator("xpath=ancestor::div[contains(@class,'rounded-3xl')]").first();
+    // Popup auto-opens 1.5s after load on the home page.
+    await page.waitForSelector("text=Let’s Hear What", { timeout: 10000 });
+    const dialog = page
+      .locator("text=Let’s Hear What")
+      .locator("xpath=ancestor::div[contains(@class,'rounded-3xl')]")
+      .first();
     await expect(dialog).toHaveScreenshot(`teardown-${bp.name}.png`, {
       maxDiffPixelRatio: 0.02,
       animations: "disabled",
@@ -22,8 +25,8 @@ for (const bp of BREAKPOINTS) {
   });
 }
 
-test("workflow teardown popup — does NOT appear on /pricing", async ({ page }) => {
+test("voice demo popup — does NOT appear on /pricing", async ({ page }) => {
   await page.goto("/pricing");
-  await page.waitForTimeout(7000);
-  await expect(page.locator("text=Send Us Your Messiest")).toHaveCount(0);
+  await page.waitForTimeout(3000);
+  await expect(page.locator("text=Let’s Hear What")).toHaveCount(0);
 });
