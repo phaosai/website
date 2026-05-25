@@ -106,11 +106,10 @@ const WorkflowTeardownPopup = () => {
                 >
                   Free Live Voice Demo
                 </span>
-                <h2 className={`${headingSize} font-extrabold text-white leading-tight`}>
-                  Let&rsquo;s Hear What{" "}
-                  <span style={{ color: purple }}>Your Business</span>{" "}
-                  Can Sound Like With{" "}
-                  <span style={{ color: purple }}>Our AI Solution</span>.
+                <h2 className={`${headingSize} font-extrabold text-white leading-tight flex flex-col items-center`}>
+                  <span>Let&rsquo;s Hear What <span style={{ color: purple }}>Your Business</span></span>
+                  <span>Can Sound Like With</span>
+                  <span style={{ color: purple }}>Our AI Solution</span>
                 </h2>
               </div>
             </div>
