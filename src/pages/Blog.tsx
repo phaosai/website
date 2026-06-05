@@ -69,7 +69,7 @@ const Blog = () => {
                   </div>
                 </div>
                 <span className="text-sm text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Read More <ArrowRight className="w-3.5 h-3.5" />
+                  Read full article <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
             </motion.article>
