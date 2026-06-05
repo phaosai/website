@@ -24,7 +24,7 @@ const StyleTile = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos AI — AI-Powered Voice & Workflow Automation"
-        description="Deploy intelligent AI agents to manage inbound calls and automate complex workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
+        description="Deploy AI agents to manage inbound calls and automate workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
         canonical="/"
         jsonLd={homeGraphSchema}
       />
