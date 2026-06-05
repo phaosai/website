@@ -15,7 +15,10 @@ const ROICalculatorPage = () => {
       />
       <Navigation />
       <main id="main-content">
-        <div className="pt-24">
+        <div className="pt-24 px-6 max-w-5xl mx-auto">
+          <h1 className="sr-only">AI ROI Calculator</h1>
+        </div>
+        <div className="pt-2">
           <ROICalculator />
         </div>
       </main>
