@@ -4,7 +4,7 @@ Disallow: /api/
 Disallow: /functions/
 Disallow: /admin/
 
-Sitemap: https://phaosai.com/sitemap.xml
+Sitemap: https://www.phaosai.com/sitemap.xml
 
 # Prioritize key pages
 User-agent: Googlebot
