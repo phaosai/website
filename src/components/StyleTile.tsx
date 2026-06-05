@@ -24,7 +24,7 @@ const StyleTile = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Phaos AI — AI-Powered Voice & Workflow Automation"
-        description="Deploy intelligent AI agents to manage inbound calls and automate complex workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
+        description="Deploy AI agents to manage inbound calls and automate workflows. Phaos AI eliminates manual operations with seamless, human-free automation."
         canonical="/"
         jsonLd={homeGraphSchema}
       />
@@ -76,8 +76,8 @@ const StyleTile = () => {
                 Schedule a Call
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/about" aria-label="Learn more about Phaos AI" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base" data-interactive>
-                Learn More
+              <Link to="/about" aria-label="About Phaos AI" className="border border-border text-foreground font-medium px-8 py-3.5 rounded-full hover:bg-secondary active:scale-[0.97] transition-all text-base" data-interactive>
+                About Phaos AI
               </Link>
             </FadeIn>
           </div>
