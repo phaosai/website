@@ -22,9 +22,13 @@ Deno.serve(async (req) => {
     const t = ticker.toUpperCase();
     const authHeader = req.headers.get("Authorization")!;
 
-    // Verify the caller actually belongs to the organization before any service-role write.
-    const { data: isMember, error: memberErr } = await auth.supa.rpc("is_org_member", { _org_id: organization_id });
-    if (memberErr || !isMember) return json({ error: "Forbidden: not a member of organization" }, 403);
+    // Verify the caller has a writer role (owner/admin/reviewer) before any service-role write.
+    // is_org_member alone would allow client_viewer/analyst to bypass the reviewer-only RLS insert policy.
+    const { data: canWrite, error: roleErr } = await auth.supa.rpc("has_org_role", {
+      _org_id: organization_id,
+      _roles: ["owner", "admin", "reviewer"],
+    });
+    if (roleErr || !canWrite) return json({ error: "Forbidden: insufficient org role" }, 403);
 
     const pci = await callFn("compute-pci-score", { ticker: t, organization_id }, authHeader);
     if (!pci) return json({ error: "PCI compute failed" }, 502);
