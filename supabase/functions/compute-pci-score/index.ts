@@ -46,10 +46,14 @@ Deno.serve(async (req) => {
     const horizon: Horizon = VALID_HORIZONS.includes(rawHorizon) ? rawHorizon : "1Y";
     const authHeader = req.headers.get("Authorization")!;
 
-    // If org-scoped persistence is requested, verify caller is a member of that org.
+    // If org-scoped persistence is requested, verify caller has a writer role (owner/admin/reviewer).
+    // Membership alone would let client_viewer/analyst bypass the reviewer-only RLS insert policy.
     if (organization_id) {
-      const { data: isMember, error: memberErr } = await auth.supa.rpc("is_org_member", { _org_id: organization_id });
-      if (memberErr || !isMember) return json({ error: "Forbidden: not a member of organization" }, 403);
+      const { data: canWrite, error: roleErr } = await auth.supa.rpc("has_org_role", {
+        _org_id: organization_id,
+        _roles: ["owner", "admin", "reviewer"],
+      });
+      if (roleErr || !canWrite) return json({ error: "Forbidden: insufficient org role" }, 403);
     }
 
     // Rate limit free-tier users to keep SEC EDGAR/XBRL traffic within polite caps.
