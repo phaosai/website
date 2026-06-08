@@ -27,7 +27,7 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <SEOHead title="Set new password — Phaos AI" description="Set a new Phaos AI password." canonical="/auth/reset-password" />
+      <SEOHead title="Set new password — Phaos AI" description="Choose a new password for your Phaos AI workspace account. Use a strong, unique password to keep your data secure." canonical="/auth/reset-password" noIndex />
       <div className="w-full max-w-md rounded-2xl border border-border bg-card/50 p-8 space-y-5">
         <h1 className="text-2xl font-bold">Set a new password</h1>
         <form onSubmit={submit} className="space-y-3">

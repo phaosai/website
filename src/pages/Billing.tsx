@@ -62,7 +62,7 @@ export default function Billing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground px-6 py-16">
-      <SEOHead title="Billing — Phaos AI" description="Manage your Phaos AI subscription and purchases." canonical="/app/billing" />
+      <SEOHead title="Billing — Phaos AI" description="Manage your Phaos AI subscription, payment methods, invoices, and seat purchases for Voice AI, Workflows, and Sunesis Research." canonical="/app/billing" noIndex />
       <div className="max-w-4xl mx-auto space-y-8">
         <header>
           <Link to="/app" className="text-sm text-muted-foreground hover:text-foreground">← Workspace</Link>
