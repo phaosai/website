@@ -112,7 +112,7 @@ const HomePhaosOneSections = () => {
                 </h3>
                 <p className="mt-3 text-sm text-foreground/80 leading-relaxed">{p.desc}</p>
                 <p className="mt-5 text-sm font-medium text-primary group-hover:underline underline-offset-4">
-                  Learn more →
+                  Explore {p.name} →
                 </p>
               </Link>
             ))}
