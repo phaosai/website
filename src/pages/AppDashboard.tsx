@@ -8,7 +8,7 @@ const AppDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground px-6 py-16">
-      <SEOHead title="Workspace — Phaos AI" description="Your Phaos AI workspace." canonical="/app" />
+      <SEOHead title="Workspace — Phaos AI" description="Your Phaos AI workspace home: access Sunesis research, Voice AI agents, workflow automations, and account billing in one place." canonical="/app" noIndex />
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex items-center justify-between">
           <div>

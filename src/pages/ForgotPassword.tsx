@@ -28,7 +28,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <SEOHead title="Reset password — Phaos AI" description="Reset your Phaos AI password." canonical="/auth/forgot-password" />
+      <SEOHead title="Reset password — Phaos AI" description="Recover access to your Phaos AI account. We'll email you a secure link to reset your password and get back into your workspace." canonical="/auth/forgot-password" noIndex />
       <div className="w-full max-w-md rounded-2xl border border-border bg-card/50 p-8 space-y-5">
         <div>
           <h1 className="text-2xl font-bold">Reset your password</h1>

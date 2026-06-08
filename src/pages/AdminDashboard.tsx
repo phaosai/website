@@ -74,7 +74,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SEOHead title="Admin — Phaos AI" description="Internal admin dashboard" canonical="/admin" />
+      <SEOHead title="Admin — Phaos AI" description="Internal Phaos AI admin dashboard for managing leads, contacts, and operational tooling. Restricted to authorized staff." canonical="/admin" noIndex />
       <Navigation />
       <section className="pt-28 px-6 pb-20">
         <div className="max-w-7xl mx-auto space-y-8">

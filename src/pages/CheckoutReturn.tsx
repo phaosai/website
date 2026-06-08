@@ -18,7 +18,7 @@ export default function CheckoutReturn() {
 
   return (
     <>
-      <SEOHead title="Purchase Complete | Phaos AI" description="Thanks for your purchase." />
+      <SEOHead title="Purchase Complete | Phaos AI" description="Thank you for your Phaos AI purchase. Your order has been received and your workspace access is being provisioned." canonical="/checkout/return" noIndex />
       <Navigation />
       <main className="min-h-[70vh] flex items-center justify-center px-6 py-20">
         <div className="max-w-lg w-full text-center">

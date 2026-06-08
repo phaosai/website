@@ -130,7 +130,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <SEOHead title="Sign in — Phaos AI" description="Sign in to your Phaos AI workspace." canonical="/auth" />
+      <SEOHead title="Sign in — Phaos AI" description="Sign in to your Phaos AI workspace to access Voice AI agents, agentic workflows, and Sunesis research tools." canonical="/auth" noIndex />
 
       <div className="w-full max-w-md space-y-8">
         {/* Logo — matches voice.phaosai.com lockup */}

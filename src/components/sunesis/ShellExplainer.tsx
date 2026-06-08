@@ -38,7 +38,7 @@ export function ShellExplainer({ title, description, details, children, asChild 
               </div>
               <p className="text-sm text-muted-foreground">{description}</p>
               <p className="mt-3 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                Click to learn more →
+                See how {title} works →
               </p>
             </>
           )}
