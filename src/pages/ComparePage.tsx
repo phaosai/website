@@ -59,6 +59,22 @@ const competitorData: Record<string, CompetitorData> = {
     ],
     summary: "Manual processes are error-prone, slow, and impossible to scale. Phaos AI automates the repetitive grind while keeping humans in the loop for decisions that matter.",
   },
+  "bland-vs-retell-vs-phaos": {
+    name: "Bland AI & Retell AI",
+    tagline: "How Phaos AI compares to Bland AI and Retell AI for enterprise voice automation",
+    features: [
+      { feature: "Hyper-realistic, emotionally-intelligent voice", phaos: true, competitor: true },
+      { feature: "24/7 inbound call handling", phaos: true, competitor: true },
+      { feature: "Native CRM/ERP integrations (Salesforce, HubSpot, ConnectWise, e-automate)", phaos: true, competitor: false },
+      { feature: "End-to-end agentic workflow automation (not just voice)", phaos: true, competitor: false },
+      { feature: "Industry-specific deployments (printing, healthcare, real estate, logistics)", phaos: true, competitor: false },
+      { feature: "Phaos Conviction Index (PCI) research scoring", phaos: true, competitor: false },
+      { feature: "6,000+ app connectivity via Zapier + webhooks", phaos: true, competitor: false },
+      { feature: "Enterprise security posture with SOC2-aligned controls", phaos: true, competitor: false },
+      { feature: "White-label developer voice APIs", phaos: false, competitor: true },
+    ],
+    summary: "Bland AI and Retell AI are strong developer-first voice API platforms — great if you want to stitch together your own stack. Phaos AI is built for operators: enterprise-grade security, deep CRM/ERP integration, end-to-end agentic workflows beyond voice, and the Phaos Conviction Index for research-driven decisions, all delivered as a managed solution.",
+  },
 };
 
 const ComparePage = () => {
