@@ -69,7 +69,7 @@
          - Frames: none. Frame-ancestors 'none' = clickjacking protection (replaces X-Frame-Options for modern browsers).
          - Form-action: self only (lead capture posts to Supabase via fetch, not <form action>).
          - Base-uri: self (prevents <base> tag injection attacks). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.gpteng.co https://*.daily.co; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.daily.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.vapi.ai https://*.vapi.ai wss://*.vapi.ai https://*.daily.co wss://*.daily.co https://*.pluot.blue wss://*.pluot.blue https://*.banuba.cloud; frame-src 'self' https://*.daily.co; frame-ancestors *; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.gpteng.co https://*.daily.co https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.daily.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.vapi.ai https://*.vapi.ai wss://*.vapi.ai https://*.daily.co wss://*.daily.co https://*.pluot.blue wss://*.pluot.blue https://*.banuba.cloud https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; frame-src 'self' https://*.daily.co; frame-ancestors *; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
     <meta http-equiv="Reporting-Endpoints" content='csp-endpoint="https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report"' />
 
     <!-- Additional security meta headers (those that work via <meta>; HSTS/X-Frame-Options/COOP must be set as HTTP headers at the hosting layer) -->
@@ -82,6 +82,18 @@
     <script>
       (function(){var t=localStorage.getItem('phaos-theme');if(t==='light')document.documentElement.classList.add('light');})();
     </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "x5zw49cpsv");
+    </script>
+
+    <!-- Instantly Pixel -->
+    <script id="vtag-ai-js" async src="https://r2.leadsy.ai/tag.js" data-pid="1oAULWm2NTuAyRm2D" data-version="062024"></script>
     <!-- Per-route og:* and twitter:* tags are injected by SEOHead (react-helmet-async) so each page has unique social previews. -->
 
 
