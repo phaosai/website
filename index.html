@@ -39,11 +39,11 @@
     <meta name="fragment" content="!" />
 
     <!-- Preconnect to backend origins (fonts are now self-hosted, so no Google Fonts preconnect needed) -->
-    <link rel="preconnect" href="https://hjqokvoaopvtapbllico.supabase.co" />
+    <link rel="preconnect" href="https://sjpbkzuloioksnkweqzn.supabase.co" />
     <!-- Tier 5b: preconnect to edge functions origin (used for chat, lead capture, csp-report) -->
-    <link rel="preconnect" href="https://hjqokvoaopvtapbllico.functions.supabase.co" />
-    <link rel="dns-prefetch" href="https://hjqokvoaopvtapbllico.supabase.co" />
-    <link rel="dns-prefetch" href="https://hjqokvoaopvtapbllico.functions.supabase.co" />
+    <link rel="preconnect" href="https://sjpbkzuloioksnkweqzn.functions.supabase.co" />
+    <link rel="dns-prefetch" href="https://sjpbkzuloioksnkweqzn.supabase.co" />
+    <link rel="dns-prefetch" href="https://sjpbkzuloioksnkweqzn.functions.supabase.co" />
     <link rel="preload" href="/phaos-hero.avif" as="image" type="image/avif" fetchpriority="high" />
 
     <!-- Self-hosted Inter variable font (Tier 5b: removes 3rd-party Google Fonts dependency, improves LCP, simplifies CSP) -->
@@ -69,8 +69,8 @@
          - Frames: none. Frame-ancestors 'none' = clickjacking protection (replaces X-Frame-Options for modern browsers).
          - Form-action: self only (lead capture posts to Supabase via fetch, not <form action>).
          - Base-uri: self (prevents <base> tag injection attacks). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.gpteng.co https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.retellai.com wss://api.retellai.com https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; frame-src 'self'; frame-ancestors *; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
-    <meta http-equiv="Reporting-Endpoints" content='csp-endpoint="https://hjqokvoaopvtapbllico.supabase.co/functions/v1/csp-report"' />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.gpteng.co https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.retellai.com wss://api.retellai.com https://www.clarity.ms https://*.clarity.ms https://r2.leadsy.ai https://*.leadsy.ai; frame-src 'self'; frame-ancestors *; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests; report-uri https://sjpbkzuloioksnkweqzn.supabase.co/functions/v1/csp-report; report-to csp-endpoint;" />
+    <meta http-equiv="Reporting-Endpoints" content='csp-endpoint="https://sjpbkzuloioksnkweqzn.supabase.co/functions/v1/csp-report"' />
 
     <!-- Additional security meta headers (those that work via <meta>; HSTS/X-Frame-Options/COOP must be set as HTTP headers at the hosting layer) -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />

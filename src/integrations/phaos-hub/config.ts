@@ -1,5 +1,5 @@
 /** Canonical Phaos platform hub — voice.phaosai.com Supabase project. */
-export const PHAOS_HUB_PROJECT_ID = "rgiesetdwhbwayjjgvnb";
+export const PHAOS_HUB_PROJECT_ID = "sjpbkzuloioksnkweqzn";
 
 export const PHAOS_HUB_URL =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_PHAOS_HUB_URL)
