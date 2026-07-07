@@ -1,38 +1,41 @@
-import { Suspense, lazy } from "react";
+import { useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import { SystemErrorBoundary } from "@/components/command-center/SystemErrorBoundary";
 
-const VapiSandbox = lazy(() =>
-  import("@/components/command-center/VapiSandbox").then((m) => ({ default: m.VapiSandbox })),
-);
+/** Canonical Retell-powered voice sandbox lives on voice.phaosai.com */
+const VOICE_SANDBOX_URL = "https://voice.phaosai.com/try";
 
-const Fallback = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+const VoiceTestLive = () => {
+  useEffect(() => {
+    window.location.replace(VOICE_SANDBOX_URL);
+  }, []);
 
-const VoiceTestLive = () => (
-  <div className="min-h-screen bg-background text-foreground">
-    <SEOHead
-      title="Test the Phaos AI Voice Agent Live | Phaos AI"
-      description="Talk to the Phaos AI voice agent live in your browser — zero-latency, browser-based test."
-      canonical="/voice-ai/test-live"
-    />
-    <Navigation />
-    <main className="px-4 md:px-6 lg:px-8 pt-24 pb-16">
-      <div className="max-w-7xl mx-auto">
-        <SystemErrorBoundary>
-          <Suspense fallback={<Fallback />}>
-            <VapiSandbox />
-          </Suspense>
-        </SystemErrorBoundary>
-      </div>
-    </main>
-    <Footer />
-  </div>
-);
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <SEOHead
+        title="Test the Phaos AI Voice Agent Live | Phaos AI"
+        description="Talk to the Phaos AI voice agent live in your browser — powered by Retell AI on voice.phaosai.com."
+        canonical="/voice-ai/test-live"
+      />
+      <Navigation />
+      <main className="px-4 md:px-6 lg:px-8 pt-24 pb-16">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground">
+            Redirecting to the live voice sandbox…
+          </p>
+          <a
+            href={VOICE_SANDBOX_URL}
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Continue to voice.phaosai.com
+          </a>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 export default VoiceTestLive;

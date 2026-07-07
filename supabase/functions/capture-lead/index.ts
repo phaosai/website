@@ -111,6 +111,33 @@ Captured: ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
       }
     }
 
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+    // Forward to canonical hub (voice.phaosai.com) for cross-app lead unification
+    const hubUrl = Deno.env.get("PHAOS_HUB_FUNCTIONS_URL");
+    const hubSecret = Deno.env.get("PHAOS_PLATFORM_SYNC_SECRET");
+    if (hubUrl && hubSecret && (email || phone || name)) {
+      try {
+        await fetch(`${hubUrl.replace(/\/$/, "")}/platform-hub/lead`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-phaos-platform-secret": hubSecret,
+          },
+          body: JSON.stringify({
+            source_app_id: "phaos-visionary-site",
+            email,
+            phone,
+            name,
+            company,
+            payload: { title, website, transcript },
+          }),
+        });
+      } catch (hubErr) {
+        console.error("Hub lead forward error (non-fatal):", hubErr);
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (LOVABLE_API_KEY) {
       console.log("=== LEAD NOTIFICATION FOR daniel@phaosai.com ===");
