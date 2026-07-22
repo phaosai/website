@@ -8,9 +8,11 @@ const PORTALS = [
   {
     key: "voice",
     title: "Voice",
-    desc: "Sign in to your voice.phaosai.com agent console.",
+    desc: "Sign in with your Live Account on voice.phaosai.com — sessions stay on the Voice app.",
     href: "https://voice.phaosai.com/auth",
     external: true,
+    // Same tab: auth cookies/session must live on voice.phaosai.com, not a sandbox popup.
+    newTab: false,
     icon: Mic,
   },
   {
@@ -19,6 +21,7 @@ const PORTALS = [
     desc: "Sign in to manage your agentic workflow automations.",
     href: "/auth?portal=workflow",
     external: false,
+    newTab: false,
     icon: Workflow,
   },
   {
@@ -27,6 +30,7 @@ const PORTALS = [
     desc: "Sign in to Sunesis — Phaos' research operating system.",
     href: "/auth?portal=research",
     external: false,
+    newTab: false,
     icon: LineChart,
   },
 ];
@@ -52,7 +56,7 @@ export default function SignIn() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
-            {PORTALS.map(({ key, title, desc, href, external, icon: Icon }) => {
+            {PORTALS.map(({ key, title, desc, href, external, newTab, icon: Icon }) => {
               const cls =
                 "group rounded-2xl border border-border bg-card/60 p-7 hover:border-primary/40 hover:bg-card transition-all hover:-translate-y-0.5";
               const inner = (
@@ -69,7 +73,12 @@ export default function SignIn() {
                 </>
               );
               return external ? (
-                <a key={key} href={href} className={cls} target="_blank" rel="noreferrer">
+                <a
+                  key={key}
+                  href={href}
+                  className={cls}
+                  {...(newTab ? { target: "_blank", rel: "noreferrer" } : {})}
+                >
                   {inner}
                 </a>
               ) : (
