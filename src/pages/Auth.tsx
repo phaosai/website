@@ -36,11 +36,40 @@ const Auth = () => {
   const from = (location.state as { from?: string } | null)?.from || "/app";
   const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
   const portal = (new URLSearchParams(location.search).get("portal") || "").toLowerCase();
-  const portalLabel = portal === "workflow" ? "Workflow" : portal === "research" ? "Research" : portal === "voice" ? "Voice" : "";
+  const isVoicePortal = portal === "voice";
+  const portalLabel =
+    portal === "workflow" ? "Workflow" : portal === "research" ? "Research" : portal === "voice" ? "Voice" : "";
   const selectedPlanName = planNames[selectedPlan] || "your plan";
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
+  const VOICE_CONTACT_URL = "https://voice.phaosai.com/contact";
+  const VOICE_APP_ORIGIN = "https://voice.phaosai.com";
 
-  const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(location.search).get("mode") === "signin" ? "signin" : "signup"));
+  const handoffVoiceSession = (s: {
+    access_token: string;
+    refresh_token: string;
+    expires_in?: number;
+    expires_at?: number;
+    token_type?: string;
+  }) => {
+    const hash = new URLSearchParams({
+      access_token: s.access_token,
+      refresh_token: s.refresh_token,
+      expires_in: String(s.expires_in ?? 3600),
+      expires_at: String(s.expires_at ?? Math.floor(Date.now() / 1000) + (s.expires_in ?? 3600)),
+      token_type: s.token_type ?? "bearer",
+      type: "magiclink",
+    });
+    window.location.replace(`${VOICE_APP_ORIGIN}/#${hash.toString()}`);
+  };
+
+  // Portal entry points (Voice / Research / Workflow) default to Sign In.
+  // Voice "Sign Up" is a redirect to the Voice contact form — not an in-app signup.
+  const [mode, setMode] = useState<Mode>(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("mode") === "signup" && portal !== "voice") return "signup";
+    if (params.get("mode") === "signin" || portal) return "signin";
+    return "signup";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -52,6 +81,11 @@ const Auth = () => {
 
   useEffect(() => {
     if (loading || !session) return;
+    // Voice Live Accounts continue on voice.phaosai.com (shared Supabase project).
+    if (isVoicePortal) {
+      handoffVoiceSession(session);
+      return;
+    }
     if (!selectedPlan) {
       navigate(from, { replace: true });
       return;
@@ -65,7 +99,7 @@ const Auth = () => {
         returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
       });
     }
-  }, [checkoutStarted, from, loading, navigate, openCheckout, selectedPlan, session]);
+  }, [checkoutStarted, from, isVoicePortal, loading, navigate, openCheckout, selectedPlan, session]);
 
   const rules = useMemo(() => passwordRules(password), [password]);
   const passedRules = Object.values(rules).filter(Boolean).length;
@@ -107,6 +141,11 @@ const Auth = () => {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
         if (!data.session) throw new Error("Sign in succeeded but the session was not restored. Please try again.");
+        if (isVoicePortal) {
+          toast({ title: "Signed in", description: "Opening your Voice Live Account." });
+          handoffVoiceSession(data.session);
+          return;
+        }
         toast({ title: "Signed in", description: "Opening your Phaos workspace." });
         navigate(selectedPlan ? "/app/billing" : from, { replace: true });
       }
@@ -133,21 +172,26 @@ const Auth = () => {
       <SEOHead title="Sign in — Phaos AI" description="Sign in to your Phaos AI workspace to access Voice AI agents, agentic workflows, and Sunesis research tools." canonical="/auth" noIndex />
 
       <div className="w-full max-w-md space-y-8">
-        {/* Logo — matches voice.phaosai.com lockup */}
+        {/* Logo — crown mark + HTML wordmark (never a raster "PHAOS AI" image) */}
         <div className="flex flex-col items-center pt-2">
           <img
             src={phaosCrown}
-            alt="Phaos AI"
+            alt=""
+            aria-hidden="true"
             width={200}
             height={130}
+            decoding="async"
             className="w-[150px] h-auto drop-shadow-[0_0_35px_rgba(138,43,226,0.45)]"
           />
-          <h1 className="mt-3 text-3xl font-extrabold tracking-[0.05em] leading-none whitespace-nowrap px-2">
+          <h1 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-[0.06em] leading-none whitespace-nowrap px-2 antialiased">
             <span className="text-white">PHAOS</span>
             <span className="italic font-semibold bg-gradient-to-r from-[#B97AFF] to-[#8A2BE2] bg-clip-text text-transparent">
               {"\u00A0"}AI
             </span>
           </h1>
+          {isVoicePortal && (
+            <span className="sr-only">Sign in to Phaos Voice</span>
+          )}
         </div>
 
         {/* Card */}
@@ -165,7 +209,13 @@ const Auth = () => {
               <button
                 key={m}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  if (m === "signup" && isVoicePortal) {
+                    window.location.assign(VOICE_CONTACT_URL);
+                    return;
+                  }
+                  setMode(m);
+                }}
                 className="py-2.5 text-sm font-semibold rounded-full transition-all"
                 style={
                   mode === m
@@ -177,7 +227,7 @@ const Auth = () => {
                     : { color: "rgba(255,255,255,0.55)" }
                 }
               >
-                {m === "signup" ? "Create Account" : "Sign In"}
+                {m === "signup" ? (isVoicePortal ? "Sign Up" : "Create Account") : "Sign In"}
               </button>
             ))}
           </div>
