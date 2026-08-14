@@ -461,12 +461,12 @@ const RunSimulation = () => {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-purple-deep/8 blur-[180px] pointer-events-none" aria-hidden="true" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 mb-6">
-            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis · Live</span>
-            <FeatureStatusBadge status="LIVE" />
+            <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis Simulator</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            Live <span className="text-gradient-purple">Conviction</span> Screen
+            Sample <span className="text-gradient-purple">Conviction Index</span> Results
           </h1>
+
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Pick the asset classes and platforms you typically trade on. Sunesis simulates hypothetical results by generating the Phaos Conviction Index, powered by Quantum AI Algorithms.
           </p>
