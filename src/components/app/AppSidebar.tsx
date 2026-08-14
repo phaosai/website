@@ -89,6 +89,12 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={subs.open} tooltip="Subscriptions">
+                  <CreditCard className="h-4 w-4" />
+                  {!collapsed && <span>Subscriptions</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
