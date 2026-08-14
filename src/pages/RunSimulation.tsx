@@ -298,7 +298,7 @@ const RunSimulation = () => {
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
         title="Live Conviction Screen — Phaos Sunesis"
-        description="Phaos Sunesis live screen. Pick the asset classes and platforms you actually trade on and Sunesis returns every instrument available to you, ranked by the Phaos Conviction Index."
+        description="Phaos Sunesis conviction screen. Pick the asset classes and platforms you typically trade on and Sunesis simulates hypothetical results by generating the Phaos Conviction Index."
         canonical="/one/run-simulation"
       />
       <Navigation />
