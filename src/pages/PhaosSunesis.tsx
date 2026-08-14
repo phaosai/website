@@ -2,7 +2,7 @@
 // surface internal designations in the methodology footnote — NEVER as a
 // second user-facing 1–100 score. PCI remains the only public score.
 import { useState } from "react";
-import { ArrowRight, FileText, Activity, Truck, MessageSquare, Globe, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
@@ -19,33 +19,8 @@ const capabilities = [
   "Surfaces named investment themes and narratives emerging across the market",
 ];
 
-const pillars = [
-  {
-    icon: Activity,
-    name: "Insider Intent",
-    desc: "Who is quietly buying, selling, or re-positioning behind the scenes.",
-  },
-  {
-    icon: FileText,
-    name: "Fundamentals & Flows",
-    desc: "How capital, contracts, and fundamentals are shifting beneath the surface.",
-  },
-  {
-    icon: Truck,
-    name: "Logistics & Supply Chain Pulse",
-    desc: "The real-world movement of goods and capacity through the system.",
-  },
-  {
-    icon: MessageSquare,
-    name: "Sentiment & Attention",
-    desc: "Where interest is accelerating, fading, or suddenly spiking.",
-  },
-  {
-    icon: Globe,
-    name: "Macro Regime Context",
-    desc: "The environment each idea is swimming in: calm, changing, or storm.",
-  },
-];
+
+
 
 const methodology = [
   "Risk-adjusted performance thinking — raw return is meaningless without context",
@@ -113,6 +88,129 @@ const PhaosSunesis = () => {
         </div>
       </section>
 
+      {/* PCI SECTION */}
+      <section className="py-20 px-6 border-t border-border bg-card/20">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-10 max-w-3xl">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+              What is PCI Phaos Conviction Index?
+            </h2>
+            <p className="text-base text-muted-foreground leading-relaxed">
+              Innovated for the rigorous demands of serious market operators, the Phaos Conviction Index (PCI) is a proprietary 0–100 research confidence framework.
+            </p>
+            <p className="mt-4 text-base text-muted-foreground leading-relaxed">
+              The PCI is not a speculative price predictor, nor is it a black-box trading signal. It is a definitive measure of evidence alignment and transparency. Engineered to evaluate the strength of an asset's underlying data stack, the index quantifies how clearly the auditable facts align with a given thesis across your chosen time horizon.
+            </p>
+          </div>
+
+          <div className="mb-10 max-w-3xl">
+            <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-3">
+              Orchestrating 20 Years of Market Intelligence
+            </h3>
+            <p className="text-base text-muted-foreground leading-relaxed mb-5">
+              When you run a Sunesis Quantum Simulation, the platform does not merely look at price action. It evaluates a massive, cross-disciplinary evidence stack. To generate a single PCI score, our engine synthesizes:
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-12">
+            {[
+              {
+                name: "Corporate & Financial Ground Truth",
+                desc: "SEC filings, XBRL data, and real-time balance sheet health.",
+              },
+              {
+                name: "Insider Conviction",
+                desc: "Form 4 insider clustering and executive capital allocation.",
+              },
+              {
+                name: "Macro & Structural Dynamics",
+                desc: "Macroeconomic regimes, government contract flow, and global logistics data.",
+              },
+              {
+                name: "Market Mechanics",
+                desc: "Institutional positioning, fund flows, and on-chain intelligence.",
+              },
+            ].map((item) => (
+              <div key={item.name} className="p-6 rounded-lg border border-border bg-background/60">
+                <h4 className="text-base font-semibold mb-2">{item.name}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-8 max-w-3xl">
+            <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-3">
+              The PCI Spectrum: Understanding Your Score
+            </h3>
+            <p className="text-base text-muted-foreground leading-relaxed">
+              Every asset analyzed by Sunesis is categorized into a clear, user-facing conviction tier based on the density and quality of its evidence stack:
+            </p>
+          </div>
+
+          <div className="space-y-3 mb-12">
+            {[
+              {
+                range: "96–100",
+                label: "PHAOS CHOICE",
+                sub: "Institutional Supercycle",
+                desc: "Maximum research conviction. Complete, frictionless alignment across every fundamental, technical, and macro evidence pillar.",
+              },
+              {
+                range: "90–95",
+                label: "HIGH CONVERGENCE",
+                sub: "Strategic Pivot",
+                desc: "A highly constructive evidence stack indicating a significant, verifiable strategic trajectory and strong institutional backing.",
+              },
+              {
+                range: "70–89",
+                label: "CONSTRUCTIVE",
+                sub: "Baseline Growth",
+                desc: "Solid baseline fundamentals and positive data alignment, representing steady operational momentum without the confluent catalysts of the top tiers.",
+              },
+              {
+                range: "51–69",
+                label: "DIVERGENCE",
+                sub: "Narrative Risk / Speculative Drift",
+                desc: "Mixed data signals, narrative-driven momentum lacking auditable financial substance, or widening gaps between price action and underlying fundamentals.",
+              },
+              {
+                range: "1–50",
+                label: "HIGH DECAY",
+                sub: "Structural Deterioration / Downside Asymmetry",
+                desc: "Severe fundamental contraction, functional insolvency, or a total lack of verifiable data. Prime research territory for downside asymmetry, PUT option positioning, and short thesis validation.",
+              },
+            ].map((t) => (
+              <div key={t.label} className="p-5 rounded-lg border border-border bg-background/60">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+                  <span className="text-sm font-semibold tabular-nums text-primary">{t.range}</span>
+                  <span className="text-sm font-semibold uppercase tracking-wider text-foreground">{t.label}</span>
+                  <span className="text-sm text-muted-foreground">{t.sub}</span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="max-w-3xl mb-8">
+            <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-3">
+              Engineered for Institutional Integrity
+            </h3>
+            <p className="text-base text-muted-foreground leading-relaxed">
+              The PCI is built with strict, automated data-quality guardrails to protect your research process. Because the index measures auditable evidence, assets operating in opaque data environments are systemically restricted. For example, OTC and penny equities are hard-capped at a maximum score of 60 (Divergence), as they inherently lack the verifiable reporting standards required to generate high-conviction research.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-lg border border-border bg-background/40">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Important Regulatory Disclosures
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              The Phaos Conviction Index (PCI) is a research confidence framework and data transparency score, not a prediction of future returns, a guarantee of performance, or a promise of investment outcomes. Platform selection is provided for access context only; Phaos AI does not execute trades or connect directly to brokerage accounts. Phaos AI is a technology provider, not a registered investment advisor. All live Sunesis research utilizes quantum-powered algorithms analyzing historical market data, fundamental metrics, and technical indicators to yield the PCI. Users should conduct their own due diligence and consult with a licensed financial professional before making investment decisions.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* WHAT SUNESIS DOES */}
       <section className="py-20 px-6 border-t border-border">
         <div className="max-w-5xl mx-auto">
@@ -131,43 +229,6 @@ const PhaosSunesis = () => {
         </div>
       </section>
 
-      {/* PCI SECTION */}
-      <section className="py-20 px-6 border-t border-border bg-card/20">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-12 max-w-3xl">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-3">Phaos Conviction Index</p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-              One Score. Five Signal Pillars. Complete Transparency.
-            </h2>
-            <p className="text-base text-muted-foreground leading-relaxed">
-              The Phaos Conviction Index rolls a full research stack into a single 1–100 signal, then shows you exactly what's driving it. Behind the score, five independent pillars feed the composite.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-            {pillars.map((p, i) => (
-              <div key={p.name} className="p-6 rounded-lg border border-border bg-background/60">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center">
-                    <p.icon className="w-4 h-4 text-primary" />
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pillar {i + 1}</span>
-                </div>
-                <h3 className="text-base font-semibold mb-2">{p.name}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-6 rounded-lg border border-primary/30 bg-primary/5 flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Composite Output</p>
-              <p className="text-lg font-semibold">Five pillars → PCI Score: 1–100</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-primary" />
-          </div>
-        </div>
-      </section>
 
       {/* METHODOLOGY */}
       <section className="py-20 px-6 border-t border-border">
