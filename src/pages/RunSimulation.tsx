@@ -95,7 +95,7 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
 ];
 
 interface PciTier {
-  label: "HIGH DECAY" | "Warning" | "Potential" | "GO" | "PHAOS CHOICE";
+  label: "HIGH DECAY" | "DIVERGENCE" | "CONSTRUCTIVE" | "HIGH CONVERGENCE" | "PHAOS CHOICE";
   range: string;
   persona: string;
   text: string;
