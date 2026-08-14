@@ -131,6 +131,8 @@ const RunSimulation = () => {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [simulated, setSimulated] = useState(false);
+
   const [explainerOpen, setExplainerOpen] = useState(false);
 
   useEffect(() => {
