@@ -463,7 +463,7 @@ const RunSimulation = () => {
             <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis Simulator</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            Sample <span className="text-gradient-purple">Conviction Index</span> Results
+            <span className="whitespace-nowrap">Sample <span className="text-gradient-purple">Conviction Index</span> Results</span>
           </h1>
 
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -514,7 +514,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
-                <p className="text-lg font-semibold">Select the Asset Classes to consider</p>
+                <p className="text-lg font-semibold">Select the Asset Class(es)</p>
 
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
@@ -570,7 +570,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-semibold">Platform — select every platform where you can actually trade</p>
+                <p className="text-lg font-semibold">Select the Financial Platform(s)</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
@@ -734,12 +734,13 @@ const RunSimulation = () => {
           )}
 
           <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 text-[11px] leading-relaxed text-muted-foreground">
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 list-disc pl-4 marker:text-primary">
-              <li>PCI is a research confidence framework, a transparency score, not a prediction of returns.</li>
-              <li>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</li>
-              <li>Phaos AI is not a registered investment advisor.</li>
+            <ul className="grid grid-cols-1 gap-y-3 list-disc pl-4 marker:text-primary">
               <li>Live Sunesis research uses Quantum powered algorithms, having analyzed 20 years of market data and movement, including deep fundamental as well as technical analysis. Yielding the PCI, Phaos Conviction Index.</li>
+              <li>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</li>
+              <li>PCI is a research confidence framework, a transparency score, not a prediction of returns.</li>
+              <li>Phaos AI is not a registered investment advisor.</li>
             </ul>
+
           </div>
 
         </div>
