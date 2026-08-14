@@ -513,10 +513,10 @@ const RunSimulation = () => {
                     {results.map((r, idx) => (
                       <tr key={r.ticker} className="border-t border-border">
                         <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-3 font-mono font-semibold">{r.ticker}</td>
-                        <td className="p-3">{r.name}</td>
-                        <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-                        <td className="p-3">
+                        <td className="p-4 font-mono font-semibold">{r.ticker}</td>
+                        <td className="p-4">{r.name}</td>
+                        <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+                        <td className="p-4">
                           <div className="flex items-center gap-2">
                             <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
                             <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
@@ -524,23 +524,12 @@ const RunSimulation = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
+                        <td className="p-4">
                           <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
                             {r.tier.label}
                           </span>
                         </td>
-                        <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
-                        <td className="p-3">
-                          <div className="flex flex-wrap gap-1">
-                            {r.platforms.slice(0, 3).map((slug) => {
-                              const p = platforms.find((x) => x.slug === slug);
-                              return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
-                            })}
-                            {r.platforms.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground self-center">+{r.platforms.length - 3}</span>
-                            )}
-                          </div>
-                        </td>
+                        <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
                       </tr>
                     ))}
                   </tbody>
