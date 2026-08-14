@@ -479,7 +479,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
-                <p className="text-lg font-semibold">Select the Timeframe</p>
+                <p className="text-lg font-bold text-primary">Select the Timeframe</p>
                 <span className="ml-auto text-xs text-muted-foreground">
                   {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label} selected
                 </span>
@@ -514,14 +514,14 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
-                <p className="text-lg font-semibold">Select the Asset Class(es)</p>
+                <p className="text-lg font-bold text-primary">Select the Asset Class(es)</p>
 
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
                   <button
                     type="button"
                     onClick={() => setSelectedClasses(allAssetValues)}
-                    className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold hover:bg-card transition-colors"
+                    className="rounded-full border border-primary/40 bg-background/60 px-4 py-1.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
                   >
                     Select all
                   </button>
@@ -570,12 +570,12 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-semibold">Select the Financial Platform(s)</p>
+                <p className="text-lg font-bold text-primary">Select the Financial Platform(s)</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedPlatforms(platforms.map((p) => p.slug))}
-                    className="rounded-full border border-border bg-background/60 px-4 py-1.5 text-sm font-semibold hover:bg-card transition-colors"
+                    className="rounded-full border border-primary/40 bg-background/60 px-4 py-1.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
                   >
                     Select all
                   </button>
