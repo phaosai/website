@@ -314,7 +314,7 @@ const RunSimulation = () => {
             Live <span className="text-gradient-purple">Conviction</span> Screen
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Pick the asset classes and platforms you actually trade on. Sunesis returns every instrument available to you right now, ranked by the Phaos Conviction Index — generated live by the Foundry.
+            Pick the asset classes and platforms you typically trade on. Sunesis simulates hypothetical results by generating the Phaos Conviction Index, powered by Quantum AI Algorithms.
           </p>
         </div>
       </section>
