@@ -501,13 +501,12 @@ const RunSimulation = () => {
                   <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="text-left p-3 w-10">#</th>
-                      <th className="text-left p-3">Ticker</th>
-                      <th className="text-left p-3">Name</th>
-                      <th className="text-left p-3">Class</th>
-                      <th className="text-left p-3">PCI</th>
-                      <th className="text-left p-3">Tier</th>
-                      <th className="text-left p-3">Top signal</th>
-                      <th className="text-left p-3">Available on</th>
+                      <th className="text-left p-4 w-[9%]">Ticker</th>
+                      <th className="text-left p-4 w-[26%]">Name</th>
+                      <th className="text-left p-4 w-[11%]">Class</th>
+                      <th className="text-left p-4 w-[14%]">PCI</th>
+                      <th className="text-left p-4 w-[14%]">Tier</th>
+                      <th className="text-left p-4 w-[26%]">Top signal</th>
                     </tr>
                   </thead>
                   <tbody>
