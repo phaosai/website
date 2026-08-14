@@ -122,9 +122,26 @@ interface TopRow {
   platforms: string[];
 }
 
+const TIMEFRAMES = [
+  { value: "1D", label: "1 Day" },
+  { value: "7D", label: "7 Days" },
+  { value: "14D", label: "14 Days" },
+  { value: "30D", label: "30 Days" },
+  { value: "60D", label: "60 Days" },
+  { value: "90D", label: "90 Days" },
+  { value: "180D", label: "180 Days" },
+  { value: "1Y", label: "1 Year" },
+  { value: "2Y", label: "2 Years" },
+  { value: "3Y", label: "3 Years" },
+] as const;
+
+type Timeframe = (typeof TIMEFRAMES)[number]["value"];
+
 const RunSimulation = () => {
   const { isLive } = useIsLiveAccount();
+  const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>("30D");
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
+
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
