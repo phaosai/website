@@ -392,10 +392,14 @@ const RunSimulation = () => {
   };
 
   const runSimulation = async () => {
-    if (selectedClasses.length === 0) {
+    if (selectedClasses.length === 0 || selectedPlatforms.length === 0) {
       setResults(null);
       setSimulated(false);
-      setErrorMsg("Select at least one Asset Class before running the simulation.");
+      setErrorMsg(
+        selectedClasses.length === 0
+          ? "Select at least one Asset Class before running the simulation."
+          : "Select at least one Platform before running the simulation.",
+      );
       return;
     }
     setResults(null);
