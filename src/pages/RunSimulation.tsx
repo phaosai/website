@@ -259,12 +259,13 @@ const RunSimulation = () => {
 
   // Simulation always runs — no selection gating.
 
-  const topTen = useMemo(() => (results ?? []).slice(0, 10), [results]);
+  // Only split into Highest/Lowest when there are enough results to fill both sets of 10.
+  const canSplit = (results?.length ?? 0) >= 20;
+  const topTen = useMemo(() => (canSplit ? (results ?? []).slice(0, 10) : []), [results, canSplit]);
   const bottomTen = useMemo(() => {
-    if (!results) return [];
-    const remaining = results.slice(10);
-    return remaining.slice(-10).slice().reverse();
-  }, [results]);
+    if (!results || !canSplit) return [];
+    return results.slice(10).slice(-10).slice().reverse();
+  }, [results, canSplit]);
 
 
 
