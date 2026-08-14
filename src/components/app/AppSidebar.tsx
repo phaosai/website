@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Microscope, Sparkles, ListChecks, FlaskConical, Workflow,
-  Users, ShieldAlert, Receipt, Settings, Lock, Crown, Hammer, Trophy,
+  Users, ShieldAlert, Receipt, Settings, Lock, Crown, Hammer, Trophy, CreditCard,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useEntitlements, type Tier } from "@/hooks/useEntitlements";
 import { cn } from "@/lib/utils";
+import { useSubscriptionsModal } from "@/components/pricing/SubscriptionsModalContext";
 
 interface NavItem {
   title: string;
@@ -35,6 +36,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const ent = useEntitlements();
+  const subs = useSubscriptionsModal();
 
   const isActive = (url: string) => url === "/app" ? pathname === "/app" : pathname.startsWith(url);
 
@@ -89,6 +91,12 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={subs.open} tooltip="Subscriptions">
+                  <CreditCard className="h-4 w-4" />
+                  {!collapsed && <span>Subscriptions</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

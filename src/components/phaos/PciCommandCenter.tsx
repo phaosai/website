@@ -11,7 +11,7 @@ interface Props {
 }
 
 const tierLabel = (s: number) =>
-  s >= 96 ? "PHAOS CHOICE" : s >= 90 ? "HIGH CONVERGENCE" : s >= 70 ? "CONSTRUCTIVE" : s >= 51 ? "DIVERGENCE" : "HIGH DECAY";
+  s >= 96 ? "PHAOS CHOICE" : s >= 90 ? "CONVERGENCE" : s >= 70 ? "CONSTRUCTIVE" : s >= 51 ? "DIVERGENCE" : "HIGH DECAY";
 
 const PciGauge = ({ score, colorVar }: { score: number; colorVar: string }) => {
   // Semi-circle radial gauge using SVG

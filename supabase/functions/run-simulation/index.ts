@@ -28,7 +28,7 @@ interface Reason {
   weight: number;
 }
 
-const tierLabel = (pci: number) => pci >= 96 ? "PHAOS CHOICE" : pci >= 90 ? "HIGH CONVERGENCE" : pci >= 70 ? "CONSTRUCTIVE" : pci >= 51 ? "DIVERGENCE" : "HIGH DECAY";
+const tierLabel = (pci: number) => pci >= 96 ? "PHAOS CHOICE" : pci >= 90 ? "CONVERGENCE" : pci >= 70 ? "CONSTRUCTIVE" : pci >= 51 ? "DIVERGENCE" : "HIGH DECAY";
 
 // Pick the source families to interrogate based on asset class.
 const familiesFor = (cls: AssetClass): { line: string; family: string }[] => {

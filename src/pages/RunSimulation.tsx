@@ -4,7 +4,7 @@ import { Sparkles, Check } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import { FeatureStatusBadge, PlatformPreferenceTag } from "@/components/phaos";
+import { FeatureStatusBadge } from "@/components/phaos";
 import type { AssetClass } from "@/data/simulationCandidates";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
@@ -95,7 +95,7 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
 ];
 
 interface PciTier {
-  label: "HIGH DECAY" | "DIVERGENCE" | "CONSTRUCTIVE" | "HIGH CONVERGENCE" | "PHAOS CHOICE";
+  label: "HIGH DECAY" | "DIVERGENCE" | "CONSTRUCTIVE" | "CONVERGENCE" | "PHAOS CHOICE";
   range: string;
   persona: string;
   text: string;
@@ -106,7 +106,7 @@ interface PciTier {
 
 const getPciTier = (pci: number): PciTier => {
   if (pci >= 96) return { label: "PHAOS CHOICE", range: "96–100", persona: "Institutional Supercycle", text: "text-pci-choice", border: "border-pci-choice/50", bg: "bg-pci-choice/10", bar: "bg-pci-choice" };
-  if (pci >= 90) return { label: "HIGH CONVERGENCE", range: "90–95", persona: "Strategic Pivot", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
+  if (pci >= 90) return { label: "CONVERGENCE", range: "90–95", persona: "Strategic Pivot", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
   if (pci >= 70) return { label: "CONSTRUCTIVE", range: "70–89", persona: "Baseline Growth", text: "text-pci-potential", border: "border-pci-potential/50", bg: "bg-pci-potential/10", bar: "bg-pci-potential" };
   if (pci >= 51) return { label: "DIVERGENCE", range: "51–69", persona: "Narrative Risk / Speculative Drift", text: "text-pci-warning", border: "border-pci-warning/50", bg: "bg-pci-warning/10", bar: "bg-pci-warning" };
   return { label: "HIGH DECAY", range: "1–50", persona: "Structural Deterioration / Downside Asymmetry", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };
@@ -490,7 +490,7 @@ const RunSimulation = () => {
                   <span className="text-xs text-muted-foreground">
                     Avg PCI <span className="text-foreground font-semibold">{summary.avg}</span> ·
                     {" "}{summary.phaosChoice} Phaos Choice ·
-                    {" "}{summary.go} High Convergence ·
+                    {" "}{summary.go} Convergence ·
                     {" "}top pick <span className="text-foreground font-semibold">{summary.top.ticker}</span>
                   </span>
                 )}
@@ -501,23 +501,22 @@ const RunSimulation = () => {
                   <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="text-left p-3 w-10">#</th>
-                      <th className="text-left p-3">Ticker</th>
-                      <th className="text-left p-3">Name</th>
-                      <th className="text-left p-3">Class</th>
-                      <th className="text-left p-3">PCI</th>
-                      <th className="text-left p-3">Tier</th>
-                      <th className="text-left p-3">Top signal</th>
-                      <th className="text-left p-3">Available on</th>
+                      <th className="text-left p-4 w-[9%]">Ticker</th>
+                      <th className="text-left p-4 w-[26%]">Name</th>
+                      <th className="text-left p-4 w-[11%]">Class</th>
+                      <th className="text-left p-4 w-[14%]">PCI</th>
+                      <th className="text-left p-4 w-[14%]">Tier</th>
+                      <th className="text-left p-4 w-[26%]">Top signal</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map((r, idx) => (
                       <tr key={r.ticker} className="border-t border-border">
                         <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-3 font-mono font-semibold">{r.ticker}</td>
-                        <td className="p-3">{r.name}</td>
-                        <td className="p-3 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-                        <td className="p-3">
+                        <td className="p-4 font-mono font-semibold">{r.ticker}</td>
+                        <td className="p-4">{r.name}</td>
+                        <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+                        <td className="p-4">
                           <div className="flex items-center gap-2">
                             <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
                             <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
@@ -525,23 +524,12 @@ const RunSimulation = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
+                        <td className="p-4">
                           <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
                             {r.tier.label}
                           </span>
                         </td>
-                        <td className="p-3 text-xs text-muted-foreground">{r.topSignal}</td>
-                        <td className="p-3">
-                          <div className="flex flex-wrap gap-1">
-                            {r.platforms.slice(0, 3).map((slug) => {
-                              const p = platforms.find((x) => x.slug === slug);
-                              return <PlatformPreferenceTag key={slug} platform={p?.name ?? slug} />;
-                            })}
-                            {r.platforms.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground self-center">+{r.platforms.length - 3}</span>
-                            )}
-                          </div>
-                        </td>
+                        <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
                       </tr>
                     ))}
                   </tbody>
