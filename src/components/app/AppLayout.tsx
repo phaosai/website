@@ -29,38 +29,57 @@ export default function AppLayout() {
   const { user, signOut } = useAuth();
   const { isLive, loading } = useIsLiveAccount();
   const { pathname } = useLocation();
+  const [subsOpen, setSubsOpen] = useState(false);
 
   const inShellArea = SHELL_PREFIXES.some((p) => pathname.startsWith(p));
   // Only admin ("live") accounts see real modules. All others — free or paid —
   // see the live-looking explainer shell.
   const showShell = inShellArea && !loading && !isLive;
 
+  // Show the plans once per signed-in session, right after login/signup.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      if (sessionStorage.getItem(SUBS_SEEN_KEY) === user.id) return;
+      sessionStorage.setItem(SUBS_SEEN_KEY, user.id);
+    } catch {
+      /* storage unavailable — show once per mount */
+    }
+    setSubsOpen(true);
+  }, [user]);
+
+  const openSubs = useCallback(() => setSubsOpen(true), []);
+  const subsCtx = useMemo(() => ({ open: openSubs }), [openSubs]);
+
   return (
     <ProtectedRoute>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background text-foreground">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-12 flex items-center justify-between border-b border-border px-3">
-              <SidebarTrigger />
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="hidden sm:inline">{user?.email}</span>
-                <Button size="sm" variant="ghost" onClick={signOut}>Sign out</Button>
-              </div>
-            </header>
-            <main className="flex-1 overflow-auto">
-              {showShell ? (
-                <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading…</div>}>
-                  <SunesisShell />
-                </Suspense>
-              ) : (
-                <Outlet />
-              )}
-            </main>
-            <ComplianceFooter />
+      <SubscriptionsModalContext.Provider value={subsCtx}>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-background text-foreground">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <header className="h-12 flex items-center justify-between border-b border-border px-3">
+                <SidebarTrigger />
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="hidden sm:inline">{user?.email}</span>
+                  <Button size="sm" variant="ghost" onClick={signOut}>Sign out</Button>
+                </div>
+              </header>
+              <main className="flex-1 overflow-auto">
+                {showShell ? (
+                  <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading…</div>}>
+                    <SunesisShell />
+                  </Suspense>
+                ) : (
+                  <Outlet />
+                )}
+              </main>
+              <ComplianceFooter />
+            </div>
           </div>
-        </div>
-      </SidebarProvider>
+          <SubscriptionsModal open={subsOpen} onClose={() => setSubsOpen(false)} />
+        </SidebarProvider>
+      </SubscriptionsModalContext.Provider>
     </ProtectedRoute>
   );
 }
