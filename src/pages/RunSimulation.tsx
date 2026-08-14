@@ -194,7 +194,7 @@ const RunSimulation = () => {
 
     return pool
       .map((c) => {
-        const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedPlatforms.join(",")}`);
+        const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedTimeframe}|${selectedPlatforms.join(",")}`);
         let pci = 42 + (seed % 57); // 42–98
         if (c.assetClass === "otc_penny") pci = Math.min(pci, 60);
         const signals = [
@@ -236,7 +236,7 @@ const RunSimulation = () => {
     try {
       if (!isLive) throw new Error("simulated-mode");
       const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
-        body: { asset_classes: selectedClasses, platforms: selectedPlatforms },
+        body: { asset_classes: selectedClasses, platforms: selectedPlatforms, timeframe: selectedTimeframe },
       });
       if (error) throw error;
       const rows: TopRow[] = (data?.results ?? []).map((r: {
