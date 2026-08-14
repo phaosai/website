@@ -3,6 +3,7 @@ import { ArrowRight, Phone, Workflow, Plug } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import IntegrationSearch from "@/components/IntegrationSearch";
+import WorkflowDiagram from "@/components/WorkflowDiagram";
 
 import { categories, type Integration } from "@/data/integrations";
 
