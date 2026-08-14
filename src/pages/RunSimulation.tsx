@@ -554,19 +554,14 @@ const RunSimulation = () => {
                 </div>
               )}
 
-              <div className="rounded-2xl border border-border bg-card/40 p-6 space-y-3">
+              <div className="rounded-2xl border border-border bg-card/40 p-6 flex justify-center">
                 <Link
-                  to="/auth?mode=signup&plan=phaos_one_monthly"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-sm font-semibold px-6 py-3 rounded-full glow-purple hover:opacity-90 transition-all"
+                  to="/auth?mode=signup&next=/pricing"
+                  className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 transition-all"
                 >
-                  Unlock the live brain — full Sunesis research
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link
-                  to="/pricing"
-                  className="w-full inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground text-sm font-semibold px-6 py-3 rounded-full hover:bg-card transition-colors"
-                >
-                  Compare plans
+                  <Sparkles className="w-5 h-5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Unlock the Live Brain</span>
+                  <Sparkles className="w-5 h-5 flex-shrink-0" />
                 </Link>
               </div>
             </div>
