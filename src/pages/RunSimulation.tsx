@@ -620,16 +620,18 @@ const RunSimulation = () => {
               <button
                 type="button"
                 onClick={() => runSimulation()}
-                disabled={loading || selectedClasses.length === 0}
+                disabled={loading || selectedClasses.length === 0 || selectedPlatforms.length === 0}
                 className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Run Sunesis Quantum Simulation</span>
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
               </button>
-              {selectedClasses.length === 0 && (
+              {(selectedClasses.length === 0 || selectedPlatforms.length === 0) && (
                 <p className="text-xs text-muted-foreground">
-                  Select at least one Asset Class to run the simulation.
+                  {selectedClasses.length === 0
+                    ? "Select at least one Asset Class to run the simulation."
+                    : "Select at least one Platform to run the simulation."}
                 </p>
               )}
             </div>
