@@ -519,11 +519,15 @@ const RunSimulation = () => {
             </div>
           )}
 
-          <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
-            <p>PCI is a research confidence framework — a transparency score, not a prediction of returns.</p>
-            <p>Phaos AI is not a registered investment advisor.</p>
-            <p>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</p>
+          <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 text-[11px] leading-relaxed text-muted-foreground">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 list-disc pl-4 marker:text-primary">
+              <li>PCI is a research confidence framework, a transparency score, not a prediction of returns.</li>
+              <li>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</li>
+              <li>Phaos AI is not a registered investment advisor.</li>
+              <li>Live Sunesis research uses Quantum powered algorithms, having analyzed 20 years of market data and movement, including deep fundamental as well as technical analysis. Yielding the PCI, Phaos Conviction Index.</li>
+            </ul>
           </div>
+
         </div>
       </section>
 
