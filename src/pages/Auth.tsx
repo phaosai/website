@@ -101,7 +101,7 @@ const Auth = () => {
         returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
       });
     }
-  }, [checkoutStarted, from, isVoicePortal, loading, navigate, openCheckout, selectedPlan, session]);
+  }, [checkoutStarted, from, isVoicePortal, loading, navigate, nextPath, openCheckout, selectedPlan, session]);
 
   const rules = useMemo(() => passwordRules(password), [password]);
   const passedRules = Object.values(rules).filter(Boolean).length;
