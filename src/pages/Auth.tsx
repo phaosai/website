@@ -35,6 +35,8 @@ const Auth = () => {
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
   const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
+  const rawNext = new URLSearchParams(location.search).get("next") || "";
+  const nextPath = rawNext.startsWith("/") ? rawNext : "";
   const portal = (new URLSearchParams(location.search).get("portal") || "").toLowerCase();
   const isVoicePortal = portal === "voice";
   const portalLabel =
@@ -87,7 +89,7 @@ const Auth = () => {
       return;
     }
     if (!selectedPlan) {
-      navigate(from, { replace: true });
+      navigate(nextPath || from, { replace: true });
       return;
     }
     if (!checkoutStarted) {
@@ -99,7 +101,7 @@ const Auth = () => {
         returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
       });
     }
-  }, [checkoutStarted, from, isVoicePortal, loading, navigate, openCheckout, selectedPlan, session]);
+  }, [checkoutStarted, from, isVoicePortal, loading, navigate, nextPath, openCheckout, selectedPlan, session]);
 
   const rules = useMemo(() => passwordRules(password), [password]);
   const passedRules = Object.values(rules).filter(Boolean).length;
@@ -245,7 +247,13 @@ const Auth = () => {
               <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Selected plan</p>
                 <p className="mt-1 text-sm font-semibold text-white">{selectedPlanName}</p>
-                <p className="mt-1 text-xs text-white/55">Create your account, then secure checkout opens automatically.</p>
+                <p className="mt-1 text-xs text-white/70">Create your free account, then preview the pricing page</p>
+              </div>
+            )}
+            {!selectedPlan && nextPath === "/pricing" && (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Next step</p>
+                <p className="mt-1 text-xs text-white/70">Create your free account, then preview the pricing page</p>
               </div>
             )}
 
