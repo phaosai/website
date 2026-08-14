@@ -9,6 +9,7 @@ import type { AssetClass } from "@/data/simulationCandidates";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
@@ -170,9 +171,80 @@ const TIMEFRAMES = [
 
 type Timeframe = (typeof TIMEFRAMES)[number]["value"];
 
+// Deterministic hypothetical detail for a given (row, signal) pair so the
+// "Top signal" cell carries real explanatory value in the sandbox.
+const hashOf = (s: string) => s.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+
+const buildSignalDetail = (r: TopRow) => {
+  const h = hashOf(`${r.ticker}|${r.topSignal}|${r.assetClass}`);
+  const [metric, sourceRaw] = r.topSignal.split("·").map((s) => s.trim());
+  const source = sourceRaw ?? "Phaos Foundry composite";
+  const direction = r.pci >= 70 ? "Supports" : r.pci >= 51 ? "Mixed" : "Detracts";
+  const confidence = ["Strong", "Moderate", "Weak"][h % 3];
+  const weight = (0.14 + ((h % 23) / 100)).toFixed(2);
+  const delta = (((h % 47) + 3) / 10).toFixed(1);
+  const days = (h % 6) + 1;
+  return {
+    metric: metric ?? r.topSignal,
+    source,
+    direction,
+    confidence,
+    weight,
+    observation: `${metric ?? r.topSignal} for ${r.ticker} moved ${direction === "Detracts" ? "-" : "+"}${delta}% versus its trailing 90-day baseline, placing it in the ${r.pci >= 70 ? "upper" : r.pci >= 51 ? "middle" : "lower"} quartile of the ${r.assetClass.replace(/_/g, " ")} cohort.`,
+    reading: `Within the ${r.tier.label} band, this reading ${direction === "Supports" ? "reinforces the evidence stack" : direction === "Mixed" ? "neither confirms nor contradicts the thesis" : "widens the gap between narrative and auditable data"}. It contributes an estimated ${weight} weight to the composite PCI of ${r.pci}.`,
+    method: `Normalized against sector peers, z-scored over a rolling window, then decayed by evidence age. Source family: ${source}. Last refresh: ${days} day${days === 1 ? "" : "s"} ago.`,
+  };
+};
+
+const SignalDetailDialog = ({ row, onOpenChange }: { row: TopRow | null; onOpenChange: (o: boolean) => void }) => {
+  if (!row) return null;
+  const d = buildSignalDetail(row);
+  return (
+    <Dialog open={!!row} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            <span className="font-mono">{row.ticker}</span>
+            <span className="text-muted-foreground text-sm font-normal">{d.metric}</span>
+          </DialogTitle>
+          <DialogDescription className="text-[11px] uppercase tracking-wider">
+            Simulated evidence detail — hypothetical
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wider">
+            <span className={`rounded-full border px-2 py-0.5 font-semibold ${row.tier.border} ${row.tier.bg} ${row.tier.text}`}>{row.tier.label}</span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{d.direction}</span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{d.confidence} confidence</span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">Weight {d.weight}</span>
+          </div>
+          <section>
+            <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observation</h4>
+            <p className="leading-relaxed text-foreground/85">{d.observation}</p>
+          </section>
+          <section>
+            <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">How it reads</h4>
+            <p className="leading-relaxed text-foreground/85">{d.reading}</p>
+          </section>
+          <section>
+            <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Methodology</h4>
+            <p className="leading-relaxed text-foreground/85">{d.method}</p>
+          </section>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            SIMULATED. Hypothetical illustration of the evidence stack. PCI is a research confidence
+            framework, not a prediction of returns. Phaos AI is not a registered investment advisor.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const ResultsTable = ({ title, subtitle, rows, accent }: {
   title: string; subtitle: string; rows: TopRow[]; accent: string;
-}) => (
+}) => {
+  const [activeRow, setActiveRow] = useState<TopRow | null>(null);
+  return (
   <div className="space-y-3">
     <div>
       <h3 className={`text-lg font-bold ${accent}`}>{title}</h3>
@@ -182,23 +254,21 @@ const ResultsTable = ({ title, subtitle, rows, accent }: {
       <table className="w-full text-sm min-w-[720px]">
         <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
           <tr>
-            <th className="text-left p-3 w-10">#</th>
-            <th className="text-left p-4 w-[9%]">Ticker</th>
-            <th className="text-left p-4 w-[26%]">Name</th>
-            <th className="text-left p-4 w-[11%]">Class</th>
-            <th className="text-left p-4 w-[14%]">PCI</th>
-            <th className="text-left p-4 w-[14%]">Tier</th>
-            <th className="text-left p-4 w-[26%]">Top signal</th>
+            <th className="text-center p-4 w-[10%]">Ticker</th>
+            <th className="text-center p-4 w-[28%]">Name</th>
+            <th className="text-center p-4 w-[12%]">Class</th>
+            <th className="text-center p-4 w-[14%]">PCI</th>
+            <th className="text-center p-4 w-[14%]">Tier</th>
+            <th className="text-center p-4 w-[22%]">Top signal</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, idx) => (
+          {rows.map((r) => (
             <tr key={r.ticker} className="border-t border-border">
-              <td className="p-3 text-muted-foreground">{idx + 1}</td>
-              <td className="p-4 font-mono font-semibold">{r.ticker}</td>
-              <td className="p-4">{r.name}</td>
-              <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-              <td className="p-4">
+              <td className="p-4 text-center font-mono font-semibold">{r.ticker}</td>
+              <td className="p-4 text-center">{r.name}</td>
+              <td className="p-4 text-center text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+              <td className="p-4 text-left">
                 <div className="flex items-center gap-2">
                   <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
                   <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
@@ -206,19 +276,30 @@ const ResultsTable = ({ title, subtitle, rows, accent }: {
                   </div>
                 </div>
               </td>
-              <td className="p-4">
+              <td className="p-4 text-left">
                 <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
                   {r.tier.label}
                 </span>
               </td>
-              <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
+              <td className="p-4 text-left text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveRow(r)}
+                  className="text-left text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+                >
+                  {r.topSignal}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+    <SignalDetailDialog row={activeRow} onOpenChange={(o) => !o && setActiveRow(null)} />
   </div>
-);
+  );
+};
+
 
 
 
