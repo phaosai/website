@@ -336,7 +336,7 @@ const RunSimulation = () => {
             {/* Step 2 — Platforms */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
-                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
                 <p className="text-lg font-semibold">Select every platform where you can actually trade</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
