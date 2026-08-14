@@ -35,6 +35,8 @@ const Auth = () => {
   const { toast } = useToast();
   const from = (location.state as { from?: string } | null)?.from || "/app";
   const selectedPlan = new URLSearchParams(location.search).get("plan") || "";
+  const rawNext = new URLSearchParams(location.search).get("next") || "";
+  const nextPath = rawNext.startsWith("/") ? rawNext : "";
   const portal = (new URLSearchParams(location.search).get("portal") || "").toLowerCase();
   const isVoicePortal = portal === "voice";
   const portalLabel =
