@@ -306,11 +306,16 @@ const Pricing = () => {
   const [cadence, setCadence] = useState<Cadence>("annual");
 
   const handleBuy = (tier: Tier) => {
+    if (tier.cta.href) {
+      navigate(tier.cta.href);
+      return;
+    }
     const priceId = cadence === "annual" ? tier.cta.priceIdAnnual : tier.cta.priceIdMonthly;
     if (!priceId) {
       navigate("/contact");
       return;
     }
+
     if (!user) {
       navigate(`/auth?mode=signup&plan=${priceId}`);
       return;
