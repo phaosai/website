@@ -392,11 +392,18 @@ const RunSimulation = () => {
   };
 
   const runSimulation = async () => {
+    if (selectedClasses.length === 0) {
+      setResults(null);
+      setSimulated(false);
+      setErrorMsg("Select at least one Asset Class before running the simulation.");
+      return;
+    }
     setResults(null);
     setErrorMsg(null);
     setSimulated(false);
     setLoading(true);
     setProgress(0);
+
 
     const progressInterval = window.setInterval(
       () => setProgress((p) => Math.min(p + 6, 92)),
