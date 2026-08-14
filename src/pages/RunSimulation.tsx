@@ -122,9 +122,26 @@ interface TopRow {
   platforms: string[];
 }
 
+const TIMEFRAMES = [
+  { value: "1D", label: "1 Day" },
+  { value: "7D", label: "7 Days" },
+  { value: "14D", label: "14 Days" },
+  { value: "30D", label: "30 Days" },
+  { value: "60D", label: "60 Days" },
+  { value: "90D", label: "90 Days" },
+  { value: "180D", label: "180 Days" },
+  { value: "1Y", label: "1 Year" },
+  { value: "2Y", label: "2 Years" },
+  { value: "3Y", label: "3 Years" },
+] as const;
+
+type Timeframe = (typeof TIMEFRAMES)[number]["value"];
+
 const RunSimulation = () => {
   const { isLive } = useIsLiveAccount();
+  const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>("30D");
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
+
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
@@ -177,7 +194,7 @@ const RunSimulation = () => {
 
     return pool
       .map((c) => {
-        const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedPlatforms.join(",")}`);
+        const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedTimeframe}|${selectedPlatforms.join(",")}`);
         let pci = 42 + (seed % 57); // 42–98
         if (c.assetClass === "otc_penny") pci = Math.min(pci, 60);
         const signals = [
@@ -219,7 +236,7 @@ const RunSimulation = () => {
     try {
       if (!isLive) throw new Error("simulated-mode");
       const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
-        body: { asset_classes: selectedClasses, platforms: selectedPlatforms },
+        body: { asset_classes: selectedClasses, platforms: selectedPlatforms, timeframe: selectedTimeframe },
       });
       if (error) throw error;
       const rows: TopRow[] = (data?.results ?? []).map((r: {
@@ -278,11 +295,47 @@ const RunSimulation = () => {
       <section className="px-6 pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
-            {/* Step 1 — Asset classes (multi-select) */}
+            {/* Step 1 — Timeframe (single-select) */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
-                <p className="text-lg font-semibold">Select the asset classes to consider</p>
+                <p className="text-lg font-semibold">Select the Timeframe</p>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label} selected
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {[TIMEFRAMES.slice(0, 5), TIMEFRAMES.slice(5)].map((row, i) => (
+                  <div key={i} className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    {row.map((t) => {
+                      const active = t.value === selectedTimeframe;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setSelectedTimeframe(t.value)}
+                          className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-base font-semibold transition-colors ${
+                            active
+                              ? "border-primary bg-primary/15 text-primary"
+                              : "border-border bg-background/60 text-foreground/80 hover:bg-card"
+                          }`}
+                        >
+                          {active && <Check className="w-4 h-4" />}
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2 — Asset Classes (multi-select) */}
+            <div>
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <p className="text-lg font-semibold">Select the Asset Classes to consider</p>
+
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
                   <button
@@ -336,7 +389,7 @@ const RunSimulation = () => {
             {/* Step 2 — Platforms */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
-                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
                 <p className="text-lg font-semibold">Select every platform where you can actually trade</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
