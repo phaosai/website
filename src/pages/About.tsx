@@ -360,7 +360,7 @@ const About = () => {
               Ready to <span className="text-gradient-purple">Join the Journey</span>?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
-              Whether you're a potential partner, investor, or customer — we'd love to connect.
+              Whether you're a potential partner, investor, or customer, we'd love to connect!
             </p>
             <Link to="/contact" className="inline-flex bg-gradient-purple text-primary-foreground font-semibold px-8 py-3.5 rounded-full glow-purple-lg hover:opacity-90 transition-all text-base items-center gap-2 group">
               Schedule a Call
