@@ -95,7 +95,7 @@ const FALLBACK_PLATFORMS: PlatformMeta[] = [
 ];
 
 interface PciTier {
-  label: "HIGH DECAY" | "DIVERGENCE" | "CONSTRUCTIVE" | "HIGH CONVERGENCE" | "PHAOS CHOICE";
+  label: "HIGH DECAY" | "DIVERGENCE" | "CONSTRUCTIVE" | "CONVERGENCE" | "PHAOS CHOICE";
   range: string;
   persona: string;
   text: string;
@@ -106,7 +106,7 @@ interface PciTier {
 
 const getPciTier = (pci: number): PciTier => {
   if (pci >= 96) return { label: "PHAOS CHOICE", range: "96–100", persona: "Institutional Supercycle", text: "text-pci-choice", border: "border-pci-choice/50", bg: "bg-pci-choice/10", bar: "bg-pci-choice" };
-  if (pci >= 90) return { label: "HIGH CONVERGENCE", range: "90–95", persona: "Strategic Pivot", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
+  if (pci >= 90) return { label: "CONVERGENCE", range: "90–95", persona: "Strategic Pivot", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
   if (pci >= 70) return { label: "CONSTRUCTIVE", range: "70–89", persona: "Baseline Growth", text: "text-pci-potential", border: "border-pci-potential/50", bg: "bg-pci-potential/10", bar: "bg-pci-potential" };
   if (pci >= 51) return { label: "DIVERGENCE", range: "51–69", persona: "Narrative Risk / Speculative Drift", text: "text-pci-warning", border: "border-pci-warning/50", bg: "bg-pci-warning/10", bar: "bg-pci-warning" };
   return { label: "HIGH DECAY", range: "1–50", persona: "Structural Deterioration / Downside Asymmetry", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };

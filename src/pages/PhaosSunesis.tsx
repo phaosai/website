@@ -157,7 +157,7 @@ const PhaosSunesis = () => {
               },
               {
                 range: "90–95",
-                label: "HIGH CONVERGENCE",
+                label: "CONVERGENCE",
                 sub: "Strategic Pivot",
                 desc: "A highly constructive evidence stack indicating a significant, verifiable strategic trajectory and strong institutional backing.",
               },

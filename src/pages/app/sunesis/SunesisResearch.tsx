@@ -94,7 +94,7 @@ const FALLBACK: PlatformMeta[] = [
 
 const TIER = (s: number) => {
   if (s >= 96) return { label: "PHAOS CHOICE", text: "text-pci-choice", border: "border-pci-choice/50", bg: "bg-pci-choice/10", bar: "bg-pci-choice" };
-  if (s >= 90) return { label: "HIGH CONVERGENCE", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
+  if (s >= 90) return { label: "CONVERGENCE", text: "text-pci-go", border: "border-pci-go/50", bg: "bg-pci-go/10", bar: "bg-pci-go" };
   if (s >= 70) return { label: "CONSTRUCTIVE", text: "text-pci-potential", border: "border-pci-potential/50", bg: "bg-pci-potential/10", bar: "bg-pci-potential" };
   if (s >= 51) return { label: "DIVERGENCE", text: "text-pci-warning", border: "border-pci-warning/50", bg: "bg-pci-warning/10", bar: "bg-pci-warning" };
   return { label: "HIGH DECAY", text: "text-pci-no-go", border: "border-pci-no-go/50", bg: "bg-pci-no-go/10", bar: "bg-pci-no-go" };
