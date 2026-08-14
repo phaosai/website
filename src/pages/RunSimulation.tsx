@@ -122,6 +122,39 @@ interface TopRow {
   platforms: string[];
 }
 
+// Signal pools tailored to each asset class so the "Top signal" column always
+// cites a source that actually covers that instrument type.
+const SIGNALS_BY_CLASS: Partial<Record<AssetClass, string[]>> = {
+  stock: ["Insider cluster · SEC Form 4", "Revenue trend · XBRL 10-Q", "Short interest · FINRA", "Options skew · CBOE EOD", "Contract awards · USAspending"],
+  adr: ["Foreign filings · SEC 20-F", "FX translation risk · FRED", "Custodian flow · DTCC", "Export data · UN Comtrade"],
+  etf: ["Creation/redemption flow · N-PORT", "Premium/discount to NAV", "Sector rotation · FRED regime", "Holdings drift · N-CSR"],
+  mutual_fund: ["Holdings drift · N-PORT", "Expense drag vs. benchmark", "Net flows · N-CEN"],
+  reit: ["FFO trend · XBRL", "Occupancy disclosure · 10-K", "Debt maturity wall · 10-Q", "Cap-rate spread · FRED"],
+  otc_penny: ["Disclosure gap · OTC tier", "Liquidity fragility · quote depth", "Dilution history · S-1 / 424B"],
+  us_treasury: ["Auction tails · TreasuryDirect", "Real yields · FRED TIPS", "Curve slope · 10Y–2Y"],
+  corporate_bond: ["Spread move · FINRA TRACE", "HY OAS regime · FRED", "Coverage ratio · XBRL"],
+  muni_bond: ["Issuer disclosure · MSRB EMMA", "Revenue base · Census finance", "Ratings drift"],
+  future: ["Term structure · exchange settle", "COT positioning · CFTC", "Roll yield vs. spot"],
+  option: ["IV rank · CBOE EOD", "Open-interest walls", "Skew shift · put/call"],
+  cfd: ["Index breadth · constituent flow", "Financing rate · broker swap", "Macro surprise · PMI"],
+  warrant: ["Dilution overhang · prospectus", "Time-value decay curve"],
+  perp_swap: ["Funding rate · Coinglass", "Open interest crowding", "Liquidation clusters"],
+  forex: ["Rate differential · FRED / BIS", "CFTC currency positioning", "PMI divergence · IMF"],
+  metal: ["Warehouse stocks · exchange", "Mine supply · USGS", "Real-yield sensitivity · FRED"],
+  soft_commodity: ["Crop balance · USDA WASDE", "Weather anomaly · NOAA", "Export pace · USDA FAS"],
+  energy: ["Inventory draw · EIA weekly", "Rig count · Baker Hughes", "Storage vs. 5-yr avg · EIA"],
+  major_crypto: ["Exchange netflow · on-chain", "Holder cohort shift", "ETF flows · issuer disclosures"],
+  altcoin: ["Developer activity · CoinGecko", "Unlock schedule · vesting", "Liquidity depth · CEX books"],
+  defi_token: ["TVL trend · DefiLlama", "Protocol fees · DefiLlama", "Governance activity · on-chain"],
+  rwa: ["Collateral attestation", "Redemption flow · on-chain", "Yield vs. T-bill · FRED"],
+  stablecoin: ["Mint/burn imbalance · on-chain", "Reserve attestation", "Peg deviation · venue books"],
+  carbon_credit: ["Registry issuance · Verra / Gold Standard", "Compliance policy · Federal Register", "Retirement volume"],
+};
+
+const signalsForClass = (cls: AssetClass): string[] =>
+  SIGNALS_BY_CLASS[cls] ?? ["Macro regime · FRED", "Fundamental trend · XBRL"];
+
+
 const TIMEFRAMES = [
   { value: "1D", label: "1 Day" },
   { value: "7D", label: "7 Days" },
@@ -136,6 +169,58 @@ const TIMEFRAMES = [
 ] as const;
 
 type Timeframe = (typeof TIMEFRAMES)[number]["value"];
+
+const ResultsTable = ({ title, subtitle, rows, accent }: {
+  title: string; subtitle: string; rows: TopRow[]; accent: string;
+}) => (
+  <div className="space-y-3">
+    <div>
+      <h3 className={`text-lg font-bold ${accent}`}>{title}</h3>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </div>
+    <div className="rounded-2xl border border-border bg-card/40 overflow-x-auto">
+      <table className="w-full text-sm min-w-[720px]">
+        <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="text-left p-3 w-10">#</th>
+            <th className="text-left p-4 w-[9%]">Ticker</th>
+            <th className="text-left p-4 w-[26%]">Name</th>
+            <th className="text-left p-4 w-[11%]">Class</th>
+            <th className="text-left p-4 w-[14%]">PCI</th>
+            <th className="text-left p-4 w-[14%]">Tier</th>
+            <th className="text-left p-4 w-[26%]">Top signal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, idx) => (
+            <tr key={r.ticker} className="border-t border-border">
+              <td className="p-3 text-muted-foreground">{idx + 1}</td>
+              <td className="p-4 font-mono font-semibold">{r.ticker}</td>
+              <td className="p-4">{r.name}</td>
+              <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
+              <td className="p-4">
+                <div className="flex items-center gap-2">
+                  <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
+                  <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
+                    <div className={`h-full ${r.tier.bar}`} style={{ width: `${r.pci}%` }} />
+                  </div>
+                </div>
+              </td>
+              <td className="p-4">
+                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
+                  {r.tier.label}
+                </span>
+              </td>
+              <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+
 
 const RunSimulation = () => {
   const { isLive } = useIsLiveAccount();
@@ -174,6 +259,15 @@ const RunSimulation = () => {
 
   // Simulation always runs — no selection gating.
 
+  const topTen = useMemo(() => (results ?? []).slice(0, 10), [results]);
+  const bottomTen = useMemo(() => {
+    if (!results) return [];
+    const remaining = results.slice(10);
+    return remaining.slice(-10).slice().reverse();
+  }, [results]);
+
+
+
   const summary = useMemo(() => {
     if (!results) return null;
     const avg = Math.round(results.reduce((s, r) => s + r.pci, 0) / results.length);
@@ -197,14 +291,8 @@ const RunSimulation = () => {
         const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedTimeframe}|${selectedPlatforms.join(",")}`);
         let pci = 42 + (seed % 57); // 42–98
         if (c.assetClass === "otc_penny") pci = Math.min(pci, 60);
-        const signals = [
-          "Macro regime · FRED",
-          "Insider cluster · SEC Form 4",
-          "Positioning · CFTC COT",
-          "Fundamental trend · XBRL",
-          "Flow crowding · FINRA / CBOE",
-          "On-chain flows · public explorers",
-        ];
+        const signals = signalsForClass(c.assetClass);
+
         const shown = selectedPlatforms.length
           ? c.platforms.filter((p) => selectedPlatforms.includes(p))
           : c.platforms;
@@ -248,7 +336,7 @@ const RunSimulation = () => {
         assetClass: r.assetClass,
         pci: r.pci,
         tier: getPciTier(r.pci),
-        topSignal: r.topSignal ?? "Macro regime · FRED",
+        topSignal: r.topSignal ?? signalsForClass(r.assetClass)[0],
         platforms: r.platforms ?? [],
       }));
       if (!rows.length) throw new Error("simulated-mode");
@@ -271,7 +359,7 @@ const RunSimulation = () => {
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
         title="Live Conviction Screen — Phaos Sunesis"
-        description="Phaos Sunesis live screen. Pick the asset classes and platforms you actually trade on and Sunesis returns every instrument available to you, ranked by the Phaos Conviction Index."
+        description="Phaos Sunesis conviction screen. Pick the asset classes and platforms you typically trade on and Sunesis simulates hypothetical results by generating the Phaos Conviction Index."
         canonical="/one/run-simulation"
       />
       <Navigation />
@@ -287,7 +375,7 @@ const RunSimulation = () => {
             Live <span className="text-gradient-purple">Conviction</span> Screen
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Pick the asset classes and platforms you actually trade on. Sunesis returns every instrument available to you right now, ranked by the Phaos Conviction Index — generated live by the Foundry.
+            Pick the asset classes and platforms you typically trade on. Sunesis simulates hypothetical results by generating the Phaos Conviction Index, powered by Quantum AI Algorithms.
           </p>
         </div>
       </section>
@@ -496,45 +584,24 @@ const RunSimulation = () => {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-border bg-card/40 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="text-left p-3 w-10">#</th>
-                      <th className="text-left p-4 w-[9%]">Ticker</th>
-                      <th className="text-left p-4 w-[26%]">Name</th>
-                      <th className="text-left p-4 w-[11%]">Class</th>
-                      <th className="text-left p-4 w-[14%]">PCI</th>
-                      <th className="text-left p-4 w-[14%]">Tier</th>
-                      <th className="text-left p-4 w-[26%]">Top signal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r, idx) => (
-                      <tr key={r.ticker} className="border-t border-border">
-                        <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-4 font-mono font-semibold">{r.ticker}</td>
-                        <td className="p-4">{r.name}</td>
-                        <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
-                            <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
-                              <div className={`h-full ${r.tier.bar}`} style={{ width: `${r.pci}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
-                            {r.tier.label}
-                          </span>
-                        </td>
-                        <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {topTen.length > 0 && (
+                <ResultsTable
+                  title="10 Highest Rated PCI"
+                  subtitle="Strongest evidence alignment in your selected universe"
+                  rows={topTen}
+                  accent="text-pci-choice"
+                />
+              )}
+
+              {bottomTen.length > 0 && (
+                <ResultsTable
+                  title="10 Lowest Rated PCI"
+                  subtitle="Weakest evidence alignment in your selected universe"
+                  rows={bottomTen}
+                  accent="text-pci-no-go"
+                />
+              )}
+
 
               {results.length === 0 && (
                 <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
