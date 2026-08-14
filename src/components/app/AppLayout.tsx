@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -7,8 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { Button } from "@/components/ui/button";
 import { ComplianceFooter } from "@/components/ComplianceFooter";
+import { SubscriptionsModal } from "@/components/pricing/SubscriptionsModal";
+import { SubscriptionsModalContext } from "@/components/pricing/SubscriptionsModalContext";
 
 const SunesisShell = lazy(() => import("@/pages/app/sunesis/SunesisShell"));
+const SUBS_SEEN_KEY = "phaos_subscriptions_modal_seen";
 
 // Routes that should be replaced with the explainer shell for free-tier users.
 const SHELL_PREFIXES = [
