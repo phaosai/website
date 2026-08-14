@@ -5,7 +5,6 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { workflowPageSchema } from "@/lib/seo-schemas";
-import WorkflowDiagram from "@/components/WorkflowDiagram";
 import { FeatureStatusBadge } from "@/components/phaos";
 
 const fadeUp = {
@@ -62,20 +61,6 @@ const Workflows = () => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Eliminate multi-step, paper-heavy processes and excessive touchpoints. Phaos agentic workflows connect your systems and execute complex business processes autonomously — from document processing and inventory management to billing automation and cross-platform data sync.
             </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Animated Workflow Diagram ── */}
-      <section className="py-12 px-6" aria-label="How Workflow Automation Works">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <WorkflowDiagram />
           </motion.div>
         </div>
       </section>
