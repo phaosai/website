@@ -403,9 +403,9 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* TIERS — Sovereign · Pro · Elite (intentional order, preserved on mobile) */}
+      {/* TIERS — Sovereign · Pro · Elite · Observer (intentional order, preserved on mobile) */}
       <section className="px-6 pb-20" aria-label="Subscription tiers">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
           {TIERS.map((tier) => (
             <PricingCard
               key={tier.id}
@@ -421,81 +421,99 @@ const Pricing = () => {
         </p>
       </section>
 
-      {/* QUANTUM BURST PACK BANNER */}
-      <section className="px-6 pb-12" aria-label="Quantum Burst Pack">
+      {/* PCI CONCURRENCE — decision surfaces */}
+      <section className="px-6 pb-16" aria-label="PCI access model">
         <div className="max-w-6xl mx-auto rounded-2xl border border-purple-deep/40 bg-gradient-to-br from-purple-deep/15 via-purple-deep/5 to-transparent p-8 md:p-10">
-          <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-purple-deep" />
-                <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-purple-deep">
-                  Add-on
-                </span>
-              </div>
-              <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-                Quantum Burst Pack
-              </h2>
-              <p className="mt-3 text-muted-foreground max-w-2xl leading-relaxed">
-                Burned through your included Quantum Audits? Add execution credits without
-                committing to a higher tier. Stress-test the next high-conviction idea the
-                moment it lands — not next billing cycle.
-              </p>
-            </div>
-            <div className="flex flex-col items-stretch md:items-end gap-3">
-              <div className="text-right">
-                <span className="text-3xl font-semibold text-foreground">$199</span>
-                <span className="text-sm text-muted-foreground"> / 5 audits</span>
-              </div>
-              <button
-                onClick={() => setZeroAuditOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
-              >
-                Add Quantum Burst <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-purple-deep" />
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-purple-deep">
+              PCI access model
+            </span>
           </div>
+          <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+            PCI Concurrence
+          </h2>
+          <p className="mt-3 text-muted-foreground max-w-3xl leading-relaxed">
+            PCI ratings are grouped into named decision surfaces. PCI Concurrence shows where
+            time horizons agree, disagree, or transition — a stock aligned across 7D, 30D, 90D
+            and 1Y, a crypto asset with 7D bearish momentum but a bullish 1Y strategic PCI, or a
+            portfolio where formerly aligned horizons begin diverging into a regime shift.
+          </p>
 
-          {/* Other add-on packs */}
-          <div className="mt-8 pt-8 border-t border-border/50 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {ADD_ON_PACKS.filter((p) => !p.featured).map((p) => (
-              <div key={p.name} className="rounded-xl border border-border/60 bg-card/40 p-5">
-                <div className="flex items-center gap-2">
-                  <p.icon className="w-4 h-4 text-purple-deep" />
-                  <p className="text-sm font-semibold text-foreground">{p.name}</p>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{p.description}</p>
-                <p className="mt-3 text-lg font-semibold text-foreground">{p.price}</p>
-              </div>
-            ))}
-            <div className="rounded-xl border border-dashed border-border/60 bg-transparent p-5 flex items-center">
-              <p className="text-xs text-muted-foreground italic">
-                Compliance & treasury packs — coming soon for Sovereign customers.
-              </p>
-            </div>
+          <div className="mt-8 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="text-left border-b border-border/60">
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">PCI surface</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Horizons</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Observer</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Elite</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Pro</th>
+                  <th className="py-3 text-[11px] font-semibold tracking-[0.15em] uppercase text-purple-deep">Sovereign</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PCI_SURFACES.map((r) => (
+                  <tr key={r.surface} className="border-b border-border/40 last:border-0">
+                    <td className="py-3 pr-4 font-medium text-foreground">{r.surface}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.horizons}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.observer}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.elite}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.pro}</td>
+                    <td className="py-3 text-foreground">{r.sovereign}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      {/* DEMO TRIGGER for the zero-audit modal */}
-      <section className="px-6 pb-20 text-center">
-        <button
-          onClick={() => setZeroAuditOpen(true)}
-          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
-        >
-          Preview the in-app exhaustion experience →
-        </button>
+      {/* FULL PLAN COMPARISON */}
+      <section className="px-6 pb-20" aria-label="Plan comparison">
+        <div className="max-w-6xl mx-auto rounded-2xl border border-border/60 bg-card/40 p-6 md:p-8">
+          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground text-center">
+            Compare every plan
+          </p>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead>
+                <tr className="text-left border-b border-border/60">
+                  <th className="py-3 pr-4 w-[16%]" />
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Observer<span className="block text-[11px] font-normal text-muted-foreground">Free</span></th>
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Elite<span className="block text-[11px] font-normal text-muted-foreground">$99/mo or $990/yr</span></th>
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Pro<span className="block text-[11px] font-normal text-muted-foreground">$299/mo or $2,990/yr</span></th>
+                  <th className="py-3 text-sm font-semibold text-purple-deep">Sovereign<span className="block text-[11px] font-normal text-muted-foreground">$1,499/mo or $14,990/yr</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.label} className="border-b border-border/40 last:border-0 align-top">
+                    <td className="py-3 pr-4 text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">{row.label}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.observer}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.elite}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.pro}</td>
+                    <td className="py-3 text-foreground leading-relaxed">{row.sovereign}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       {/* DISCLAIMER */}
       <section className="px-6 py-12 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-muted-foreground leading-relaxed text-center italic">
-            PCI is a research confidence framework, not a prediction of returns. QRR is a
-            supplemental advanced-compute risk interpretation layer; it is not a guarantee.
-            Research outputs are informational and not investment advice.
+            PCI is a research confidence framework, not a prediction of returns. Research outputs
+            are informational and not investment advice. Market-data availability, latency, and
+            entitlements vary by asset class, exchange, geography, brokerage connection, and user
+            classification.
           </p>
         </div>
       </section>
+
 
       <Footer />
 
