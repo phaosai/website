@@ -382,15 +382,19 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => runSimulation()}
-              disabled={!canRun || loading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <Sparkles className="w-5 h-5" />
-              Run Live Screen
-            </button>
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => runSimulation()}
+                disabled={loading}
+                className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Run Sunesis Quantum Simulation</span>
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+              </button>
+            </div>
+
           </div>
 
           {/* Working indicator */}
