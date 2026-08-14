@@ -332,8 +332,9 @@ const Pricing = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Pricing — Phaos AI"
-        description="Premium research operating systems. Elite $99, Pro $299, Sovereign $1,499. Institutional-grade conviction without institutional lock-in."
+        description="Sunesis plans: Observer free, Elite $99/mo, Pro $299/mo, Sovereign $1,499/mo. PCI Concurrence across tactical, position, and strategic horizons."
         canonical="/pricing"
+
       />
       <PaymentTestModeBanner />
       <Navigation />
