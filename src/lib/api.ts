@@ -32,8 +32,9 @@ export const blogPosts: BlogPost[] = [
     title: "The Complete Guide to Workflow Automation ROI",
     excerpt:
       "How to calculate the real return on investment from automating your manual business processes. Includes frameworks, formulas, and real-world examples.",
-    author: "Shree Dandekar",
-    authorTitle: "CTO",
+    author: "Daniel Lindros",
+    authorTitle: "Founder & CEO",
+
     readTime: 12,
     date: "2026-03-10",
     category: "Technical Deep Dive",
