@@ -304,7 +304,6 @@ const Pricing = () => {
 
   // Annual is the default selection per institutional positioning.
   const [cadence, setCadence] = useState<Cadence>("annual");
-  const [zeroAuditOpen, setZeroAuditOpen] = useState(false);
 
   const handleBuy = (tier: Tier) => {
     const priceId = cadence === "annual" ? tier.cta.priceIdAnnual : tier.cta.priceIdMonthly;
@@ -538,7 +537,6 @@ const Pricing = () => {
       )}
 
       {/* ZERO-AUDIT MODAL (preview / scaffold) */}
-      <ZeroAuditModal open={zeroAuditOpen} onClose={() => setZeroAuditOpen(false)} onUpgrade={() => { setZeroAuditOpen(false); navigate("/pricing"); }} />
     </div>
   );
 };
@@ -663,67 +661,5 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
   );
 }
 
-function ZeroAuditModal({ open, onClose, onUpgrade }: { open: boolean; onClose: () => void; onUpgrade: () => void }) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="zero-audit-title"
-    >
-      <div className="relative bg-background rounded-2xl shadow-2xl w-full max-w-lg border border-purple-deep/40 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-deep via-purple-deep/60 to-purple-deep" />
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
-        <div className="p-7 pt-9">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-deep/40 bg-purple-deep/10 text-[10px] font-semibold tracking-[0.15em] uppercase text-purple-deep">
-            <Zap className="w-3 h-3" /> Quantum Audits
-          </div>
-          <h2 id="zero-audit-title" className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-            You've used all included Quantum Audits for this period.
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            Keep the workflow moving with a Quantum Burst Pack, upgrade for deeper recurring
-            audit capacity, or continue with standard Truth Machine mode.
-          </p>
-
-          <div className="mt-6 space-y-2.5">
-            <button
-              onClick={onClose}
-              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold"><Zap className="w-4 h-4" /> Buy Quantum Burst Pack</span>
-              <span className="text-xs opacity-80">$199 · 5 audits</span>
-            </button>
-            <button
-              onClick={onUpgrade}
-              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-purple-deep/40 bg-purple-deep/5 text-foreground hover:bg-purple-deep/10 transition-colors"
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="w-4 h-4 text-purple-deep" /> Upgrade Plan</span>
-              <span className="text-xs text-muted-foreground">More audits, more workflow</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border/60 text-foreground hover:bg-foreground/5 transition-colors text-sm"
-            >
-              Continue with standard Truth Machine
-            </button>
-          </div>
-
-          <p className="mt-5 text-[11px] text-muted-foreground italic">
-            Quantum Audit is a supplemental advanced-compute validation layer. It is not a
-            prediction of returns or investment advice.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default Pricing;
