@@ -479,7 +479,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
-                <p className="text-lg font-bold text-primary">Select the Timeframe</p>
+                <p className="text-lg font-bold text-primary [text-shadow:0_0_12px_hsl(var(--primary)/0.55)]">Select the Timeframe</p>
                 <span className="ml-auto text-xs text-muted-foreground">
                   {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label} selected
                 </span>
@@ -514,7 +514,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
-                <p className="text-lg font-bold text-primary">Select the Asset Class(es)</p>
+                <p className="text-lg font-bold text-primary [text-shadow:0_0_12px_hsl(var(--primary)/0.55)]">Select the Asset Class(es)</p>
 
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
@@ -570,7 +570,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-bold text-primary">Select the Financial Platform(s)</p>
+                <p className="text-lg font-bold text-primary [text-shadow:0_0_12px_hsl(var(--primary)/0.55)]">Select the Financial Platform(s)</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
