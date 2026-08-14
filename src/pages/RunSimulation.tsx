@@ -308,7 +308,7 @@ const RunSimulation = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>("30D");
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
 
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["robinhood"]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -392,10 +392,14 @@ const RunSimulation = () => {
   };
 
   const runSimulation = async () => {
-    if (selectedClasses.length === 0) {
+    if (selectedClasses.length === 0 || selectedPlatforms.length === 0) {
       setResults(null);
       setSimulated(false);
-      setErrorMsg("Select at least one Asset Class before running the simulation.");
+      setErrorMsg(
+        selectedClasses.length === 0
+          ? "Select at least one Asset Class before running the simulation."
+          : "Select at least one Platform before running the simulation.",
+      );
       return;
     }
     setResults(null);
@@ -563,11 +567,11 @@ const RunSimulation = () => {
               </div>
             </div>
 
-            {/* Step 2 — Platforms */}
+            {/* Step 3 — Platform */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-semibold">Select every platform where you can actually trade</p>
+                <p className="text-lg font-semibold">Platform — select every platform where you can actually trade</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
@@ -616,16 +620,18 @@ const RunSimulation = () => {
               <button
                 type="button"
                 onClick={() => runSimulation()}
-                disabled={loading || selectedClasses.length === 0}
+                disabled={loading || selectedClasses.length === 0 || selectedPlatforms.length === 0}
                 className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Run Sunesis Quantum Simulation</span>
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
               </button>
-              {selectedClasses.length === 0 && (
+              {(selectedClasses.length === 0 || selectedPlatforms.length === 0) && (
                 <p className="text-xs text-muted-foreground">
-                  Select at least one Asset Class to run the simulation.
+                  {selectedClasses.length === 0
+                    ? "Select at least one Asset Class to run the simulation."
+                    : "Select at least one Platform to run the simulation."}
                 </p>
               )}
             </div>
