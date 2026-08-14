@@ -9,6 +9,7 @@ import type { AssetClass } from "@/data/simulationCandidates";
 import { useIsLiveAccount } from "@/hooks/useIsLiveAccount";
 import { LiveExplainerDialog } from "@/components/sunesis/LiveExplainerDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const investmentGroups: { group: string; items: { value: AssetClass; label: string }[] }[] = [
   {
