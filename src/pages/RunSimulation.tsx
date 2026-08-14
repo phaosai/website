@@ -363,9 +363,9 @@ const RunSimulation = () => {
   // simulation can never come back empty, whatever the selection.
   const buildSimulatedRows = async (): Promise<TopRow[]> => {
     const { CANDIDATES } = await import("@/data/simulationCandidates");
-    const classes = selectedClasses.length ? selectedClasses : allAssetValues;
-    const byClass = CANDIDATES.filter((c) => classes.includes(c.assetClass));
-    const pool = byClass.length ? byClass : CANDIDATES;
+    const classes = selectedClasses;
+    const pool = CANDIDATES.filter((c) => classes.includes(c.assetClass));
+
     const seedOf = (s: string) => s.split("").reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 100000, 7);
 
     return pool
@@ -392,11 +392,18 @@ const RunSimulation = () => {
   };
 
   const runSimulation = async () => {
+    if (selectedClasses.length === 0) {
+      setResults(null);
+      setSimulated(false);
+      setErrorMsg("Select at least one Asset Class before running the simulation.");
+      return;
+    }
     setResults(null);
     setErrorMsg(null);
     setSimulated(false);
     setLoading(true);
     setProgress(0);
+
 
     const progressInterval = window.setInterval(
       () => setProgress((p) => Math.min(p + 6, 92)),
@@ -605,18 +612,24 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3">
               <button
                 type="button"
                 onClick={() => runSimulation()}
-                disabled={loading}
+                disabled={loading || selectedClasses.length === 0}
                 className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">Run Sunesis Quantum Simulation</span>
                 <Sparkles className="w-5 h-5 flex-shrink-0" />
               </button>
+              {selectedClasses.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Select at least one Asset Class to run the simulation.
+                </p>
+              )}
             </div>
+
 
           </div>
 
