@@ -463,7 +463,7 @@ const RunSimulation = () => {
             <span className="text-xs font-semibold tracking-[0.2em] uppercase text-muted-foreground">Phaos Sunesis Simulator</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
-            Sample <span className="text-gradient-purple">Conviction Index</span> Results
+            <span className="whitespace-nowrap">Sample <span className="text-gradient-purple">Conviction Index</span> Results</span>
           </h1>
 
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -514,7 +514,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
-                <p className="text-lg font-semibold">Select the Asset Classes to consider</p>
+                <p className="text-lg font-semibold">Select the Asset Class(es)</p>
 
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
@@ -570,7 +570,7 @@ const RunSimulation = () => {
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">3</span>
-                <p className="text-lg font-semibold">Platform — select every platform where you can actually trade</p>
+                <p className="text-lg font-semibold">Select the Financial Platform(s)</p>
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     type="button"
