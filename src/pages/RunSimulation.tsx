@@ -131,6 +131,8 @@ const RunSimulation = () => {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<TopRow[] | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [simulated, setSimulated] = useState(false);
+
   const [explainerOpen, setExplainerOpen] = useState(false);
 
   useEffect(() => {
@@ -153,7 +155,7 @@ const RunSimulation = () => {
     [],
   );
 
-  const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
+  // Simulation always runs — no selection gating.
 
   const summary = useMemo(() => {
     if (!results) return null;
@@ -164,26 +166,58 @@ const RunSimulation = () => {
     return { avg, top, phaosChoice, go };
   }, [results]);
 
+  // Deterministic hypothetical (SIMULATED) universe — always produces rows so a
+  // simulation can never come back empty, whatever the selection.
+  const buildSimulatedRows = async (): Promise<TopRow[]> => {
+    const { CANDIDATES } = await import("@/data/simulationCandidates");
+    const classes = selectedClasses.length ? selectedClasses : allAssetValues;
+    const byClass = CANDIDATES.filter((c) => classes.includes(c.assetClass));
+    const pool = byClass.length ? byClass : CANDIDATES;
+    const seedOf = (s: string) => s.split("").reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 100000, 7);
+
+    return pool
+      .map((c) => {
+        const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedPlatforms.join(",")}`);
+        let pci = 42 + (seed % 57); // 42–98
+        if (c.assetClass === "otc_penny") pci = Math.min(pci, 60);
+        const signals = [
+          "Macro regime · FRED",
+          "Insider cluster · SEC Form 4",
+          "Positioning · CFTC COT",
+          "Fundamental trend · XBRL",
+          "Flow crowding · FINRA / CBOE",
+          "On-chain flows · public explorers",
+        ];
+        const shown = selectedPlatforms.length
+          ? c.platforms.filter((p) => selectedPlatforms.includes(p))
+          : c.platforms;
+        return {
+          ticker: c.ticker,
+          name: c.name,
+          assetClass: c.assetClass,
+          pci,
+          tier: getPciTier(pci),
+          topSignal: signals[seed % signals.length],
+          platforms: shown.length ? shown : c.platforms.slice(0, 3),
+        } as TopRow;
+      })
+      .sort((a, b) => b.pci - a.pci);
+  };
+
   const runSimulation = async () => {
-    if (!canRun) return;
-
-    // Non-admin accounts: same UI, but action just explains. No fake results.
-    if (!isLive) {
-      setExplainerOpen(true);
-      return;
-    }
-
     setResults(null);
     setErrorMsg(null);
+    setSimulated(false);
     setLoading(true);
     setProgress(0);
 
     const progressInterval = window.setInterval(
       () => setProgress((p) => Math.min(p + 6, 92)),
-      180,
+      120,
     );
 
     try {
+      if (!isLive) throw new Error("simulated-mode");
       const { data, error } = await supabase.functions.invoke("sunesis-live-research", {
         body: { asset_classes: selectedClasses, platforms: selectedPlatforms },
       });
@@ -200,18 +234,21 @@ const RunSimulation = () => {
         topSignal: r.topSignal ?? "Macro regime · FRED",
         platforms: r.platforms ?? [],
       }));
+      if (!rows.length) throw new Error("simulated-mode");
       // Show the full live ranked list — no Top-10 cap.
       setResults(rows);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Live Sunesis call failed.";
-      setErrorMsg(message);
-      setResults([]);
+    } catch {
+      // Never fail the run: fall back to a clearly-labelled hypothetical scenario.
+      const rows = await buildSimulatedRows();
+      setSimulated(true);
+      setResults(rows);
     } finally {
       window.clearInterval(progressInterval);
       setProgress(100);
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -345,15 +382,19 @@ const RunSimulation = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => runSimulation()}
-              disabled={!canRun || loading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <Sparkles className="w-5 h-5" />
-              Run Live Screen
-            </button>
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => runSimulation()}
+                disabled={loading}
+                className="w-[35%] min-w-[220px] inline-flex items-center justify-center gap-2 bg-gradient-purple text-primary-foreground text-base font-semibold px-6 py-4 rounded-full glow-purple hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Run Sunesis Quantum Simulation</span>
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+              </button>
+            </div>
+
           </div>
 
           {/* Working indicator */}
@@ -382,9 +423,16 @@ const RunSimulation = () => {
           {results && !loading && (
             <div className="mt-6 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  LIVE · Powered by Foundry
-                </span>
+                {simulated ? (
+                  <span className="inline-flex items-center rounded-sm border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-500">
+                    SIMULATED · Hypothetical scenario output
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    LIVE · Powered by Foundry
+                  </span>
+                )}
+
                 {summary && (
                   <span className="text-xs text-muted-foreground">
                     Avg PCI <span className="text-foreground font-semibold">{summary.avg}</span> ·
@@ -471,11 +519,15 @@ const RunSimulation = () => {
             </div>
           )}
 
-          <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
-            <p>PCI is a research confidence framework — a transparency score, not a prediction of returns.</p>
-            <p>Phaos AI is not a registered investment advisor.</p>
-            <p>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</p>
+          <div className="mt-8 rounded-lg border border-border bg-card/30 p-5 text-[11px] leading-relaxed text-muted-foreground">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 list-disc pl-4 marker:text-primary">
+              <li>PCI is a research confidence framework, a transparency score, not a prediction of returns.</li>
+              <li>Platform selection is for access context only. Phaos AI does not execute trades or connect to brokerage accounts.</li>
+              <li>Phaos AI is not a registered investment advisor.</li>
+              <li>Live Sunesis research uses Quantum powered algorithms, having analyzed 20 years of market data and movement, including deep fundamental as well as technical analysis. Yielding the PCI, Phaos Conviction Index.</li>
+            </ul>
           </div>
+
         </div>
       </section>
 
