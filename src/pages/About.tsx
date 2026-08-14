@@ -179,13 +179,13 @@ const About = () => {
             </h2>
             <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
               <p>
-                Phaos AI is developing a dual-platform solution: <strong className="text-foreground">Voice AI Agents</strong> that handle inbound and outbound calls with human-like intelligence, and <strong className="text-foreground">Agentic Workflows</strong> that automate complex, multi-step business processes end-to-end.
+                Phaos AI has developed a dual-platform solution, comprising <strong className="text-foreground">AI Voice Agents</strong> for human-like inbound call management and <strong className="text-foreground">Agentic Workflows</strong> for end-to-end business process automation. Originating within the Document Solutions industry to eliminate paper-heavy workflows, manual service dispatching, and excessive customer touchpoints, our ecosystem has been engineered from the ground up to eradicate operational friction through seamless, autonomous intelligence.
               </p>
               <p>
-                We started by tackling the printing, copier, and document solutions industry — a sector drowning in manual processes, paper-heavy workflows, and excessive customer touchpoints. But our technology is built to serve any business that relies on high call volumes, repetitive operations, and disconnected systems.
+                Building upon this specialized foundation, the platform has been optimized and scaled to serve 40 additional industries that rely on high call volumes, repetitive operations, and disparate systems. By executing intelligent routing and cross-platform data synchronization, Phaos AI replaces legacy manual workloads with unified, enterprise-grade automation.
               </p>
               <p>
-                From automated service dispatching and intelligent call routing to proactive customer outreach and cross-platform data sync, Phaos AI replaces the manual grind with seamless, autonomous automation.
+                Designed for rapid deployment, our infrastructure features streamlined automated onboarding to minimize setup time and maximize immediate return on investment for our clients and partners. Furthermore, robust white labeling partnership opportunities empower agencies, managed service providers, and industry leaders to deliver world-class AI automation under their own brand, establishing our technology as a powerful engine for scalable growth.
               </p>
             </div>
           </motion.div>
