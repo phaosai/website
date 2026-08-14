@@ -197,14 +197,8 @@ const RunSimulation = () => {
         const seed = seedOf(`${c.ticker}|${c.assetClass}|${selectedTimeframe}|${selectedPlatforms.join(",")}`);
         let pci = 42 + (seed % 57); // 42–98
         if (c.assetClass === "otc_penny") pci = Math.min(pci, 60);
-        const signals = [
-          "Macro regime · FRED",
-          "Insider cluster · SEC Form 4",
-          "Positioning · CFTC COT",
-          "Fundamental trend · XBRL",
-          "Flow crowding · FINRA / CBOE",
-          "On-chain flows · public explorers",
-        ];
+        const signals = signalsForClass(c.assetClass);
+
         const shown = selectedPlatforms.length
           ? c.platforms.filter((p) => selectedPlatforms.includes(p))
           : c.platforms;
