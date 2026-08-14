@@ -490,7 +490,7 @@ const RunSimulation = () => {
                   <span className="text-xs text-muted-foreground">
                     Avg PCI <span className="text-foreground font-semibold">{summary.avg}</span> ·
                     {" "}{summary.phaosChoice} Phaos Choice ·
-                    {" "}{summary.go} High Convergence ·
+                    {" "}{summary.go} Convergence ·
                     {" "}top pick <span className="text-foreground font-semibold">{summary.top.ticker}</span>
                   </span>
                 )}
