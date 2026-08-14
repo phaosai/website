@@ -11,41 +11,51 @@ import { useAuth } from "@/contexts/AuthContext";
 type Cadence = "monthly" | "annual";
 
 interface Tier {
-  id: "sovereign" | "pro" | "elite";
+  id: "sovereign" | "pro" | "elite" | "observer";
   name: string;
   tagline: string;
   monthly: number;
   annual: number; // total annual = monthly * 10 (2 months free)
-  quantumAudits: string;
+  pciAccess: string;
   perfectFor: string;
   features: string[];
+  exclusions?: string;
+  whyUpgrade?: string;
   cta: { label: string; priceIdMonthly?: string; priceIdAnnual?: string; href?: string };
   badge?: string;
-  variant: "flagship" | "popular" | "entry";
+  variant: "flagship" | "popular" | "entry" | "free";
 }
 
 const TIERS: Tier[] = [
   {
     id: "sovereign",
     name: "Sovereign",
-    tagline: "The full research operating system for institutional-grade operators.",
+    tagline: "The institutional Sunesis research operating system.",
     monthly: 1499,
     annual: 14990,
-    quantumAudits: "8 Quantum Audits / month",
+    pciAccess: "All 10 PCI horizons · 1D through 3Y",
     perfectFor:
-      "RIAs, family offices, boutique funds, and serious operators who need depth without institutional procurement friction.",
+      "RIAs, family offices, boutique funds, multi-strategy operators, and research organizations managing multiple portfolios, mandates, entities, or client relationships.",
     features: [
-      "Full Sunesis research environment with all signal categories unlocked",
-      "8 Quantum Audits / month — advanced-compute validation for highest-conviction theses",
-      "Unlimited Truth Memos and audit-ready research receipts",
-      "Continuous monitoring with conviction-drift alerts and regime-shift simulations",
-      "Workflow governance: roles, approvals, sign-offs, and append-only audit trails",
-      "Branded client portals for sharing research without exposing the workspace",
-      "Multi-entity / multi-book separation for households, mandates, and strategies",
-      "Compliance-ready treasury & RWA monitoring scaffolds",
-      "Priority research queue and dedicated implementation support",
-      "First access to new modules across the Phaos ecosystem",
+      "Everything in Pro, plus:",
+      "Complete PCI access across 1D, 7D, 14D, 30D, 60D, 90D, 180D, 1Y, 2Y, and 3Y",
+      "Exclusive 1-Day PCI for premium tactical monitoring and rapid conviction-change detection",
+      "Exclusive 2-Year and 3-Year PCI for structural macro, strategic allocation, and longer-duration mandate research",
+      "Full PCI Concurrence across all ten horizons, including alignment, divergence, transition, and regime-shift conditions",
+      "Up to 20 years of available PCI history, market context, and regime analysis",
+      "Deepest available PCI factor analysis and methodology visibility",
+      "Portfolio-, mandate-, entity-, and book-level monitoring",
+      "Continuous alerts for conviction drift, material evidence changes, and mandate-relevant risk events",
+      "Multi-entity and multi-book separation for households, strategies, funds, mandates, client segments, and internal teams",
+      "Institutional governance with roles, permissions, approvals, sign-offs, retention controls, and append-only audit trails",
+      "Branded client portals and controlled research sharing without exposing internal workspaces",
+      "Compliance-ready research receipts with source provenance, timestamps, methodology, assumptions, and disclosure fields",
+      "Higher-capacity scenario analysis and portfolio-level stress testing",
+      "Secure API and data-export options, subject to contract and underlying data-license permissions",
+      "Priority onboarding, implementation, research support, and early access to Phaos ecosystem modules",
     ],
+    whyUpgrade:
+      "Sovereign is not simply more market data or more research. It gives an organization the controls to create, review, retain, monitor, govern, and deliver investment research across multiple entities and stakeholders.",
     cta: {
       label: "Start with Sovereign",
       priceIdMonthly: "pantheon_monthly",
@@ -56,23 +66,31 @@ const TIERS: Tier[] = [
   {
     id: "pro",
     name: "Pro",
-    tagline: "Deeper workflow, richer scenarios, and recurring audit depth.",
+    tagline: "Tactical-to-macro intelligence for decisions you need to defend.",
     monthly: 299,
     annual: 2990,
-    quantumAudits: "4 Quantum Audits / month",
+    pciAccess: "Tactical · Position · Strategic surfaces",
     perfectFor:
-      "Active investors, advisors, and small research teams who need to move from raw signal to defensible conviction every week.",
+      "Active investors, advisors, analysts, and small research teams that need to monitor changing conviction, stress-test decisions, and maintain a defensible research record.",
     features: [
       "Everything in Elite, plus:",
-      "4 Quantum Audits / month — stress-test your highest-conviction theses",
-      "Expanded Truth Memo allowance with full bull / bear case generation",
-      "Scenario sandbox: macro stress, rates, vol, FX, and commodity shifts",
-      "What-Changed insights and conviction-drift monitoring",
-      "Workflow governance with approvals and version history",
-      "Audit Receipt exports (PDF + share links) for every research artifact",
-      "Save and monitor your highest-conviction ideas across the workspace",
-      "Priority email support",
+      "Full PCI access across 7D, 14D, 30D, 60D, 90D, 180D, and 1Y",
+      "Tactical PCI horizons for event-driven, swing, and short-duration position research",
+      "Full PCI factor attribution, including horizon-specific drivers and changes in the evidence base",
+      "PCI Concurrence across tactical, position, and strategic horizons",
+      "What Changed intelligence that identifies the evidence, factors, and market conditions behind a conviction shift",
+      "Up to five years of PCI history and historical-regime context",
+      "Advanced scenario sandbox for macro, rates, volatility, FX, commodities, and cross-asset shocks",
+      "Advanced Truth Memos with structured bull case, bear case, counter-thesis, key risks, evidence hierarchy, and decision record",
+      "Recurring monitoring, expanded watchlist capacity, and higher alert volume",
+      "Secure share links and PDF Audit Receipts",
+      "Shared workspaces for small teams",
+      "Role-based permissions, approvals, sign-offs, and version history",
+      "Read-only multi-broker portfolio aggregation and research-to-portfolio context where supported",
+      "Priority support",
     ],
+    whyUpgrade:
+      "Pro is where Sunesis becomes a serious conviction-management workflow. The buyer pays for tactical decision support, deeper analysis, research rigor, collaborative review, and recurring monitoring.",
     cta: {
       label: "Start with Pro",
       priceIdMonthly: "kyrios_monthly",
@@ -84,22 +102,30 @@ const TIERS: Tier[] = [
   {
     id: "elite",
     name: "Elite",
-    tagline: "Truth-first foundational research with premium audit access.",
+    tagline: "Truth-first live research for independent operators.",
     monthly: 99,
     annual: 990,
-    quantumAudits: "1 Quantum Audit / month",
+    pciAccess: "Position · Strategic surfaces",
     perfectFor:
-      "Independent researchers and serious operators who want sharper signal quality without enterprise complexity.",
+      "Independent researchers, sophisticated individual investors, and active operators who need broad market access and a repeatable personal research workflow.",
     features: [
-      "Full access to the Sunesis research environment",
-      "1 Quantum Audit / month — entry-level advanced-compute validation",
-      "Source-grounded Truth Memos with bull / bear framing",
-      "Phaos Conviction Index across 60+ publicly accessible signal categories",
-      "Evidence trail and methodology transparency on every result",
-      "Watchlist with conviction monitoring",
-      "Standard Truth Machine simulations",
+      "Everything in Observer, plus:",
+      "Unlimited quantum-powered research across all 24 supported asset classes",
+      "Full standard brokerage and research-source coverage",
+      "Full PCI ratings for 30D, 60D, 90D, 180D, and 1Y",
+      "Core PCI driver analysis across technical, fundamental, market-structure, sentiment, and macro factors where applicable",
+      "Position and strategic PCI Concurrence views",
+      "Full source-grounded Truth Memos with bull case, bear case, evidence trail, and methodology references",
+      "Up to two years of PCI history",
+      "Expanded watchlists and scheduled alerts for material PCI movement",
+      "Saved research, reusable views, and a private workspace",
+      "Standard research-receipt exports for personal use",
+      "Standard scenario analysis across macro, rates, volatility, FX, commodities, and related market conditions",
+      "Up to three read-only brokerage connections where supported",
       "Email support",
     ],
+    whyUpgrade:
+      "Elite turns discovery into a real, daily research process. It is priced for broad adoption while providing the market coverage, PCI depth, evidence, historical context, and alerts serious independent users need.",
     cta: {
       label: "Start with Elite",
       priceIdMonthly: "sunesis_monthly",
@@ -107,36 +133,169 @@ const TIERS: Tier[] = [
     },
     variant: "entry",
   },
+  {
+    id: "observer",
+    name: "Observer",
+    tagline: "See where conviction is forming.",
+    monthly: 0,
+    annual: 0,
+    pciAccess: "30D and 1Y summary ratings",
+    perfectFor:
+      "Curious investors and prospective users evaluating Sunesis, exploring the Phaos Conviction Index, and validating live research before upgrading.",
+    features: [
+      "Unlimited quantum-powered live searches inside a focused discovery universe",
+      "Access to 3 curated asset classes: major U.S. equities, ETFs, and major crypto assets",
+      "Curated brokerage and research-source coverage",
+      "PCI summary ratings for 30 Days and 1 Year",
+      "Overall PCI score and directional classification: Strong Bullish, Bullish, Neutral, Bearish, or Strong Bearish",
+      "Standard Truth Memo previews with source visibility and selected evidence",
+      "30 days of PCI historical context",
+      "One personal watchlist with up to 10 instruments",
+      "Daily data refresh cadence",
+      "One read-only brokerage connection where supported",
+    ],
+    exclusions:
+      "Observer does not include full factor drilldowns, detailed PCI explanations, exports, share links, scenario analysis, tactical PCI, live alerts, team workspaces, or portfolio-level workflows.",
+    cta: {
+      label: "Explore Sunesis free",
+      href: "/auth?mode=signup",
+    },
+    variant: "free",
+  },
 ];
 
-const ADD_ON_PACKS = [
+const PCI_SURFACES = [
   {
-    name: "Quantum Burst Pack",
-    icon: Zap,
-    price: "$199",
-    description: "5 additional Quantum Audit executions. Use any time within the next 90 days.",
-    priceId: "quantum_burst_pack",
-    featured: true,
+    surface: "Tactical",
+    horizons: "1D, 7D, 14D",
+    observer: "Not included",
+    elite: "Not included",
+    pro: "7D and 14D",
+    sovereign: "1D, 7D, and 14D",
   },
   {
-    name: "Premium Report Pack",
-    icon: Sparkles,
-    price: "$99",
-    description: "10 additional generated audit-ready research memos with PDF export.",
-    priceId: "premium_report_pack",
+    surface: "Position",
+    horizons: "30D, 60D, 90D",
+    observer: "30D summary",
+    elite: "Full",
+    pro: "Full",
+    sovereign: "Full",
   },
   {
-    name: "Monitoring Pack",
-    icon: Shield,
-    price: "$79",
-    description: "Add 25 monitored tickers with conviction-drift alerts for the billing period.",
-    priceId: "monitoring_pack",
+    surface: "Strategic",
+    horizons: "180D, 1Y, 2Y, 3Y",
+    observer: "1Y summary",
+    elite: "180D and 1Y",
+    pro: "180D and 1Y",
+    sovereign: "Full through 3Y",
+  },
+];
+
+const COMPARISON_ROWS: { label: string; observer: string; elite: string; pro: string; sovereign: string }[] = [
+  {
+    label: "Best for",
+    observer: "Curious investors and prospective users",
+    elite: "Independent researchers and serious investors",
+    pro: "Active investors, advisors, and small research teams",
+    sovereign: "RIAs, family offices, boutique funds, and multi-entity operators",
+  },
+  {
+    label: "Core value",
+    observer: "Experience live Sunesis research",
+    elite: "Build a repeatable personal research process",
+    pro: "Turn research into monitored, defensible team decisions",
+    sovereign: "Run institutional research, governance, and client delivery",
+  },
+  {
+    label: "Asset access",
+    observer: "3 curated asset classes",
+    elite: "All 24 supported asset classes",
+    pro: "All 24 supported asset classes",
+    sovereign: "All 24 supported asset classes, plus eligible custom coverage",
+  },
+  {
+    label: "Brokerage coverage",
+    observer: "Selected sources and one read-only connection where supported",
+    elite: "Standard brokerage and research-source coverage",
+    pro: "Multi-broker portfolio aggregation where supported",
+    sovereign: "Multi-entity portfolio, mandate, and book-level views where supported",
+  },
+  {
+    label: "PCI horizons",
+    observer: "30D and 1Y summary",
+    elite: "30D, 60D, 90D, 180D, and 1Y",
+    pro: "7D, 14D, 30D, 60D, 90D, 180D, and 1Y",
+    sovereign: "All: 1D, 7D, 14D, 30D, 60D, 90D, 180D, 1Y, 2Y, 3Y",
+  },
+  {
+    label: "PCI detail",
+    observer: "Score and direction only",
+    elite: "Core drivers",
+    pro: "Full attribution and factor change analysis",
+    sovereign: "Full attribution, methodology, and regime context",
+  },
+  {
+    label: "PCI history",
+    observer: "30 days",
+    elite: "Up to 2 years",
+    pro: "Up to 5 years",
+    sovereign: "Up to 20 years, where data supports it",
+  },
+  {
+    label: "PCI Concurrence",
+    observer: "Preview",
+    elite: "Position and strategic views",
+    pro: "Tactical through strategic views",
+    sovereign: "Full 1D through 3Y horizon surface",
+  },
+  {
+    label: "Truth Memos",
+    observer: "Standard preview",
+    elite: "Full source-grounded memos",
+    pro: "Advanced memos with counter-thesis and decision record",
+    sovereign: "Institutional research outputs and controlled delivery",
+  },
+  {
+    label: "Monitoring",
+    observer: "One small watchlist",
+    elite: "Expanded watchlists and scheduled alerts",
+    pro: "Conviction drift, What Changed, recurring monitoring",
+    sovereign: "Portfolio, mandate, evidence, and regime-shift monitoring",
+  },
+  {
+    label: "Scenario analysis",
+    observer: "Not included",
+    elite: "Standard research scenarios",
+    pro: "Advanced cross-asset stress testing",
+    sovereign: "Portfolio-level and higher-capacity scenarios",
+  },
+  {
+    label: "Collaboration",
+    observer: "Individual only",
+    elite: "Private workspace",
+    pro: "Team workspace, roles, approvals, version history",
+    sovereign: "Multi-entity governance, retention, and audit trails",
+  },
+  {
+    label: "Sharing and exports",
+    observer: "Not included",
+    elite: "Personal research receipts",
+    pro: "Secure links and PDF Audit Receipts",
+    sovereign: "Branded portals, controlled sharing, expanded exports, API options",
+  },
+  {
+    label: "Support",
+    observer: "Self-serve",
+    elite: "Email support",
+    pro: "Priority support",
+    sovereign: "Priority implementation and dedicated support",
   },
 ];
 
 function formatPrice(n: number) {
   return n.toLocaleString("en-US");
 }
+
 
 const Pricing = () => {
   const { user } = useAuth();
@@ -145,14 +304,18 @@ const Pricing = () => {
 
   // Annual is the default selection per institutional positioning.
   const [cadence, setCadence] = useState<Cadence>("annual");
-  const [zeroAuditOpen, setZeroAuditOpen] = useState(false);
 
   const handleBuy = (tier: Tier) => {
+    if (tier.cta.href) {
+      navigate(tier.cta.href);
+      return;
+    }
     const priceId = cadence === "annual" ? tier.cta.priceIdAnnual : tier.cta.priceIdMonthly;
     if (!priceId) {
       navigate("/contact");
       return;
     }
+
     if (!user) {
       navigate(`/auth?mode=signup&plan=${priceId}`);
       return;
@@ -169,8 +332,9 @@ const Pricing = () => {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       <SEOHead
         title="Pricing — Phaos AI"
-        description="Premium research operating systems. Elite $99, Pro $299, Sovereign $1,499. Institutional-grade conviction without institutional lock-in."
+        description="Sunesis plans: Observer free, Elite $99/mo, Pro $299/mo, Sovereign $1,499/mo. PCI Concurrence across tactical, position, and strategic horizons."
         canonical="/pricing"
+
       />
       <PaymentTestModeBanner />
       <Navigation />
@@ -244,9 +408,9 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* TIERS — Sovereign · Pro · Elite (intentional order, preserved on mobile) */}
+      {/* TIERS — Sovereign · Pro · Elite · Observer (intentional order, preserved on mobile) */}
       <section className="px-6 pb-20" aria-label="Subscription tiers">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
           {TIERS.map((tier) => (
             <PricingCard
               key={tier.id}
@@ -262,81 +426,99 @@ const Pricing = () => {
         </p>
       </section>
 
-      {/* QUANTUM BURST PACK BANNER */}
-      <section className="px-6 pb-12" aria-label="Quantum Burst Pack">
+      {/* PCI CONCURRENCE — decision surfaces */}
+      <section className="px-6 pb-16" aria-label="PCI access model">
         <div className="max-w-6xl mx-auto rounded-2xl border border-purple-deep/40 bg-gradient-to-br from-purple-deep/15 via-purple-deep/5 to-transparent p-8 md:p-10">
-          <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-purple-deep" />
-                <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-purple-deep">
-                  Add-on
-                </span>
-              </div>
-              <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-                Quantum Burst Pack
-              </h2>
-              <p className="mt-3 text-muted-foreground max-w-2xl leading-relaxed">
-                Burned through your included Quantum Audits? Add execution credits without
-                committing to a higher tier. Stress-test the next high-conviction idea the
-                moment it lands — not next billing cycle.
-              </p>
-            </div>
-            <div className="flex flex-col items-stretch md:items-end gap-3">
-              <div className="text-right">
-                <span className="text-3xl font-semibold text-foreground">$199</span>
-                <span className="text-sm text-muted-foreground"> / 5 audits</span>
-              </div>
-              <button
-                onClick={() => setZeroAuditOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
-              >
-                Add Quantum Burst <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-purple-deep" />
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-purple-deep">
+              PCI access model
+            </span>
           </div>
+          <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+            PCI Concurrence
+          </h2>
+          <p className="mt-3 text-muted-foreground max-w-3xl leading-relaxed">
+            PCI ratings are grouped into named decision surfaces. PCI Concurrence shows where
+            time horizons agree, disagree, or transition — a stock aligned across 7D, 30D, 90D
+            and 1Y, a crypto asset with 7D bearish momentum but a bullish 1Y strategic PCI, or a
+            portfolio where formerly aligned horizons begin diverging into a regime shift.
+          </p>
 
-          {/* Other add-on packs */}
-          <div className="mt-8 pt-8 border-t border-border/50 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {ADD_ON_PACKS.filter((p) => !p.featured).map((p) => (
-              <div key={p.name} className="rounded-xl border border-border/60 bg-card/40 p-5">
-                <div className="flex items-center gap-2">
-                  <p.icon className="w-4 h-4 text-purple-deep" />
-                  <p className="text-sm font-semibold text-foreground">{p.name}</p>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{p.description}</p>
-                <p className="mt-3 text-lg font-semibold text-foreground">{p.price}</p>
-              </div>
-            ))}
-            <div className="rounded-xl border border-dashed border-border/60 bg-transparent p-5 flex items-center">
-              <p className="text-xs text-muted-foreground italic">
-                Compliance & treasury packs — coming soon for Sovereign customers.
-              </p>
-            </div>
+          <div className="mt-8 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="text-left border-b border-border/60">
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">PCI surface</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Horizons</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Observer</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Elite</th>
+                  <th className="py-3 pr-4 text-[11px] font-semibold tracking-[0.15em] uppercase text-muted-foreground">Pro</th>
+                  <th className="py-3 text-[11px] font-semibold tracking-[0.15em] uppercase text-purple-deep">Sovereign</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PCI_SURFACES.map((r) => (
+                  <tr key={r.surface} className="border-b border-border/40 last:border-0">
+                    <td className="py-3 pr-4 font-medium text-foreground">{r.surface}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.horizons}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.observer}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.elite}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{r.pro}</td>
+                    <td className="py-3 text-foreground">{r.sovereign}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      {/* DEMO TRIGGER for the zero-audit modal */}
-      <section className="px-6 pb-20 text-center">
-        <button
-          onClick={() => setZeroAuditOpen(true)}
-          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
-        >
-          Preview the in-app exhaustion experience →
-        </button>
+      {/* FULL PLAN COMPARISON */}
+      <section className="px-6 pb-20" aria-label="Plan comparison">
+        <div className="max-w-6xl mx-auto rounded-2xl border border-border/60 bg-card/40 p-6 md:p-8">
+          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground text-center">
+            Compare every plan
+          </p>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead>
+                <tr className="text-left border-b border-border/60">
+                  <th className="py-3 pr-4 w-[16%]" />
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Observer<span className="block text-[11px] font-normal text-muted-foreground">Free</span></th>
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Elite<span className="block text-[11px] font-normal text-muted-foreground">$99/mo or $990/yr</span></th>
+                  <th className="py-3 pr-4 text-sm font-semibold text-foreground">Pro<span className="block text-[11px] font-normal text-muted-foreground">$299/mo or $2,990/yr</span></th>
+                  <th className="py-3 text-sm font-semibold text-purple-deep">Sovereign<span className="block text-[11px] font-normal text-muted-foreground">$1,499/mo or $14,990/yr</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.label} className="border-b border-border/40 last:border-0 align-top">
+                    <td className="py-3 pr-4 text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">{row.label}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.observer}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.elite}</td>
+                    <td className="py-3 pr-4 text-muted-foreground leading-relaxed">{row.pro}</td>
+                    <td className="py-3 text-foreground leading-relaxed">{row.sovereign}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       {/* DISCLAIMER */}
       <section className="px-6 py-12 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-muted-foreground leading-relaxed text-center italic">
-            PCI is a research confidence framework, not a prediction of returns. QRR is a
-            supplemental advanced-compute risk interpretation layer; it is not a guarantee.
-            Research outputs are informational and not investment advice.
+            PCI is a research confidence framework, not a prediction of returns. Research outputs
+            are informational and not investment advice. Market-data availability, latency, and
+            entitlements vary by asset class, exchange, geography, brokerage connection, and user
+            classification.
           </p>
         </div>
       </section>
+
 
       <Footer />
 
@@ -361,7 +543,6 @@ const Pricing = () => {
       )}
 
       {/* ZERO-AUDIT MODAL (preview / scaffold) */}
-      <ZeroAuditModal open={zeroAuditOpen} onClose={() => setZeroAuditOpen(false)} onUpgrade={() => { setZeroAuditOpen(false); navigate("/pricing"); }} />
     </div>
   );
 };
@@ -387,9 +568,9 @@ function Benchmark({ name, price, sub, muted, highlight }: { name: string; price
 }
 
 function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; onBuy: () => void }) {
-  const isAnnual = cadence === "annual";
-  const monthlyEquivalent = isAnnual ? Math.round(tier.annual / 12) : tier.monthly;
-  const cadenceLabel = isAnnual ? "/month, billed annually" : "/month";
+  const isFree = tier.monthly === 0;
+  const isAnnual = cadence === "annual" && !isFree;
+  const savings = tier.monthly * 12 - tier.annual;
 
   const variantClasses =
     tier.variant === "flagship"
@@ -421,18 +602,26 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
 
         <div className="mt-5 flex items-baseline gap-1.5">
-          <span className="text-4xl md:text-5xl font-semibold text-foreground">${formatPrice(monthlyEquivalent)}</span>
-          <span className="text-sm text-muted-foreground">{cadenceLabel}</span>
+          <span className="text-4xl md:text-5xl font-semibold text-foreground">
+            ${formatPrice(isAnnual ? tier.annual : tier.monthly)}
+          </span>
+          <span className="text-sm text-muted-foreground">{isAnnual ? "/year" : "/month"}</span>
         </div>
-        {isAnnual && (
+        {isFree ? (
+          <p className="mt-1 text-xs text-muted-foreground">Free forever. No card required.</p>
+        ) : isAnnual ? (
           <p className="mt-1 text-xs text-purple-deep">
-            ${formatPrice(tier.annual)}/yr · 2 months free vs. monthly
+            ${formatPrice(tier.monthly)}/month billed monthly · save ${formatPrice(savings)} annually
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-purple-deep">
+            or ${formatPrice(tier.annual)}/year, save ${formatPrice(savings)}
           </p>
         )}
 
         <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-purple-deep/30 bg-purple-deep/5 text-xs font-medium text-purple-deep">
           <Zap className="w-3 h-3" />
-          {tier.quantumAudits}
+          {tier.pciAccess}
         </div>
       </div>
 
@@ -449,7 +638,17 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
             </li>
           ))}
         </ul>
+        {tier.exclusions && (
+          <p className="mt-4 text-xs text-muted-foreground/80 italic leading-relaxed">{tier.exclusions}</p>
+        )}
+        {tier.whyUpgrade && (
+          <p className="mt-4 pt-4 border-t border-border/40 text-xs text-muted-foreground leading-relaxed">
+            <span className="text-foreground/80 font-medium">Why users upgrade: </span>
+            {tier.whyUpgrade}
+          </p>
+        )}
       </div>
+
 
       <button
         onClick={onBuy}
@@ -468,67 +667,5 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
   );
 }
 
-function ZeroAuditModal({ open, onClose, onUpgrade }: { open: boolean; onClose: () => void; onUpgrade: () => void }) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="zero-audit-title"
-    >
-      <div className="relative bg-background rounded-2xl shadow-2xl w-full max-w-lg border border-purple-deep/40 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-deep via-purple-deep/60 to-purple-deep" />
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
-        <div className="p-7 pt-9">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-deep/40 bg-purple-deep/10 text-[10px] font-semibold tracking-[0.15em] uppercase text-purple-deep">
-            <Zap className="w-3 h-3" /> Quantum Audits
-          </div>
-          <h2 id="zero-audit-title" className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-            You've used all included Quantum Audits for this period.
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-            Keep the workflow moving with a Quantum Burst Pack, upgrade for deeper recurring
-            audit capacity, or continue with standard Truth Machine mode.
-          </p>
-
-          <div className="mt-6 space-y-2.5">
-            <button
-              onClick={onClose}
-              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg bg-purple-deep text-white hover:bg-purple-deep/90 transition-colors"
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold"><Zap className="w-4 h-4" /> Buy Quantum Burst Pack</span>
-              <span className="text-xs opacity-80">$199 · 5 audits</span>
-            </button>
-            <button
-              onClick={onUpgrade}
-              className="w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-purple-deep/40 bg-purple-deep/5 text-foreground hover:bg-purple-deep/10 transition-colors"
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="w-4 h-4 text-purple-deep" /> Upgrade Plan</span>
-              <span className="text-xs text-muted-foreground">More audits, more workflow</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border/60 text-foreground hover:bg-foreground/5 transition-colors text-sm"
-            >
-              Continue with standard Truth Machine
-            </button>
-          </div>
-
-          <p className="mt-5 text-[11px] text-muted-foreground italic">
-            Quantum Audit is a supplemental advanced-compute validation layer. It is not a
-            prediction of returns or investment advice.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default Pricing;
