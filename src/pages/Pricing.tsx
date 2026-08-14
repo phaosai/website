@@ -11,41 +11,51 @@ import { useAuth } from "@/contexts/AuthContext";
 type Cadence = "monthly" | "annual";
 
 interface Tier {
-  id: "sovereign" | "pro" | "elite";
+  id: "sovereign" | "pro" | "elite" | "observer";
   name: string;
   tagline: string;
   monthly: number;
   annual: number; // total annual = monthly * 10 (2 months free)
-  quantumAudits: string;
+  pciAccess: string;
   perfectFor: string;
   features: string[];
+  exclusions?: string;
+  whyUpgrade?: string;
   cta: { label: string; priceIdMonthly?: string; priceIdAnnual?: string; href?: string };
   badge?: string;
-  variant: "flagship" | "popular" | "entry";
+  variant: "flagship" | "popular" | "entry" | "free";
 }
 
 const TIERS: Tier[] = [
   {
     id: "sovereign",
     name: "Sovereign",
-    tagline: "The full research operating system for institutional-grade operators.",
+    tagline: "The institutional Sunesis research operating system.",
     monthly: 1499,
     annual: 14990,
-    quantumAudits: "8 Quantum Audits / month",
+    pciAccess: "All 10 PCI horizons · 1D through 3Y",
     perfectFor:
-      "RIAs, family offices, boutique funds, and serious operators who need depth without institutional procurement friction.",
+      "RIAs, family offices, boutique funds, multi-strategy operators, and research organizations managing multiple portfolios, mandates, entities, or client relationships.",
     features: [
-      "Full Sunesis research environment with all signal categories unlocked",
-      "8 Quantum Audits / month — advanced-compute validation for highest-conviction theses",
-      "Unlimited Truth Memos and audit-ready research receipts",
-      "Continuous monitoring with conviction-drift alerts and regime-shift simulations",
-      "Workflow governance: roles, approvals, sign-offs, and append-only audit trails",
-      "Branded client portals for sharing research without exposing the workspace",
-      "Multi-entity / multi-book separation for households, mandates, and strategies",
-      "Compliance-ready treasury & RWA monitoring scaffolds",
-      "Priority research queue and dedicated implementation support",
-      "First access to new modules across the Phaos ecosystem",
+      "Everything in Pro, plus:",
+      "Complete PCI access across 1D, 7D, 14D, 30D, 60D, 90D, 180D, 1Y, 2Y, and 3Y",
+      "Exclusive 1-Day PCI for premium tactical monitoring and rapid conviction-change detection",
+      "Exclusive 2-Year and 3-Year PCI for structural macro, strategic allocation, and longer-duration mandate research",
+      "Full PCI Concurrence across all ten horizons, including alignment, divergence, transition, and regime-shift conditions",
+      "Up to 20 years of available PCI history, market context, and regime analysis",
+      "Deepest available PCI factor analysis and methodology visibility",
+      "Portfolio-, mandate-, entity-, and book-level monitoring",
+      "Continuous alerts for conviction drift, material evidence changes, and mandate-relevant risk events",
+      "Multi-entity and multi-book separation for households, strategies, funds, mandates, client segments, and internal teams",
+      "Institutional governance with roles, permissions, approvals, sign-offs, retention controls, and append-only audit trails",
+      "Branded client portals and controlled research sharing without exposing internal workspaces",
+      "Compliance-ready research receipts with source provenance, timestamps, methodology, assumptions, and disclosure fields",
+      "Higher-capacity scenario analysis and portfolio-level stress testing",
+      "Secure API and data-export options, subject to contract and underlying data-license permissions",
+      "Priority onboarding, implementation, research support, and early access to Phaos ecosystem modules",
     ],
+    whyUpgrade:
+      "Sovereign is not simply more market data or more research. It gives an organization the controls to create, review, retain, monitor, govern, and deliver investment research across multiple entities and stakeholders.",
     cta: {
       label: "Start with Sovereign",
       priceIdMonthly: "pantheon_monthly",
@@ -56,23 +66,31 @@ const TIERS: Tier[] = [
   {
     id: "pro",
     name: "Pro",
-    tagline: "Deeper workflow, richer scenarios, and recurring audit depth.",
+    tagline: "Tactical-to-macro intelligence for decisions you need to defend.",
     monthly: 299,
     annual: 2990,
-    quantumAudits: "4 Quantum Audits / month",
+    pciAccess: "Tactical · Position · Strategic surfaces",
     perfectFor:
-      "Active investors, advisors, and small research teams who need to move from raw signal to defensible conviction every week.",
+      "Active investors, advisors, analysts, and small research teams that need to monitor changing conviction, stress-test decisions, and maintain a defensible research record.",
     features: [
       "Everything in Elite, plus:",
-      "4 Quantum Audits / month — stress-test your highest-conviction theses",
-      "Expanded Truth Memo allowance with full bull / bear case generation",
-      "Scenario sandbox: macro stress, rates, vol, FX, and commodity shifts",
-      "What-Changed insights and conviction-drift monitoring",
-      "Workflow governance with approvals and version history",
-      "Audit Receipt exports (PDF + share links) for every research artifact",
-      "Save and monitor your highest-conviction ideas across the workspace",
-      "Priority email support",
+      "Full PCI access across 7D, 14D, 30D, 60D, 90D, 180D, and 1Y",
+      "Tactical PCI horizons for event-driven, swing, and short-duration position research",
+      "Full PCI factor attribution, including horizon-specific drivers and changes in the evidence base",
+      "PCI Concurrence across tactical, position, and strategic horizons",
+      "What Changed intelligence that identifies the evidence, factors, and market conditions behind a conviction shift",
+      "Up to five years of PCI history and historical-regime context",
+      "Advanced scenario sandbox for macro, rates, volatility, FX, commodities, and cross-asset shocks",
+      "Advanced Truth Memos with structured bull case, bear case, counter-thesis, key risks, evidence hierarchy, and decision record",
+      "Recurring monitoring, expanded watchlist capacity, and higher alert volume",
+      "Secure share links and PDF Audit Receipts",
+      "Shared workspaces for small teams",
+      "Role-based permissions, approvals, sign-offs, and version history",
+      "Read-only multi-broker portfolio aggregation and research-to-portfolio context where supported",
+      "Priority support",
     ],
+    whyUpgrade:
+      "Pro is where Sunesis becomes a serious conviction-management workflow. The buyer pays for tactical decision support, deeper analysis, research rigor, collaborative review, and recurring monitoring.",
     cta: {
       label: "Start with Pro",
       priceIdMonthly: "kyrios_monthly",
@@ -84,22 +102,30 @@ const TIERS: Tier[] = [
   {
     id: "elite",
     name: "Elite",
-    tagline: "Truth-first foundational research with premium audit access.",
+    tagline: "Truth-first live research for independent operators.",
     monthly: 99,
     annual: 990,
-    quantumAudits: "1 Quantum Audit / month",
+    pciAccess: "Position · Strategic surfaces",
     perfectFor:
-      "Independent researchers and serious operators who want sharper signal quality without enterprise complexity.",
+      "Independent researchers, sophisticated individual investors, and active operators who need broad market access and a repeatable personal research workflow.",
     features: [
-      "Full access to the Sunesis research environment",
-      "1 Quantum Audit / month — entry-level advanced-compute validation",
-      "Source-grounded Truth Memos with bull / bear framing",
-      "Phaos Conviction Index across 60+ publicly accessible signal categories",
-      "Evidence trail and methodology transparency on every result",
-      "Watchlist with conviction monitoring",
-      "Standard Truth Machine simulations",
+      "Everything in Observer, plus:",
+      "Unlimited quantum-powered research across all 24 supported asset classes",
+      "Full standard brokerage and research-source coverage",
+      "Full PCI ratings for 30D, 60D, 90D, 180D, and 1Y",
+      "Core PCI driver analysis across technical, fundamental, market-structure, sentiment, and macro factors where applicable",
+      "Position and strategic PCI Concurrence views",
+      "Full source-grounded Truth Memos with bull case, bear case, evidence trail, and methodology references",
+      "Up to two years of PCI history",
+      "Expanded watchlists and scheduled alerts for material PCI movement",
+      "Saved research, reusable views, and a private workspace",
+      "Standard research-receipt exports for personal use",
+      "Standard scenario analysis across macro, rates, volatility, FX, commodities, and related market conditions",
+      "Up to three read-only brokerage connections where supported",
       "Email support",
     ],
+    whyUpgrade:
+      "Elite turns discovery into a real, daily research process. It is priced for broad adoption while providing the market coverage, PCI depth, evidence, historical context, and alerts serious independent users need.",
     cta: {
       label: "Start with Elite",
       priceIdMonthly: "sunesis_monthly",
@@ -107,36 +133,169 @@ const TIERS: Tier[] = [
     },
     variant: "entry",
   },
+  {
+    id: "observer",
+    name: "Observer",
+    tagline: "See where conviction is forming.",
+    monthly: 0,
+    annual: 0,
+    pciAccess: "30D and 1Y summary ratings",
+    perfectFor:
+      "Curious investors and prospective users evaluating Sunesis, exploring the Phaos Conviction Index, and validating live research before upgrading.",
+    features: [
+      "Unlimited quantum-powered live searches inside a focused discovery universe",
+      "Access to 3 curated asset classes: major U.S. equities, ETFs, and major crypto assets",
+      "Curated brokerage and research-source coverage",
+      "PCI summary ratings for 30 Days and 1 Year",
+      "Overall PCI score and directional classification: Strong Bullish, Bullish, Neutral, Bearish, or Strong Bearish",
+      "Standard Truth Memo previews with source visibility and selected evidence",
+      "30 days of PCI historical context",
+      "One personal watchlist with up to 10 instruments",
+      "Daily data refresh cadence",
+      "One read-only brokerage connection where supported",
+    ],
+    exclusions:
+      "Observer does not include full factor drilldowns, detailed PCI explanations, exports, share links, scenario analysis, tactical PCI, live alerts, team workspaces, or portfolio-level workflows.",
+    cta: {
+      label: "Explore Sunesis free",
+      href: "/auth?mode=signup",
+    },
+    variant: "free",
+  },
 ];
 
-const ADD_ON_PACKS = [
+const PCI_SURFACES = [
   {
-    name: "Quantum Burst Pack",
-    icon: Zap,
-    price: "$199",
-    description: "5 additional Quantum Audit executions. Use any time within the next 90 days.",
-    priceId: "quantum_burst_pack",
-    featured: true,
+    surface: "Tactical",
+    horizons: "1D, 7D, 14D",
+    observer: "Not included",
+    elite: "Not included",
+    pro: "7D and 14D",
+    sovereign: "1D, 7D, and 14D",
   },
   {
-    name: "Premium Report Pack",
-    icon: Sparkles,
-    price: "$99",
-    description: "10 additional generated audit-ready research memos with PDF export.",
-    priceId: "premium_report_pack",
+    surface: "Position",
+    horizons: "30D, 60D, 90D",
+    observer: "30D summary",
+    elite: "Full",
+    pro: "Full",
+    sovereign: "Full",
   },
   {
-    name: "Monitoring Pack",
-    icon: Shield,
-    price: "$79",
-    description: "Add 25 monitored tickers with conviction-drift alerts for the billing period.",
-    priceId: "monitoring_pack",
+    surface: "Strategic",
+    horizons: "180D, 1Y, 2Y, 3Y",
+    observer: "1Y summary",
+    elite: "180D and 1Y",
+    pro: "180D and 1Y",
+    sovereign: "Full through 3Y",
+  },
+];
+
+const COMPARISON_ROWS: { label: string; observer: string; elite: string; pro: string; sovereign: string }[] = [
+  {
+    label: "Best for",
+    observer: "Curious investors and prospective users",
+    elite: "Independent researchers and serious investors",
+    pro: "Active investors, advisors, and small research teams",
+    sovereign: "RIAs, family offices, boutique funds, and multi-entity operators",
+  },
+  {
+    label: "Core value",
+    observer: "Experience live Sunesis research",
+    elite: "Build a repeatable personal research process",
+    pro: "Turn research into monitored, defensible team decisions",
+    sovereign: "Run institutional research, governance, and client delivery",
+  },
+  {
+    label: "Asset access",
+    observer: "3 curated asset classes",
+    elite: "All 24 supported asset classes",
+    pro: "All 24 supported asset classes",
+    sovereign: "All 24 supported asset classes, plus eligible custom coverage",
+  },
+  {
+    label: "Brokerage coverage",
+    observer: "Selected sources and one read-only connection where supported",
+    elite: "Standard brokerage and research-source coverage",
+    pro: "Multi-broker portfolio aggregation where supported",
+    sovereign: "Multi-entity portfolio, mandate, and book-level views where supported",
+  },
+  {
+    label: "PCI horizons",
+    observer: "30D and 1Y summary",
+    elite: "30D, 60D, 90D, 180D, and 1Y",
+    pro: "7D, 14D, 30D, 60D, 90D, 180D, and 1Y",
+    sovereign: "All: 1D, 7D, 14D, 30D, 60D, 90D, 180D, 1Y, 2Y, 3Y",
+  },
+  {
+    label: "PCI detail",
+    observer: "Score and direction only",
+    elite: "Core drivers",
+    pro: "Full attribution and factor change analysis",
+    sovereign: "Full attribution, methodology, and regime context",
+  },
+  {
+    label: "PCI history",
+    observer: "30 days",
+    elite: "Up to 2 years",
+    pro: "Up to 5 years",
+    sovereign: "Up to 20 years, where data supports it",
+  },
+  {
+    label: "PCI Concurrence",
+    observer: "Preview",
+    elite: "Position and strategic views",
+    pro: "Tactical through strategic views",
+    sovereign: "Full 1D through 3Y horizon surface",
+  },
+  {
+    label: "Truth Memos",
+    observer: "Standard preview",
+    elite: "Full source-grounded memos",
+    pro: "Advanced memos with counter-thesis and decision record",
+    sovereign: "Institutional research outputs and controlled delivery",
+  },
+  {
+    label: "Monitoring",
+    observer: "One small watchlist",
+    elite: "Expanded watchlists and scheduled alerts",
+    pro: "Conviction drift, What Changed, recurring monitoring",
+    sovereign: "Portfolio, mandate, evidence, and regime-shift monitoring",
+  },
+  {
+    label: "Scenario analysis",
+    observer: "Not included",
+    elite: "Standard research scenarios",
+    pro: "Advanced cross-asset stress testing",
+    sovereign: "Portfolio-level and higher-capacity scenarios",
+  },
+  {
+    label: "Collaboration",
+    observer: "Individual only",
+    elite: "Private workspace",
+    pro: "Team workspace, roles, approvals, version history",
+    sovereign: "Multi-entity governance, retention, and audit trails",
+  },
+  {
+    label: "Sharing and exports",
+    observer: "Not included",
+    elite: "Personal research receipts",
+    pro: "Secure links and PDF Audit Receipts",
+    sovereign: "Branded portals, controlled sharing, expanded exports, API options",
+  },
+  {
+    label: "Support",
+    observer: "Self-serve",
+    elite: "Email support",
+    pro: "Priority support",
+    sovereign: "Priority implementation and dedicated support",
   },
 ];
 
 function formatPrice(n: number) {
   return n.toLocaleString("en-US");
 }
+
 
 const Pricing = () => {
   const { user } = useAuth();
