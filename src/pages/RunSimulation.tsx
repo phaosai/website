@@ -275,7 +275,7 @@ const RunSimulation = () => {
         assetClass: r.assetClass,
         pci: r.pci,
         tier: getPciTier(r.pci),
-        topSignal: r.topSignal ?? "Macro regime · FRED",
+        topSignal: r.topSignal ?? signalsForClass(r.assetClass)[0],
         platforms: r.platforms ?? [],
       }));
       if (!rows.length) throw new Error("simulated-mode");
