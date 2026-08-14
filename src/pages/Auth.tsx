@@ -247,13 +247,13 @@ const Auth = () => {
               <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Selected plan</p>
                 <p className="mt-1 text-sm font-semibold text-white">{selectedPlanName}</p>
-                <p className="mt-1 text-xs text-white/70">Create your free account, then preview the pricing page</p>
+                <p className="mt-1 text-xs text-white/70">{mode === "signin" ? "Access Your Sunesis AI Quantum Research Platform" : "Create your free account, then preview the pricing page"}</p>
               </div>
             )}
             {!selectedPlan && nextPath === "/pricing" && (
               <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">Next step</p>
-                <p className="mt-1 text-xs text-white/70">Create your free account, then preview the pricing page</p>
+                <p className="mt-1 text-xs text-white/70">{mode === "signin" ? "Access Your Sunesis AI Quantum Research Platform" : "Create your free account, then preview the pricing page"}</p>
               </div>
             )}
 
