@@ -423,9 +423,16 @@ const RunSimulation = () => {
           {results && !loading && (
             <div className="mt-6 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  LIVE · Powered by Foundry
-                </span>
+                {simulated ? (
+                  <span className="inline-flex items-center rounded-sm border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-500">
+                    SIMULATED · Hypothetical scenario output
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    LIVE · Powered by Foundry
+                  </span>
+                )}
+
                 {summary && (
                   <span className="text-xs text-muted-foreground">
                     Avg PCI <span className="text-foreground font-semibold">{summary.avg}</span> ·
