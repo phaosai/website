@@ -155,7 +155,7 @@ const RunSimulation = () => {
     [],
   );
 
-  const canRun = selectedClasses.length > 0 && selectedPlatforms.length > 0;
+  // Simulation always runs — no selection gating.
 
   const summary = useMemo(() => {
     if (!results) return null;
