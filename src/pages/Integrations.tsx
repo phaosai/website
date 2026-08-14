@@ -3,6 +3,7 @@ import { ArrowRight, Phone, Workflow, Plug } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import IntegrationSearch from "@/components/IntegrationSearch";
+import WorkflowDiagram from "@/components/WorkflowDiagram";
 
 import { categories, type Integration } from "@/data/integrations";
 
@@ -70,14 +71,29 @@ const Integrations = () => {
               <span className="text-gradient-purple">Your Business Runs On</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Phaos AI agents and workflows integrate with the platforms you already use — giving your AI access to real-time data from CRMs, ERPs, print management systems, e-commerce platforms, and more. No silos. No manual handoffs.
+              Phaos AI agents and workflows integrate with the platforms you already use, giving your AI access to real-time data from CRMs, ERPs, print management systems, e-commerce platforms, and more. No silos. No manual handoffs.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Animated Workflow Diagram ── */}
+      <section className="py-12 px-6" aria-label="How Workflow Automation Works">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <WorkflowDiagram />
           </motion.div>
         </div>
       </section>
 
       {/* Integration Search */}
       <IntegrationSearch />
+
 
       {/* How It Works */}
       <section className="py-20 px-6 border-t border-border/30">
