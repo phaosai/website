@@ -28,7 +28,7 @@ interface Reason {
   weight: number;
 }
 
-const tierLabel = (pci: number) => pci >= 96 ? "PHAOS CHOICE" : pci >= 90 ? "GO" : pci >= 70 ? "Potential" : pci >= 51 ? "Warning" : "NO GO";
+const tierLabel = (pci: number) => pci >= 96 ? "PHAOS CHOICE" : pci >= 90 ? "HIGH CONVERGENCE" : pci >= 70 ? "CONSTRUCTIVE" : pci >= 51 ? "DIVERGENCE" : "HIGH DECAY";
 
 // Pick the source families to interrogate based on asset class.
 const familiesFor = (cls: AssetClass): { line: string; family: string }[] => {
@@ -205,7 +205,7 @@ const buildReasons = (cls: AssetClass, ticker: string, seed: number): Reason[] =
     reasons.unshift({
       rank: 0, category: "fundamental",
       headline: "Auditable evidence is sparse — speculative bucket",
-      evidence: "OTC tier disclosures are limited and short-interest is fragile; PCI is hard-capped at the Warning ceiling.",
+      evidence: "OTC tier disclosures are limited and short-interest is fragile; PCI is hard-capped at the Divergence ceiling.",
       direction: "detracts", confidence: "strong", weight: 1.0,
     });
   }
