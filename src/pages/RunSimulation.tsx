@@ -363,9 +363,9 @@ const RunSimulation = () => {
   // simulation can never come back empty, whatever the selection.
   const buildSimulatedRows = async (): Promise<TopRow[]> => {
     const { CANDIDATES } = await import("@/data/simulationCandidates");
-    const classes = selectedClasses.length ? selectedClasses : allAssetValues;
-    const byClass = CANDIDATES.filter((c) => classes.includes(c.assetClass));
-    const pool = byClass.length ? byClass : CANDIDATES;
+    const classes = selectedClasses;
+    const pool = CANDIDATES.filter((c) => classes.includes(c.assetClass));
+
     const seedOf = (s: string) => s.split("").reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 100000, 7);
 
     return pool
