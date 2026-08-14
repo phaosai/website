@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { aboutPageSchema } from "@/lib/seo-schemas";
 import danielPhoto from "@/assets/daniel-lindros.jpg";
-import shreePhoto from "@/assets/shree-dandekar.jpg";
+
 import diegoPhoto from "@/assets/diego-barrientos.jpg";
 import toriPhoto from "@/assets/tori-mccrea.jpg";
 import kaitlynPhoto from "@/assets/kaitlyn-hathaway.jpeg";
@@ -233,35 +233,8 @@ const About = () => {
             </div>
           </motion.div>
 
-          {/* Shree Dandekar */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 mb-8"
-          >
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="w-48 h-48 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/30">
-                <img src={shreePhoto} alt="Shree Dandekar — CTO of Phaos AI" width={192} height={192} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-1">Shree Dandekar</h3>
-                <p className="text-primary font-medium mb-4">Chief Technology Officer</p>
-                <div className="space-y-4 text-muted-foreground leading-relaxed">
-                  <p>
-                    Shree Dandekar is an inspirational technology leader, inventor, and product strategist with over 30 years of experience driving software innovation across Fortune 500 industries and global markets. A growth architect at heart, Shree has spent his career turning complex technical challenges into scalable, revenue-generating solutions — spanning enterprise software, AI, and digital transformation.
-                  </p>
-                  <p>
-                    His deep expertise in product development, engineering leadership, and go-to-market execution — combined with a proven track record of building and scaling high-performing technology teams — makes him the ideal architect behind Phaos AI's platform. Shree brings the technical rigor and visionary product thinking needed to deliver AI that doesn't just work — it sets new benchmarks.
-                  </p>
-                  <p>
-                    With a career that began as a software engineer at Dell and evolved through senior leadership roles across multiple industries, Shree brings a rare blend of hands-on technical depth and executive strategic perspective to Phaos AI.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+
+
 
           {/* Diego Barrientos */}
           <motion.div

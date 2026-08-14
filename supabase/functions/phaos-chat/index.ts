@@ -181,7 +181,7 @@ Phaos AI Inc. is an AI-powered voice and agentic workflow automation company. Th
 
 **Contact:** daniel@phaosai.com | (617) 678-2426 | Casselberry, FL USA
 
-**Leadership:** Daniel Lindros (Founder & CEO), Shree Dandekar (CTO), Juan "Diego" Barrientos (Director of Product Technology), Will Donahue (Sales Specialist)
+**Leadership:** Daniel Lindros (Founder & CEO), Juan "Diego" Barrientos (Director of Product Technology), Will Donahue (Sales Specialist)
 
 ### Core Products
 - **Voice AI Agents**: 24/7 intelligent call handling, hyper-realistic voice ("Uncanny Valley Breakthrough"), real-time multilingual, emotion scoring, self-healing flows
