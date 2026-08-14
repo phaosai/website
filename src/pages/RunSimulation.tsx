@@ -308,7 +308,7 @@ const RunSimulation = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>("30D");
   const [selectedClasses, setSelectedClasses] = useState<AssetClass[]>(["stock"]);
 
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["robinhood"]);
   const [platforms, setPlatforms] = useState<PlatformMeta[]>(FALLBACK_PLATFORMS);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
