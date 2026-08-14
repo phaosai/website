@@ -8,16 +8,16 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 
-type Cadence = "monthly" | "annual";
-type TierId = "sovereign" | "pro" | "elite" | "observer";
+export type Cadence = "monthly" | "annual";
+export type TierId = "sovereign" | "pro" | "elite" | "observer";
 
-interface KeySpec {
+export interface KeySpec {
   label: string;
   value: string;
   included: boolean;
 }
 
-interface Tier {
+export interface Tier {
   id: TierId;
   name: string;
   tagline: string;
@@ -34,7 +34,7 @@ interface Tier {
   variant: "flagship" | "popular" | "entry" | "free";
 }
 
-const TIERS: Tier[] = [
+export const TIERS: Tier[] = [
   {
     id: "sovereign",
     name: "Sovereign",
@@ -309,7 +309,7 @@ const COMPARISON_ROWS: { label: string; observer: string; elite: string; pro: st
   },
 ];
 
-function formatPrice(n: number) {
+export function formatPrice(n: number) {
   return n.toLocaleString("en-US");
 }
 
@@ -540,7 +540,7 @@ function Benchmark({ name, price, sub, muted, highlight }: { name: string; price
   );
 }
 
-function PricingCard({
+export function PricingCard({
   tier,
   cadence,
   selected,
