@@ -19,33 +19,8 @@ const capabilities = [
   "Surfaces named investment themes and narratives emerging across the market",
 ];
 
-const pillars = [
-  {
-    icon: Activity,
-    name: "Insider Intent",
-    desc: "Who is quietly buying, selling, or re-positioning behind the scenes.",
-  },
-  {
-    icon: FileText,
-    name: "Fundamentals & Flows",
-    desc: "How capital, contracts, and fundamentals are shifting beneath the surface.",
-  },
-  {
-    icon: Truck,
-    name: "Logistics & Supply Chain Pulse",
-    desc: "The real-world movement of goods and capacity through the system.",
-  },
-  {
-    icon: MessageSquare,
-    name: "Sentiment & Attention",
-    desc: "Where interest is accelerating, fading, or suddenly spiking.",
-  },
-  {
-    icon: Globe,
-    name: "Macro Regime Context",
-    desc: "The environment each idea is swimming in: calm, changing, or storm.",
-  },
-];
+
+
 
 const methodology = [
   "Risk-adjusted performance thinking — raw return is meaningless without context",
