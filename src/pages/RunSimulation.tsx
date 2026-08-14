@@ -122,6 +122,39 @@ interface TopRow {
   platforms: string[];
 }
 
+// Signal pools tailored to each asset class so the "Top signal" column always
+// cites a source that actually covers that instrument type.
+const SIGNALS_BY_CLASS: Partial<Record<AssetClass, string[]>> = {
+  stock: ["Insider cluster · SEC Form 4", "Revenue trend · XBRL 10-Q", "Short interest · FINRA", "Options skew · CBOE EOD", "Contract awards · USAspending"],
+  adr: ["Foreign filings · SEC 20-F", "FX translation risk · FRED", "Custodian flow · DTCC", "Export data · UN Comtrade"],
+  etf: ["Creation/redemption flow · N-PORT", "Premium/discount to NAV", "Sector rotation · FRED regime", "Holdings drift · N-CSR"],
+  mutual_fund: ["Holdings drift · N-PORT", "Expense drag vs. benchmark", "Net flows · N-CEN"],
+  reit: ["FFO trend · XBRL", "Occupancy disclosure · 10-K", "Debt maturity wall · 10-Q", "Cap-rate spread · FRED"],
+  otc_penny: ["Disclosure gap · OTC tier", "Liquidity fragility · quote depth", "Dilution history · S-1 / 424B"],
+  us_treasury: ["Auction tails · TreasuryDirect", "Real yields · FRED TIPS", "Curve slope · 10Y–2Y"],
+  corporate_bond: ["Spread move · FINRA TRACE", "HY OAS regime · FRED", "Coverage ratio · XBRL"],
+  muni_bond: ["Issuer disclosure · MSRB EMMA", "Revenue base · Census finance", "Ratings drift"],
+  future: ["Term structure · exchange settle", "COT positioning · CFTC", "Roll yield vs. spot"],
+  option: ["IV rank · CBOE EOD", "Open-interest walls", "Skew shift · put/call"],
+  cfd: ["Index breadth · constituent flow", "Financing rate · broker swap", "Macro surprise · PMI"],
+  warrant: ["Dilution overhang · prospectus", "Time-value decay curve"],
+  perp_swap: ["Funding rate · Coinglass", "Open interest crowding", "Liquidation clusters"],
+  forex: ["Rate differential · FRED / BIS", "CFTC currency positioning", "PMI divergence · IMF"],
+  metal: ["Warehouse stocks · exchange", "Mine supply · USGS", "Real-yield sensitivity · FRED"],
+  soft_commodity: ["Crop balance · USDA WASDE", "Weather anomaly · NOAA", "Export pace · USDA FAS"],
+  energy: ["Inventory draw · EIA weekly", "Rig count · Baker Hughes", "Storage vs. 5-yr avg · EIA"],
+  major_crypto: ["Exchange netflow · on-chain", "Holder cohort shift", "ETF flows · issuer disclosures"],
+  altcoin: ["Developer activity · CoinGecko", "Unlock schedule · vesting", "Liquidity depth · CEX books"],
+  defi_token: ["TVL trend · DefiLlama", "Protocol fees · DefiLlama", "Governance activity · on-chain"],
+  rwa: ["Collateral attestation", "Redemption flow · on-chain", "Yield vs. T-bill · FRED"],
+  stablecoin: ["Mint/burn imbalance · on-chain", "Reserve attestation", "Peg deviation · venue books"],
+  carbon_credit: ["Registry issuance · Verra / Gold Standard", "Compliance policy · Federal Register", "Retirement volume"],
+};
+
+const signalsForClass = (cls: AssetClass): string[] =>
+  SIGNALS_BY_CLASS[cls] ?? ["Macro regime · FRED", "Fundamental trend · XBRL"];
+
+
 const TIMEFRAMES = [
   { value: "1D", label: "1 Day" },
   { value: "7D", label: "7 Days" },
