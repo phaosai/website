@@ -278,11 +278,47 @@ const RunSimulation = () => {
       <section className="px-6 pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="rounded-2xl border border-border bg-card/40 p-6 sm:p-10 space-y-10">
-            {/* Step 1 — Asset classes (multi-select) */}
+            {/* Step 1 — Timeframe (single-select) */}
             <div>
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">1</span>
-                <p className="text-lg font-semibold">Select the asset classes to consider</p>
+                <p className="text-lg font-semibold">Select the Timeframe</p>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label} selected
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {[TIMEFRAMES.slice(0, 5), TIMEFRAMES.slice(5)].map((row, i) => (
+                  <div key={i} className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    {row.map((t) => {
+                      const active = t.value === selectedTimeframe;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setSelectedTimeframe(t.value)}
+                          className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-base font-semibold transition-colors ${
+                            active
+                              ? "border-primary bg-primary/15 text-primary"
+                              : "border-border bg-background/60 text-foreground/80 hover:bg-card"
+                          }`}
+                        >
+                          {active && <Check className="w-4 h-4" />}
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2 — Asset Classes (multi-select) */}
+            <div>
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
+                <span className="w-7 h-7 rounded-full border border-border bg-background text-sm font-semibold flex items-center justify-center">2</span>
+                <p className="text-lg font-semibold">Select the Asset Classes to consider</p>
+
                 <div className="ml-auto flex items-center gap-2">
                   <span className="text-xs text-muted-foreground mr-1">{selectedClasses.length} selected</span>
                   <button
