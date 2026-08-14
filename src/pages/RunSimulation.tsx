@@ -523,45 +523,24 @@ const RunSimulation = () => {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-border bg-card/40 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="text-left p-3 w-10">#</th>
-                      <th className="text-left p-4 w-[9%]">Ticker</th>
-                      <th className="text-left p-4 w-[26%]">Name</th>
-                      <th className="text-left p-4 w-[11%]">Class</th>
-                      <th className="text-left p-4 w-[14%]">PCI</th>
-                      <th className="text-left p-4 w-[14%]">Tier</th>
-                      <th className="text-left p-4 w-[26%]">Top signal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r, idx) => (
-                      <tr key={r.ticker} className="border-t border-border">
-                        <td className="p-3 text-muted-foreground">{idx + 1}</td>
-                        <td className="p-4 font-mono font-semibold">{r.ticker}</td>
-                        <td className="p-4">{r.name}</td>
-                        <td className="p-4 text-xs uppercase tracking-wider text-muted-foreground">{r.assetClass.replace(/_/g, " ")}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-base font-bold tabular-nums ${r.tier.text}`}>{r.pci}</span>
-                            <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
-                              <div className={`h-full ${r.tier.bar}`} style={{ width: `${r.pci}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${r.tier.border} ${r.tier.bg} ${r.tier.text}`}>
-                            {r.tier.label}
-                          </span>
-                        </td>
-                        <td className="p-4 text-xs text-muted-foreground">{r.topSignal}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {topTen.length > 0 && (
+                <ResultsTable
+                  title="10 Highest Rated PCI"
+                  subtitle="Strongest evidence alignment in your selected universe"
+                  rows={topTen}
+                  accent="text-pci-choice"
+                />
+              )}
+
+              {bottomTen.length > 0 && (
+                <ResultsTable
+                  title="10 Lowest Rated PCI"
+                  subtitle="Weakest evidence alignment in your selected universe"
+                  rows={bottomTen}
+                  accent="text-pci-no-go"
+                />
+              )}
+
 
               {results.length === 0 && (
                 <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
