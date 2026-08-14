@@ -603,6 +603,17 @@ const RunSimulation = () => {
                 />
               )}
 
+              {!canSplit && results.length > 0 && (
+                <ResultsTable
+                  title="Simulation Results"
+                  subtitle="Ranked by the Phaos Conviction Index"
+                  rows={results}
+                  accent="text-pci-choice"
+                />
+              )}
+
+
+
 
               {results.length === 0 && (
                 <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
