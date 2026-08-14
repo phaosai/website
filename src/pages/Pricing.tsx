@@ -564,9 +564,9 @@ function Benchmark({ name, price, sub, muted, highlight }: { name: string; price
 }
 
 function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; onBuy: () => void }) {
-  const isAnnual = cadence === "annual";
-  const monthlyEquivalent = isAnnual ? Math.round(tier.annual / 12) : tier.monthly;
-  const cadenceLabel = isAnnual ? "/month, billed annually" : "/month";
+  const isFree = tier.monthly === 0;
+  const isAnnual = cadence === "annual" && !isFree;
+  const savings = tier.monthly * 12 - tier.annual;
 
   const variantClasses =
     tier.variant === "flagship"
@@ -598,18 +598,26 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
 
         <div className="mt-5 flex items-baseline gap-1.5">
-          <span className="text-4xl md:text-5xl font-semibold text-foreground">${formatPrice(monthlyEquivalent)}</span>
-          <span className="text-sm text-muted-foreground">{cadenceLabel}</span>
+          <span className="text-4xl md:text-5xl font-semibold text-foreground">
+            ${formatPrice(isAnnual ? tier.annual : tier.monthly)}
+          </span>
+          <span className="text-sm text-muted-foreground">{isAnnual ? "/year" : "/month"}</span>
         </div>
-        {isAnnual && (
+        {isFree ? (
+          <p className="mt-1 text-xs text-muted-foreground">Free forever. No card required.</p>
+        ) : isAnnual ? (
           <p className="mt-1 text-xs text-purple-deep">
-            ${formatPrice(tier.annual)}/yr · 2 months free vs. monthly
+            ${formatPrice(tier.monthly)}/month billed monthly · save ${formatPrice(savings)} annually
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-purple-deep">
+            or ${formatPrice(tier.annual)}/year, save ${formatPrice(savings)}
           </p>
         )}
 
         <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-purple-deep/30 bg-purple-deep/5 text-xs font-medium text-purple-deep">
           <Zap className="w-3 h-3" />
-          {tier.quantumAudits}
+          {tier.pciAccess}
         </div>
       </div>
 
@@ -626,7 +634,17 @@ function PricingCard({ tier, cadence, onBuy }: { tier: Tier; cadence: Cadence; o
             </li>
           ))}
         </ul>
+        {tier.exclusions && (
+          <p className="mt-4 text-xs text-muted-foreground/80 italic leading-relaxed">{tier.exclusions}</p>
+        )}
+        {tier.whyUpgrade && (
+          <p className="mt-4 pt-4 border-t border-border/40 text-xs text-muted-foreground leading-relaxed">
+            <span className="text-foreground/80 font-medium">Why users upgrade: </span>
+            {tier.whyUpgrade}
+          </p>
+        )}
       </div>
+
 
       <button
         onClick={onBuy}
