@@ -89,7 +89,7 @@ const Auth = () => {
       return;
     }
     if (!selectedPlan) {
-      navigate(from, { replace: true });
+      navigate(nextPath || from, { replace: true });
       return;
     }
     if (!checkoutStarted) {
