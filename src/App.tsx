@@ -14,7 +14,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
-const WorkflowTeardownPopup = lazy(() => import("./components/WorkflowTeardownPopup"));
+// Popup temporarily disabled: const WorkflowTeardownPopup = lazy(() => import("./components/WorkflowTeardownPopup"));
 const PhaosNavigator = lazy(() => import("./components/PhaosNavigator"));
 const CustomCursor = lazy(() => import("./components/CustomCursor"));
 
@@ -113,7 +113,7 @@ const DeferredGlobalUI = () => {
   return (
     <Suspense fallback={null}>
       <ChatWidget />
-      <WorkflowTeardownPopup />
+      {/* Popup temporarily disabled — re-enable <WorkflowTeardownPopup /> to restore */}
       <PhaosNavigator />
       <CustomCursor />
     </Suspense>
